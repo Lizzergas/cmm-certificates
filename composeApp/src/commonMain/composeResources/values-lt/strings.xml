@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">Cmm Programa</string>
     <string name="home_choose_file">Pasirinkti failą</string>
+    <string name="home_choose_directory">Pasirinkti aplanką</string>
+    <string name="home_xlsx_label">XLSX failas</string>
+    <string name="home_output_dir_label">PDF išsaugojimo aplankas</string>
+    <string name="home_generate">Generuoti</string>
+    <string name="home_title">Konverteris</string>
+    <string name="home_subtitle">Excel į PDF</string>
+    <string name="home_source_excel_title">Pradinis Excel failas</string>
+    <string name="home_source_excel_hint">Palieskite, kad pasirinktumėte skaičiuoklę</string>
+    <string name="home_output_directory_title">Aplankas</string>
+    <string name="home_output_directory_hint">Palieskite, kad pasirinktumėte aplanką</string>
+    <string name="home_convert_button">Konvertuoti į PDF</string>
 </resources>
