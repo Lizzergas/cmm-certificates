@@ -19,8 +19,10 @@ data class ConversionProgressState(
 class ConversionProgressStore {
     private val _state = MutableStateFlow(ConversionProgressState())
     val state: StateFlow<ConversionProgressState> = _state
+    private val cancelRequested = MutableStateFlow(false)
 
     fun start(total: Int, outputDir: String) {
+        cancelRequested.value = false
         _state.value = ConversionProgressState(
             current = 0,
             total = total,
@@ -60,7 +62,20 @@ class ConversionProgressStore {
         }
     }
 
+    fun requestCancel() {
+        cancelRequested.value = true
+        _state.update {
+            it.copy(
+                inProgress = false,
+                endedAtMillis = nowMillis(),
+            )
+        }
+    }
+
+    fun isCancelRequested(): Boolean = cancelRequested.value
+
     fun reset() {
+        cancelRequested.value = false
         _state.value = ConversionProgressState()
     }
 

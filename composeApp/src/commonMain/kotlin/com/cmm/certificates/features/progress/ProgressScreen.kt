@@ -1,5 +1,11 @@
 package com.cmm.certificates.features.progress
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,7 +64,9 @@ fun ProgressScreen(
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         bottomBar = {
+            val bottomBarHeight = 128.dp
             Surface(
+                modifier = Modifier.height(bottomBarHeight),
                 color = Color.White,
                 tonalElevation = 6.dp,
                 shadowElevation = 6.dp,
@@ -68,6 +76,7 @@ fun ProgressScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (progressState.completed) {
                         Column(
@@ -89,7 +98,6 @@ fun ProgressScreen(
                             }
                             TextButton(
                                 onClick = {
-                                    progressStore.reset()
                                     onConvertAnother()
                                 },
                                 modifier = Modifier.fillMaxWidth(),
@@ -100,7 +108,7 @@ fun ProgressScreen(
                     } else {
                         OutlinedButton(
                             onClick = {
-                                progressStore.reset()
+                                progressStore.requestCancel()
                                 onCancel()
                             },
                             modifier = Modifier.fillMaxWidth(),
@@ -119,28 +127,42 @@ fun ProgressScreen(
             }
         },
     ) { padding ->
-        if (progressState.completed) {
-            SuccessContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .safeContentPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                total = total,
-                outputDir = outputDir,
-                durationText = durationText,
-            )
-        } else {
-            ProgressContent(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .safeContentPadding()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                current = current,
-                total = total,
-                progress = progress,
-            )
+        val fadeInDuration = 420
+        val fadeOutDuration = 300
+        val sizeDuration = 360
+        val contentModifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .safeContentPadding()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+        AnimatedContent(
+            targetState = progressState.completed,
+            modifier = contentModifier,
+            contentAlignment = Alignment.Center,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(durationMillis = fadeInDuration)) togetherWith
+                        fadeOut(animationSpec = tween(durationMillis = fadeOutDuration)) using
+                        SizeTransform(
+                            clip = false,
+                            sizeAnimationSpec = { _, _ -> tween(durationMillis = sizeDuration) },
+                        )
+            },
+        ) { completed ->
+            if (completed) {
+                SuccessContent(
+                    modifier = Modifier.fillMaxSize(),
+                    total = total,
+                    outputDir = outputDir,
+                    durationText = durationText,
+                )
+            } else {
+                ProgressContent(
+                    modifier = Modifier.fillMaxSize(),
+                    current = current,
+                    total = total,
+                    progress = progress,
+                )
+            }
         }
     }
 }

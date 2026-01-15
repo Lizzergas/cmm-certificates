@@ -126,7 +126,8 @@ class HomeViewModel(
 
         withContext(Dispatchers.Default) {
             progressStore.start(snapshot.entries.size, snapshot.outputDir)
-            snapshot.entries.forEachIndexed { index, entry ->
+            for ((index, entry) in snapshot.entries.withIndex()) {
+                if (progressStore.isCancelRequested()) return@withContext
                 println("Generating document for entry #${index + 1}: $entry")
                 val fullName = listOf(entry.name, entry.surname)
                     .filter { it.isNotBlank() }
@@ -150,6 +151,7 @@ class HomeViewModel(
                         outputPath = outputPath,
                         replacements = replacements,
                     )
+                    if (progressStore.isCancelRequested()) return@withContext
                     progressStore.update(index + 1)
                 } catch (e: Exception) {
                     println("Failed to generate document for $fullName: ${e.message}")
@@ -160,7 +162,9 @@ class HomeViewModel(
                     return@withContext
                 }
             }
-            progressStore.finish()
+            if (!progressStore.isCancelRequested()) {
+                progressStore.finish()
+            }
         }
     }
 }
