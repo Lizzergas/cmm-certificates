@@ -2,13 +2,18 @@ package com.cmm.certificates.features.home
 
 import androidx.lifecycle.ViewModel
 import com.cmm.certificates.docx.DocxTemplate
+import com.cmm.certificates.features.progress.ConversionProgressStore
 import com.cmm.certificates.xlsx.RegistrationEntry
 import com.cmm.certificates.xlsx.XlsxParser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val progressStore: ConversionProgressStore,
+) : ViewModel() {
     private val _uiState = MutableStateFlow(
         HomeUiState(
             xlsxPath = "",
@@ -78,16 +83,18 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun generateDocuments() {
+    suspend fun generateDocuments() {
         val snapshot = _uiState.value
         if (snapshot.templatePath.isBlank() || snapshot.outputDir.isBlank()) {
             println("Template path or output directory is blank; cannot generate documents.")
             _uiState.update { it.copy(parseError = "Template and output folder are required.") }
+            progressStore.fail("Template and output folder are required.")
             return
         }
         if (snapshot.entries.isEmpty()) {
             println("No entries to process; nothing to generate.")
             _uiState.update { it.copy(parseError = "No XLSX entries to generate.") }
+            progressStore.fail("No XLSX entries to generate.")
             return
         }
         if (snapshot.accreditedId.isBlank() ||
@@ -97,6 +104,7 @@ class HomeViewModel : ViewModel() {
             snapshot.lector.isBlank()
         ) {
             _uiState.update { it.copy(parseError = "All certificate fields are required.") }
+            progressStore.fail("All certificate fields are required.")
             return
         }
 
@@ -105,45 +113,54 @@ class HomeViewModel : ViewModel() {
         } catch (e: Exception) {
             println("Failed to load template: ${e.message}")
             _uiState.update { it.copy(parseError = e.message ?: "Failed to load template.") }
+            progressStore.fail(e.message ?: "Failed to load template.")
             return
         }
 
         val docIdStart = snapshot.docIdStart.trim().toLongOrNull()
         if (docIdStart == null) {
             _uiState.update { it.copy(parseError = "Document ID start must be a number.") }
+            progressStore.fail("Document ID start must be a number.")
             return
         }
 
-        snapshot.entries.forEachIndexed { index, entry ->
-            println("Generating document for entry #${index + 1}: $entry")
-            val fullName = listOf(entry.name, entry.surname)
-                .filter { it.isNotBlank() }
-                .joinToString(" ")
-            val docId = docIdStart + index
-            val replacements = mapOf(
-                "{{full_name}}" to fullName,
-                "{{date}}" to entry.formattedDate,
-                "{{accredited_id}}" to snapshot.accreditedId,
-                "{{doc_id}}" to docId.toString(),
-                "{{accredited_type}}" to snapshot.accreditedType,
-                "{{accredited_hours}}" to snapshot.accreditedHours,
-                "{{certificate_name}}" to snapshot.certificateName,
-                "{{lector}}" to snapshot.lector,
-            )
-            val outputPath = joinPath(snapshot.outputDir, "${docId}.docx")
-            try {
-                println("Writing output: $outputPath")
-                DocxTemplate.fillTemplate(
-                    templateBytes = templateBytes,
-                    outputPath = outputPath,
-                    replacements = replacements,
+        withContext(Dispatchers.Default) {
+            progressStore.start(snapshot.entries.size, snapshot.outputDir)
+            snapshot.entries.forEachIndexed { index, entry ->
+                println("Generating document for entry #${index + 1}: $entry")
+                val fullName = listOf(entry.name, entry.surname)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ")
+                val docId = docIdStart + index
+                val replacements = mapOf(
+                    "{{full_name}}" to fullName,
+                    "{{date}}" to entry.formattedDate,
+                    "{{accredited_id}}" to snapshot.accreditedId,
+                    "{{doc_id}}" to docId.toString(),
+                    "{{accredited_type}}" to snapshot.accreditedType,
+                    "{{accredited_hours}}" to snapshot.accreditedHours,
+                    "{{certificate_name}}" to snapshot.certificateName,
+                    "{{lector}}" to snapshot.lector,
                 )
-            } catch (e: Exception) {
-                println("Failed to generate document for $fullName: ${e.message}")
-                _uiState.update {
-                    it.copy(parseError = e.message ?: "Failed to write $outputPath")
+                val outputPath = joinPath(snapshot.outputDir, "${docId}.pdf")
+                try {
+                    println("Writing output: $outputPath")
+                    DocxTemplate.fillTemplateToPdf(
+                        templateBytes = templateBytes,
+                        outputPath = outputPath,
+                        replacements = replacements,
+                    )
+                    progressStore.update(index + 1)
+                } catch (e: Exception) {
+                    println("Failed to generate document for $fullName: ${e.message}")
+                    _uiState.update {
+                        it.copy(parseError = e.message ?: "Failed to write $outputPath")
+                    }
+                    progressStore.fail(e.message ?: "Failed to write $outputPath")
+                    return@withContext
                 }
             }
+            progressStore.finish()
         }
     }
 }

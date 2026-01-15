@@ -67,6 +67,7 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.poi.ooxml)
             implementation(libs.docx4j.jaxb.referenceimpl)
+            implementation(libs.docx4j.export.fo)
         }
     }
 }

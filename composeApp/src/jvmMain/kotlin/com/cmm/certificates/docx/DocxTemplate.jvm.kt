@@ -1,12 +1,15 @@
 package com.cmm.certificates.docx
 
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.FileOutputStream
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFRun
 import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.docx4j.Docx4J
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 actual object DocxTemplate {
     actual fun loadTemplate(path: String): ByteArray {
@@ -18,33 +21,49 @@ actual object DocxTemplate {
         outputPath: String,
         replacements: Map<String, String>,
     ) {
+        val docxBytes = buildDocxBytes(templateBytes, replacements)
+        FileOutputStream(outputPath).use { output -> output.write(docxBytes) }
+    }
+
+    actual fun fillTemplateToPdf(
+        templateBytes: ByteArray,
+        outputPath: String,
+        replacements: Map<String, String>,
+    ) {
+        val docxBytes = buildDocxBytes(templateBytes, replacements)
+        val wordPackage = WordprocessingMLPackage.load(ByteArrayInputStream(docxBytes))
+        FileOutputStream(outputPath).use { output ->
+            Docx4J.toPDF(wordPackage, output)
+        }
+    }
+
+    private fun buildDocxBytes(
+        templateBytes: ByteArray,
+        replacements: Map<String, String>,
+    ): ByteArray {
         val doc = XWPFDocument(ByteArrayInputStream(templateBytes))
-        doc.use { doc ->
-            doc.paragraphs.forEach { paragraph ->
+        doc.use { document ->
+            document.paragraphs.forEach { paragraph ->
                 replaceInParagraph(paragraph, replacements)
             }
-            doc.tables.forEach { table ->
+            document.tables.forEach { table ->
                 replaceInTable(table, replacements)
             }
-            doc.headerList.forEach { header ->
+            document.headerList.forEach { header ->
                 header.paragraphs.forEach { paragraph ->
-                    replaceInParagraph(
-                        paragraph,
-                        replacements
-                    )
+                    replaceInParagraph(paragraph, replacements)
                 }
                 header.tables.forEach { table -> replaceInTable(table, replacements) }
             }
-            doc.footerList.forEach { footer ->
+            document.footerList.forEach { footer ->
                 footer.paragraphs.forEach { paragraph ->
-                    replaceInParagraph(
-                        paragraph,
-                        replacements
-                    )
+                    replaceInParagraph(paragraph, replacements)
                 }
                 footer.tables.forEach { table -> replaceInTable(table, replacements) }
             }
-            FileOutputStream(outputPath).use { output -> doc.write(output) }
+            val output = ByteArrayOutputStream()
+            document.write(output)
+            return output.toByteArray()
         }
     }
 

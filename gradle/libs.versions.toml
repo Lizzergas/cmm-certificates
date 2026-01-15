@@ -25,6 +25,7 @@ poiOoxml = "5.5.1"
 
 [libraries]
 docx4j-jaxb-referenceimpl = { module = "org.docx4j:docx4j-JAXB-ReferenceImpl", version.ref = "docx4jJaxbReferenceimpl" }
+docx4j-export-fo = { module = "org.docx4j:docx4j-export-fo", version.ref = "docx4jJaxbReferenceimpl" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }
@@ -65,4 +66,3 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-

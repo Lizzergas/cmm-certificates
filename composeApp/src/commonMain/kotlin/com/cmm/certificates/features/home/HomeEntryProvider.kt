@@ -3,6 +3,7 @@ package com.cmm.certificates.features.home
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
+import com.cmm.certificates.features.progress.ProgressScreenRoute
 import com.cmm.certificates.features.test.TestScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
@@ -16,7 +17,8 @@ data object HomeScreenRoute : NavKey
 fun EntryProviderScope<NavKey>.featureHomeEntryProvider(navigator: Navigator) {
     entry<HomeScreenRoute> {
         HomeScreen(
-            onProfileClick = { navigator.push(TestScreenRoute("Hello from Home Screen")) }
+            onProfileClick = { navigator.push(TestScreenRoute("Hello from Home Screen")) },
+            onStartConversion = { navigator.push(ProgressScreenRoute) },
         )
     }
 }

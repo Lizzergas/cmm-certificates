@@ -11,6 +11,8 @@ import androidx.savedstate.serialization.SavedStateConfiguration
 import com.cmm.certificates.features.home.HomeScreenRoute
 import com.cmm.certificates.features.home.featureHomeEntryProvider
 import com.cmm.certificates.features.home.homeNavSerializerModule
+import com.cmm.certificates.features.progress.featureProgressEntryProvider
+import com.cmm.certificates.features.progress.progressNavSerializerModule
 import com.cmm.certificates.features.test.featureTestEntryProvider
 import com.cmm.certificates.features.test.testNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
@@ -22,6 +24,7 @@ class Navigator internal constructor(
 ) {
     val entries = entryProvider {
         featureHomeEntryProvider(this@Navigator)
+        featureProgressEntryProvider(this@Navigator)
         featureTestEntryProvider(this@Navigator)
     }
 
@@ -42,6 +45,7 @@ fun rememberNavigator(
         SerializersModule {
             polymorphic(NavKey::class) {
                 include(homeNavSerializerModule)
+                include(progressNavSerializerModule)
                 include(testNavSerializerModule)
             }
         }

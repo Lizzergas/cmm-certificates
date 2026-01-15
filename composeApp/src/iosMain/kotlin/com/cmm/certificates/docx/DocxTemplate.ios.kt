@@ -12,4 +12,12 @@ actual object DocxTemplate {
     ) {
         throw UnsupportedOperationException("DOCX templating is only supported on JVM desktop targets for now.")
     }
+
+    actual fun fillTemplateToPdf(
+        templateBytes: ByteArray,
+        outputPath: String,
+        replacements: Map<String, String>,
+    ) {
+        throw UnsupportedOperationException("PDF generation is only supported on JVM desktop targets for now.")
+    }
 }

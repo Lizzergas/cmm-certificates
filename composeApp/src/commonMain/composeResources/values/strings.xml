@@ -28,4 +28,11 @@
     <string name="home_tooltip_xlsx">Data extracted from Google Forms</string>
     <string name="home_tooltip_docx">Template used for PDF generation</string>
     <string name="home_tooltip_output">Where PDFs will be saved</string>
+    <string name="progress_title">Converting entries...</string>
+    <string name="progress_cancel">Cancel</string>
+    <string name="progress_success_title">%d PDFs generated\nsuccessfully</string>
+    <string name="progress_output_label">Output folder</string>
+    <string name="progress_time_label">Process time</string>
+    <string name="progress_open_folder">Open folder</string>
+    <string name="progress_convert_another">Convert another</string>
 </resources>

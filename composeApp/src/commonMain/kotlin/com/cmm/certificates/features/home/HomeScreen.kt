@@ -77,6 +77,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(
     onProfileClick: () -> Unit,
+    onStartConversion: () -> Unit,
     viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -138,7 +139,10 @@ fun HomeScreen(
                             }
                             PrimaryActionButton(
                                 text = stringResource(Res.string.home_convert_button),
-                                onClick = { scope.launch { viewModel.generateDocuments() } },
+                                onClick = {
+                                    onStartConversion()
+                                    scope.launch { viewModel.generateDocuments() }
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = actionEnabled,
                             )

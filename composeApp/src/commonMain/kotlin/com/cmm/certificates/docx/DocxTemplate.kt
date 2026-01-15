@@ -8,4 +8,10 @@ expect object DocxTemplate {
         outputPath: String,
         replacements: Map<String, String>,
     )
+
+    fun fillTemplateToPdf(
+        templateBytes: ByteArray,
+        outputPath: String,
+        replacements: Map<String, String>,
+    )
 }

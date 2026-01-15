@@ -13,7 +13,7 @@
     <string name="home_output_directory_title">Išvesties aplankas</string>
     <string name="home_output_directory_hint">Palieskite, kad pasirinktumėte vietą</string>
     <string name="home_convert_button">Konvertuoti į PDF</string>
-    <string name="home_validation_hint">Norėdami tęsti, pasirinkite visus failus</string>
+    <string name="home_validation_hint">Norėdami tęsti, pasirinkite visus failus ir užpildykite visus laukus</string>
     <string name="home_form_section_title">Sertifikato duomenys</string>
     <string name="home_accredited_id_label">Akredituoto ID</string>
     <string name="home_doc_id_label">Dokumento ID pradžia</string>
@@ -28,4 +28,11 @@
     <string name="home_tooltip_xlsx">Duomenys iš Google Forms</string>
     <string name="home_tooltip_docx">Šablonas PDF generavimui</string>
     <string name="home_tooltip_output">Čia bus išsaugoti PDF failai</string>
+    <string name="progress_title">Konvertuojami įrašai...</string>
+    <string name="progress_cancel">Atšaukti</string>
+    <string name="progress_success_title">Sugeneruoti %d PDF\nsėkmingai</string>
+    <string name="progress_output_label">Išvesties aplankas</string>
+    <string name="progress_time_label">Trukmė</string>
+    <string name="progress_open_folder">Atidaryti aplanką</string>
+    <string name="progress_convert_another">Konvertuoti kitą</string>
 </resources>
