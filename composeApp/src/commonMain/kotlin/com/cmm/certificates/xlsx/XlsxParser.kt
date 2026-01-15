@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDateTime
 
 data class RegistrationEntry(
     val date: LocalDateTime,
+    val formattedDate: String,
     val primaryEmail: String,
     val name: String,
     val surname: String,

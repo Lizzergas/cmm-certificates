@@ -15,4 +15,15 @@
     <string name="home_output_directory_hint">Tap to choose destination</string>
     <string name="home_convert_button">Convert to PDF</string>
     <string name="home_validation_hint">Select all files to continue</string>
+    <string name="home_form_section_title">Certificate Details</string>
+    <string name="home_accredited_id_label">Accredited ID</string>
+    <string name="home_doc_id_label">Document ID start</string>
+    <string name="home_accredited_type_label">Accredited type</string>
+    <string name="home_accredited_hours_label">Accredited hours</string>
+    <string name="home_certificate_name_label">Certificate name</string>
+    <string name="home_lector_label">Lector</string>
+    <string name="home_accredited_type_lecture">paskaitoje</string>
+    <string name="home_accredited_type_seminar">seminare</string>
+    <string name="home_accredited_type_conference">konferencijoje</string>
+    <string name="home_accredited_type_training">mokymuose</string>
 </resources>

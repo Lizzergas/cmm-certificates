@@ -15,4 +15,15 @@
     <string name="home_output_directory_hint">Palieskite, kad pasirinktumėte vietą</string>
     <string name="home_convert_button">Konvertuoti į PDF</string>
     <string name="home_validation_hint">Norėdami tęsti, pasirinkite visus failus</string>
+    <string name="home_form_section_title">Sertifikato duomenys</string>
+    <string name="home_accredited_id_label">Akredituoto ID</string>
+    <string name="home_doc_id_label">Dokumento ID pradžia</string>
+    <string name="home_accredited_type_label">Akreditavimo tipas</string>
+    <string name="home_accredited_hours_label">Akredituotos valandos</string>
+    <string name="home_certificate_name_label">Sertifikato pavadinimas</string>
+    <string name="home_lector_label">Lektorius</string>
+    <string name="home_accredited_type_lecture">paskaitoje</string>
+    <string name="home_accredited_type_seminar">seminare</string>
+    <string name="home_accredited_type_conference">konferencijoje</string>
+    <string name="home_accredited_type_training">mokymuose</string>
 </resources>

@@ -102,9 +102,11 @@ actual object XlsxParser {
             val timestamp = row.valueAt(0, headers)
             if (timestamp.isNullOrBlank()) break
             val parsedTimestamp = parseTimestamp(timestamp)
+            val formattedDate = formatLithuanianDate(parsedTimestamp.date)
             entries.add(
                 RegistrationEntry(
                     date = parsedTimestamp,
+                    formattedDate = formattedDate,
                     primaryEmail = row.valueAt(1, headers).orEmpty(),
                     name = row.valueAt(2, headers).orEmpty(),
                     surname = row.valueAt(3, headers).orEmpty(),
@@ -162,6 +164,25 @@ actual object XlsxParser {
         val minute = ((totalSeconds % 3600) / 60).toInt()
         val second = (totalSeconds % 60).toInt()
         return LocalDateTime(date, LocalTime(hour, minute, second))
+    }
+
+    private fun formatLithuanianDate(date: LocalDate): String {
+        val monthName = when (date.monthNumber) {
+            1 -> "sausio"
+            2 -> "vasario"
+            3 -> "kovo"
+            4 -> "balandžio"
+            5 -> "gegužės"
+            6 -> "birželio"
+            7 -> "liepos"
+            8 -> "rugpjūčio"
+            9 -> "rugsėjo"
+            10 -> "spalio"
+            11 -> "lapkričio"
+            12 -> "gruodžio"
+            else -> ""
+        }
+        return "${date.year} m. $monthName ${date.dayOfMonth} d."
     }
 
     private fun isEmptyRow(row: Map<String, String?>): Boolean {

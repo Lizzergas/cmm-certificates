@@ -14,6 +14,12 @@ class HomeViewModel : ViewModel() {
             xlsxPath = "",
             templatePath = "",
             outputDir = "",
+            accreditedId = "IVP-10",
+            docIdStart = "",
+            accreditedType = "paskaitoje",
+            accreditedHours = "",
+            certificateName = "",
+            lector = "",
             entries = emptyList(),
             parseError = null,
         )
@@ -26,6 +32,30 @@ class HomeViewModel : ViewModel() {
 
     fun setTemplatePath(path: String) {
         _uiState.update { it.copy(templatePath = path) }
+    }
+
+    fun setAccreditedId(value: String) {
+        _uiState.update { it.copy(accreditedId = value) }
+    }
+
+    fun setDocIdStart(value: String) {
+        _uiState.update { it.copy(docIdStart = value) }
+    }
+
+    fun setAccreditedType(value: String) {
+        _uiState.update { it.copy(accreditedType = value) }
+    }
+
+    fun setAccreditedHours(value: String) {
+        _uiState.update { it.copy(accreditedHours = value) }
+    }
+
+    fun setCertificateName(value: String) {
+        _uiState.update { it.copy(certificateName = value) }
+    }
+
+    fun setLector(value: String) {
+        _uiState.update { it.copy(lector = value) }
     }
 
     fun selectXlsx(path: String) {
@@ -60,6 +90,15 @@ class HomeViewModel : ViewModel() {
             _uiState.update { it.copy(parseError = "No XLSX entries to generate.") }
             return
         }
+        if (snapshot.accreditedId.isBlank() ||
+            snapshot.docIdStart.isBlank() ||
+            snapshot.accreditedHours.isBlank() ||
+            snapshot.certificateName.isBlank() ||
+            snapshot.lector.isBlank()
+        ) {
+            _uiState.update { it.copy(parseError = "All certificate fields are required.") }
+            return
+        }
 
         val templateBytes = try {
             DocxTemplate.loadTemplate(snapshot.templatePath)
@@ -69,13 +108,29 @@ class HomeViewModel : ViewModel() {
             return
         }
 
+        val docIdStart = snapshot.docIdStart.trim().toLongOrNull()
+        if (docIdStart == null) {
+            _uiState.update { it.copy(parseError = "Document ID start must be a number.") }
+            return
+        }
+
         snapshot.entries.forEachIndexed { index, entry ->
             println("Generating document for entry #${index + 1}: $entry")
             val fullName = listOf(entry.name, entry.surname)
                 .filter { it.isNotBlank() }
                 .joinToString(" ")
-            val replacements = mapOf("{{full_name}}" to fullName)
-            val outputPath = joinPath(snapshot.outputDir, "entry_${index + 1}.docx")
+            val docId = docIdStart + index
+            val replacements = mapOf(
+                "{{full_name}}" to fullName,
+                "{{date}}" to entry.formattedDate,
+                "{{accredited_id}}" to snapshot.accreditedId,
+                "{{doc_id}}" to docId.toString(),
+                "{{accredited_type}}" to snapshot.accreditedType,
+                "{{accredited_hours}}" to snapshot.accreditedHours,
+                "{{certificate_name}}" to snapshot.certificateName,
+                "{{lector}}" to snapshot.lector,
+            )
+            val outputPath = joinPath(snapshot.outputDir, "${docId}.docx")
             try {
                 println("Writing output: $outputPath")
                 DocxTemplate.fillTemplate(
@@ -97,6 +152,12 @@ data class HomeUiState(
     val xlsxPath: String,
     val templatePath: String,
     val outputDir: String,
+    val accreditedId: String,
+    val docIdStart: String,
+    val accreditedType: String,
+    val accreditedHours: String,
+    val certificateName: String,
+    val lector: String,
     val entries: List<RegistrationEntry>,
     val parseError: String?,
 )
