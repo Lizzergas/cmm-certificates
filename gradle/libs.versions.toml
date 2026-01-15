@@ -20,6 +20,7 @@ kotlinxDatetime = "0.7.1"
 multiplatform-nav3-ui = "1.1.0-alpha01"
 kotlinx-serialization = "1.10.0-RC"
 filekit = "0.12.0"
+pdfbox = "2.0.30"
 poiOoxml = "5.5.1"
 
 
@@ -56,6 +57,7 @@ kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-seria
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poiOoxml" }
 
 [plugins]

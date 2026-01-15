@@ -1,15 +1,23 @@
 package com.cmm.certificates.docx
 
+import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.pdfbox.pdmodel.PDPageContentStream
+import org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFRun
 import org.apache.poi.xwpf.usermodel.XWPFTable
 import org.docx4j.Docx4J
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import javax.imageio.ImageIO
+import java.util.zip.ZipInputStream
 
 actual object DocxTemplate {
     actual fun loadTemplate(path: String): ByteArray {
@@ -30,12 +38,40 @@ actual object DocxTemplate {
         outputPath: String,
         replacements: Map<String, String>,
     ) {
+        // 1) Fill DOCX template (Apache POI)
         val docxBytes = buildDocxBytes(templateBytes, replacements)
+
+        // 2) Extract background image from DOCX (image1.* preferred)
+        val bg = extractFirstImageFromDocx(docxBytes)
+
+        // 3) Convert DOCX -> PDF (docx4j)
         val wordPackage = WordprocessingMLPackage.load(ByteArrayInputStream(docxBytes))
-        FileOutputStream(outputPath).use { output ->
-            Docx4J.toPDF(wordPackage, output)
+        val pdfBytes = ByteArrayOutputStream().use { baos ->
+            Docx4J.toPDF(wordPackage, baos)
+            baos.toByteArray()
         }
+
+        // 4) Stamp background image behind content (PDFBox)
+        val stampedPdfBytes = if (bg != null) {
+            addBackgroundToPdfBytes(
+                pdfBytes = pdfBytes,
+                backgroundImageBytes = bg.bytes,
+                imageExtLower = bg.extLower,
+                mode = BackgroundMode.COVER,
+                bleedPx = 2f
+            )
+        } else {
+            pdfBytes
+        }
+
+        // 5) Keep only the first page
+        val singlePagePdfBytes = keepOnlyFirstPage(stampedPdfBytes)
+
+        // 6) Write result
+        FileOutputStream(outputPath).use { it.write(singlePagePdfBytes) }
     }
+
+
 
     private fun buildDocxBytes(
         templateBytes: ByteArray,
@@ -203,5 +239,123 @@ actual object DocxTemplate {
         }
         out.add(value.substring(start))
         return out
+    }
+}
+
+enum class BackgroundMode { COVER, CONTAIN, STRETCH }
+
+private data class Quad(val w: Float, val h: Float, val x: Float, val y: Float)
+
+private fun addBackgroundToPdfBytes(
+    pdfBytes: ByteArray,
+    backgroundImageBytes: ByteArray,
+    imageExtLower: String,
+    mode: BackgroundMode = BackgroundMode.COVER,
+    bleedPx: Float = 2f, // avoids white edges due to rounding
+): ByteArray {
+    PDDocument.load(ByteArrayInputStream(pdfBytes)).use { doc ->
+
+        val buffered: BufferedImage = ImageIO.read(ByteArrayInputStream(backgroundImageBytes))
+            ?: error("Failed to decode background image ($imageExtLower)")
+
+        val bg = when (imageExtLower) {
+            "jpg", "jpeg" -> JPEGFactory.createFromImage(doc, buffered)
+            else -> LosslessFactory.createFromImage(doc, buffered) // png, etc.
+        }
+
+        for (page in doc.pages) {
+            val mb = page.mediaBox
+            val pageW = mb.width
+            val pageH = mb.height
+
+            val imgW = bg.width.toFloat()
+            val imgH = bg.height.toFloat()
+
+            val quad = when (mode) {
+                BackgroundMode.STRETCH -> {
+                    Quad(pageW + 2 * bleedPx, pageH + 2 * bleedPx, -bleedPx, -bleedPx)
+                }
+                BackgroundMode.CONTAIN -> {
+                    val scale = minOf(pageW / imgW, pageH / imgH)
+                    val drawW = imgW * scale
+                    val drawH = imgH * scale
+                    Quad(
+                        w = drawW + 2 * bleedPx,
+                        h = drawH + 2 * bleedPx,
+                        x = (pageW - drawW) / 2f - bleedPx,
+                        y = (pageH - drawH) / 2f - bleedPx
+                    )
+                }
+                BackgroundMode.COVER -> {
+                    val scale = maxOf(pageW / imgW, pageH / imgH)
+                    val drawW = imgW * scale
+                    val drawH = imgH * scale
+                    Quad(
+                        w = drawW + 2 * bleedPx,
+                        h = drawH + 2 * bleedPx,
+                        x = (pageW - drawW) / 2f - bleedPx,
+                        y = (pageH - drawH) / 2f - bleedPx
+                    )
+                }
+            }
+
+            // PREPEND => draw behind existing content
+            PDPageContentStream(doc, page, AppendMode.PREPEND, true, true).use { cs ->
+                cs.drawImage(bg, quad.x, quad.y, quad.w, quad.h)
+            }
+        }
+
+        ByteArrayOutputStream().use { out ->
+            doc.save(out)
+            return out.toByteArray()
+        }
+    }
+}
+
+
+private data class DocxImage(val bytes: ByteArray, val extLower: String)
+
+private fun extractFirstImageFromDocx(docxBytes: ByteArray): DocxImage? {
+    val entries = mutableListOf<Pair<String, ByteArray>>()
+
+    ZipInputStream(ByteArrayInputStream(docxBytes)).use { zis ->
+        while (true) {
+            val e = zis.nextEntry ?: break
+            val name = e.name
+            if (!e.isDirectory && name.startsWith("word/media/")) {
+                // common: word/media/image1.jpeg, image2.png, etc.
+                val bytes = zis.readBytes()
+                entries += name to bytes
+            }
+            zis.closeEntry()
+        }
+    }
+
+    if (entries.isEmpty()) return null
+
+    // Prefer image1.* if present; otherwise smallest "imageN"; otherwise first.
+    val preferred = entries
+        .sortedWith(
+            compareBy<Pair<String, ByteArray>>(
+                { !it.first.substringAfterLast('/').startsWith("image1.", ignoreCase = true) }, // false first
+                { it.first } // lexicographic (image1, image2...)
+            )
+        )
+        .first()
+
+    val ext = preferred.first.substringAfterLast('.', missingDelimiterValue = "").lowercase()
+    return DocxImage(preferred.second, ext)
+}
+
+private fun keepOnlyFirstPage(pdfBytes: ByteArray): ByteArray {
+    PDDocument.load(ByteArrayInputStream(pdfBytes)).use { doc ->
+        // remove pages from the end down to index 1
+        for (i in doc.numberOfPages - 1 downTo 1) {
+            doc.removePage(i)
+        }
+        ByteArrayOutputStream().use { out ->
+            doc.save(out)
+            return out.toByteArray()
+        }
     }
 }
