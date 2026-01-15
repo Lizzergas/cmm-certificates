@@ -5,8 +5,7 @@
     <string name="home_xlsx_label">XLSX failas</string>
     <string name="home_output_dir_label">PDF išsaugojimo aplankas</string>
     <string name="home_generate">Generuoti</string>
-    <string name="home_title">Konverteris</string>
-    <string name="home_subtitle">Excel į PDF</string>
+    <string name="home_title">Pažymų konverteris</string>
     <string name="home_source_excel_title">Pradinis Excel failas</string>
     <string name="home_source_excel_hint">Palieskite, kad pasirinktumėte skaičiuoklę</string>
     <string name="home_template_title">DOCX šablonas</string>
@@ -26,4 +25,7 @@
     <string name="home_accredited_type_seminar">seminare</string>
     <string name="home_accredited_type_conference">konferencijoje</string>
     <string name="home_accredited_type_training">mokymuose</string>
+    <string name="home_tooltip_xlsx">Duomenys iš Google Forms</string>
+    <string name="home_tooltip_docx">Šablonas PDF generavimui</string>
+    <string name="home_tooltip_output">Čia bus išsaugoti PDF failai</string>
 </resources>

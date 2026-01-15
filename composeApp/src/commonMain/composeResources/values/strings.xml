@@ -5,8 +5,7 @@
     <string name="home_xlsx_label">XLSX file</string>
     <string name="home_output_dir_label">PDF output folder</string>
     <string name="home_generate">Generate</string>
-    <string name="home_title">Converter</string>
-    <string name="home_subtitle">Excel to PDF</string>
+    <string name="home_title">Certificate generator</string>
     <string name="home_source_excel_title">Source Excel File</string>
     <string name="home_source_excel_hint">Tap to select spreadsheet</string>
     <string name="home_template_title">DOCX Template</string>
@@ -26,4 +25,7 @@
     <string name="home_accredited_type_seminar">seminare</string>
     <string name="home_accredited_type_conference">konferencijoje</string>
     <string name="home_accredited_type_training">mokymuose</string>
+    <string name="home_tooltip_xlsx">Data extracted from Google Forms</string>
+    <string name="home_tooltip_docx">Template used for PDF generation</string>
+    <string name="home_tooltip_output">Where PDFs will be saved</string>
 </resources>
