@@ -66,6 +66,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.poi.ooxml)
+            implementation(libs.docx4j.jaxb.referenceimpl)
         }
     }
 }

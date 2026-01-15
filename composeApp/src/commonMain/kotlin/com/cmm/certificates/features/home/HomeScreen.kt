@@ -37,6 +37,8 @@ import certificates.composeapp.generated.resources.home_output_directory_title
 import certificates.composeapp.generated.resources.home_source_excel_hint
 import certificates.composeapp.generated.resources.home_source_excel_title
 import certificates.composeapp.generated.resources.home_subtitle
+import certificates.composeapp.generated.resources.home_template_hint
+import certificates.composeapp.generated.resources.home_template_title
 import certificates.composeapp.generated.resources.home_title
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -75,7 +77,7 @@ fun HomeScreen(
                 ) {
                     PrimaryActionButton(
                         text = stringResource(Res.string.home_convert_button),
-                        onClick = { println("Convert to PDF") },
+                        onClick = { scope.launch { viewModel.generateDocuments() } },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -113,6 +115,13 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        state.entries.forEach { entry ->
+                            Text(
+                                text = entry.toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     SelectionCard(
@@ -132,6 +141,27 @@ fun HomeScreen(
                                     type = FileKitType.File(listOf("xlsx")),
                                 )
                                 viewModel.selectXlsx(file?.toString().orEmpty())
+                            }
+                        },
+                    )
+
+                    SelectionCard(
+                        title = stringResource(Res.string.home_template_title),
+                        subtitle = state.templatePath.ifBlank {
+                            stringResource(Res.string.home_template_hint)
+                        },
+                        selected = state.templatePath.isNotBlank(),
+                        badgeText = "DOCX",
+                        badgeBackground = primaryLight,
+                        badgeContentColor = primaryColor,
+                        minHeight = cardHeight,
+                        onClick = {
+                            scope.launch {
+                                val file = FileKit.openFilePicker(
+                                    mode = FileKitMode.Single,
+                                    type = FileKitType.File(listOf("docx")),
+                                )
+                                viewModel.setTemplatePath(file?.toString().orEmpty())
                             }
                         },
                     )

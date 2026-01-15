@@ -9,6 +9,8 @@
     <string name="home_subtitle">Excel to PDF</string>
     <string name="home_source_excel_title">Source Excel File</string>
     <string name="home_source_excel_hint">Tap to select spreadsheet</string>
+    <string name="home_template_title">Template DOCX</string>
+    <string name="home_template_hint">Tap to select template</string>
     <string name="home_output_directory_title">Folder</string>
     <string name="home_output_directory_hint">Tap to choose folder</string>
     <string name="home_convert_button">Convert to PDF</string>

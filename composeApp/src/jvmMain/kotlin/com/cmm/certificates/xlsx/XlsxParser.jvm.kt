@@ -1,13 +1,17 @@
 package com.cmm.certificates.xlsx
 
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
 import java.io.InputStream
 import java.util.zip.ZipFile
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants
 import javax.xml.stream.XMLStreamReader
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
+import kotlin.math.floor
+import kotlin.math.roundToLong
 
 /**
  * Minimal XLSX reader (no external libraries).
@@ -42,10 +46,12 @@ actual object XlsxParser {
 
             val rels = readWorkbookRels(zip) // r:id -> target like "worksheets/sheet1.xml"
             val first = workbook.sheets.first()
-            val target = rels[first.relId] ?: error("Missing relationship for sheet r:id=${first.relId}")
+            val target =
+                rels[first.relId] ?: error("Missing relationship for sheet r:id=${first.relId}")
             val sheetEntryPath = "xl/$target".normalizeXlsxPath()
 
-            val entry = zip.getEntry(sheetEntryPath) ?: error("Sheet XML not found: $sheetEntryPath")
+            val entry =
+                zip.getEntry(sheetEntryPath) ?: error("Sheet XML not found: $sheetEntryPath")
             val parsed = zip.getInputStream(entry).use { parseSheet(it, sharedStrings) }
             return Sheet(
                 name = first.name,
@@ -62,10 +68,12 @@ actual object XlsxParser {
             val rels = readWorkbookRels(zip)
 
             return workbook.sheets.map { s ->
-                val target = rels[s.relId] ?: error("Missing relationship for sheet r:id=${s.relId}")
+                val target =
+                    rels[s.relId] ?: error("Missing relationship for sheet r:id=${s.relId}")
                 val sheetEntryPath = "xl/$target".normalizeXlsxPath()
 
-                val entry = zip.getEntry(sheetEntryPath) ?: error("Sheet XML not found: $sheetEntryPath")
+                val entry =
+                    zip.getEntry(sheetEntryPath) ?: error("Sheet XML not found: $sheetEntryPath")
                 val parsed = zip.getInputStream(entry).use { parseSheet(it, sharedStrings) }
 
                 Sheet(
@@ -112,6 +120,10 @@ actual object XlsxParser {
 
     private fun parseTimestamp(raw: String): LocalDateTime {
         val trimmed = raw.trim()
+        val numeric = trimmed.toDoubleOrNull()
+        if (numeric != null) {
+            return parseExcelSerialDate(numeric)
+        }
         val parts = trimmed.split(" ", limit = 2)
         require(parts.size == 2) { "Invalid timestamp format: $raw" }
 
@@ -130,6 +142,26 @@ actual object XlsxParser {
         val date = LocalDate(year, month, day)
         val time = LocalTime(hour, minute, second)
         return LocalDateTime(date, time)
+    }
+
+    private fun parseExcelSerialDate(serial: Double): LocalDateTime {
+        var days = floor(serial).toLong()
+        val fraction = serial - floor(serial)
+        if (serial >= 60.0) {
+            days -= 1
+        }
+
+        var totalSeconds = (fraction * 86_400.0).roundToLong()
+        if (totalSeconds >= 86_400) {
+            totalSeconds -= 86_400
+            days += 1
+        }
+
+        val date = LocalDate(1899, 12, 31).plus(days.toInt(), DateTimeUnit.DAY)
+        val hour = (totalSeconds / 3600).toInt()
+        val minute = ((totalSeconds % 3600) / 60).toInt()
+        val second = (totalSeconds % 60).toInt()
+        return LocalDateTime(date, LocalTime(hour, minute, second))
     }
 
     private fun isEmptyRow(row: Map<String, String?>): Boolean {
