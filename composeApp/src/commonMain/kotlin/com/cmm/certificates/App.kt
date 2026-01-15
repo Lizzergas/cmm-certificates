@@ -6,6 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.ui.NavDisplay
 import com.cmm.certificates.di.appModule
+import com.cmm.certificates.i18n.AppEnvironment
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
 
@@ -18,15 +19,19 @@ val LocalNavigator = staticCompositionLocalOf<Navigator> {
 fun App(
 ) {
     val navigator = rememberNavigator()
-   
+
     KoinApplication(koinConfiguration { modules(appModule) }) {
         // Providing navigation to composable hierarchy might be redundant
-        CompositionLocalProvider(LocalNavigator provides navigator) {
-            NavDisplay(
-                backStack = navigator.backStack,
-                entryProvider = navigator.entries,
-                onBack = navigator::back,
-            )
+        AppEnvironment {
+            CompositionLocalProvider(
+                LocalNavigator provides navigator,
+            ) {
+                NavDisplay(
+                    backStack = navigator.backStack,
+                    entryProvider = navigator.entries,
+                    onBack = navigator::back,
+                )
+            }
         }
     }
 }

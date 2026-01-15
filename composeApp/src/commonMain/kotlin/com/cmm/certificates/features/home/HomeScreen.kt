@@ -15,6 +15,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,16 +25,22 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.compose_multiplatform
-import com.cmm.certificates.TestViewModel
+import certificates.composeapp.generated.resources.home_choose_file
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.openFilePicker
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun HomeScreen(
     onProfileClick: () -> Unit,
-    viewModel: TestViewModel = koinViewModel<TestViewModel>(),
+    viewModel: HomeViewModel = koinViewModel<HomeViewModel>(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
@@ -50,6 +57,14 @@ fun HomeScreen(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Button(onClick = {
+                scope.launch {
+                    val file = FileKit.openFilePicker(mode = FileKitMode.Single)
+                    println("Selected file: $file")
+                }
+            }) {
+                Text(stringResource(Res.string.home_choose_file))
+            }
             Button(onClick = { showContent = !showContent }) {
                 Text("Clicckkk me!")
             }
