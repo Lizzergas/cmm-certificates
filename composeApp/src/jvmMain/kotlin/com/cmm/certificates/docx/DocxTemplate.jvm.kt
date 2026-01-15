@@ -1,11 +1,12 @@
 package com.cmm.certificates.docx
 
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import org.apache.poi.xwpf.usermodel.XWPFParagraph
-import org.apache.poi.xwpf.usermodel.XWPFTable
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileOutputStream
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFRun
+import org.apache.poi.xwpf.usermodel.XWPFTable
 
 actual object DocxTemplate {
     actual fun loadTemplate(path: String): ByteArray {
@@ -92,7 +93,12 @@ actual object DocxTemplate {
                 val endRunText = snapshotTexts[endRunIndex]
                 val suffix = endRunText.substring(endOffset)
 
-                startRun.setText(prefix + replacement + suffix, 0)
+                setRunTextPreservingSuffixWithBreaks(
+                    run = startRun,
+                    prefix = prefix,
+                    replacement = replacement,
+                    suffix = suffix,
+                )
 
                 for (i in startRunIndex + 1 until endRunIndex) {
                     snapshotRuns[i].setText("", 0)
@@ -138,5 +144,45 @@ actual object DocxTemplate {
             acc += runTexts[i].length
         }
         return Positions(starts, runTexts)
+    }
+
+    private fun setRunTextPreservingSuffixWithBreaks(
+        run: XWPFRun,
+        prefix: String,
+        replacement: String,
+        suffix: String,
+    ) {
+        val normalized = replacement
+            .replace("\\n", "\n")
+            .replace(Regex("\\bw:br\\b", RegexOption.IGNORE_CASE), "\n")
+            .replace("\r\n", "\n")
+
+        val lines = splitPreserveEmpty(normalized)
+        if (lines.size == 1) {
+            run.setText(prefix + normalized + suffix, 0)
+            return
+        }
+
+        run.setText(prefix + lines.first(), 0)
+        for (i in 1 until lines.size) {
+            run.addBreak()
+            run.setText(lines[i])
+        }
+        if (suffix.isNotEmpty()) {
+            run.setText(suffix)
+        }
+    }
+
+    private fun splitPreserveEmpty(value: String): List<String> {
+        val out = ArrayList<String>()
+        var start = 0
+        for (i in value.indices) {
+            if (value[i] == '\n') {
+                out.add(value.substring(start, i))
+                start = i + 1
+            }
+        }
+        out.add(value.substring(start))
+        return out
     }
 }
