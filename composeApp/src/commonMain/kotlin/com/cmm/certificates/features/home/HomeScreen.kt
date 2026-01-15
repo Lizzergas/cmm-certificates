@@ -26,10 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.cmm.certificates.components.PrimaryActionButton
-import com.cmm.certificates.components.SelectionCard
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.home_convert_button
 import certificates.composeapp.generated.resources.home_output_directory_hint
@@ -40,6 +39,10 @@ import certificates.composeapp.generated.resources.home_subtitle
 import certificates.composeapp.generated.resources.home_template_hint
 import certificates.composeapp.generated.resources.home_template_title
 import certificates.composeapp.generated.resources.home_title
+import certificates.composeapp.generated.resources.home_validation_hint
+import com.cmm.certificates.components.PrimaryActionButton
+import com.cmm.certificates.components.SelectionCard
+import com.cmm.certificates.components.SelectionCardState
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -58,8 +61,6 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val backgroundColor = Color(0xFFF8FAFC)
-    val primaryColor = Color(0xFF2563EB)
-    val primaryLight = Color(0xFFEFF6FF)
 
     MaterialTheme {
         Scaffold(
@@ -75,11 +76,38 @@ fun HomeScreen(
                         )
                         .padding(horizontal = 24.dp, vertical = 16.dp),
                 ) {
-                    PrimaryActionButton(
-                        text = stringResource(Res.string.home_convert_button),
-                        onClick = { scope.launch { viewModel.generateDocuments() } },
+                    val hasXlsx = state.xlsxPath.isNotBlank()
+                    val hasTemplate = state.templatePath.isNotBlank()
+                    val hasOutput = state.outputDir.isNotBlank()
+                    val actionEnabled =
+                        hasXlsx && hasTemplate && hasOutput && state.entries.isNotEmpty()
+
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                    )
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        if (!actionEnabled) {
+                            Text(
+                                text = stringResource(Res.string.home_validation_hint),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        Color.White.copy(alpha = 0.6f),
+                                        MaterialTheme.shapes.small
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        PrimaryActionButton(
+                            text = stringResource(Res.string.home_convert_button),
+                            onClick = { scope.launch { viewModel.generateDocuments() } },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = actionEnabled,
+                        )
+                    }
                 }
             },
         ) { padding ->
@@ -89,7 +117,25 @@ fun HomeScreen(
                     .safeContentPadding()
                     .fillMaxSize(),
             ) {
-                val cardHeight = if (maxWidth < 360.dp) 180.dp else 220.dp
+                val cardHeight = if (maxWidth < 360.dp) 180.dp else 200.dp
+                val hasXlsx = state.xlsxPath.isNotBlank()
+                val hasTemplate = state.templatePath.isNotBlank()
+                val hasOutput = state.outputDir.isNotBlank()
+                val xlsxState = if (hasXlsx) {
+                    SelectionCardState.Selected
+                } else {
+                    SelectionCardState.Idle
+                }
+                val templateState = if (hasTemplate) {
+                    SelectionCardState.Selected
+                } else {
+                    SelectionCardState.Idle
+                }
+                val outputState = if (hasOutput) {
+                    SelectionCardState.Selected
+                } else {
+                    SelectionCardState.Idle
+                }
 
                 Column(
                     modifier = Modifier
@@ -98,7 +144,7 @@ fun HomeScreen(
                         .align(Alignment.TopCenter)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 24.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Column(
                         modifier = Modifier.clickable(onClick = onProfileClick),
@@ -115,13 +161,6 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        state.entries.forEach { entry ->
-                            Text(
-                                text = entry.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
                     }
 
                     SelectionCard(
@@ -129,11 +168,9 @@ fun HomeScreen(
                         subtitle = state.xlsxPath.ifBlank {
                             stringResource(Res.string.home_source_excel_hint)
                         },
-                        selected = state.xlsxPath.isNotBlank(),
                         badgeText = "XLSX",
-                        badgeBackground = primaryLight,
-                        badgeContentColor = primaryColor,
                         minHeight = cardHeight,
+                        state = xlsxState,
                         onClick = {
                             scope.launch {
                                 val file = FileKit.openFilePicker(
@@ -150,11 +187,9 @@ fun HomeScreen(
                         subtitle = state.templatePath.ifBlank {
                             stringResource(Res.string.home_template_hint)
                         },
-                        selected = state.templatePath.isNotBlank(),
                         badgeText = "DOCX",
-                        badgeBackground = primaryLight,
-                        badgeContentColor = primaryColor,
                         minHeight = cardHeight,
+                        state = templateState,
                         onClick = {
                             scope.launch {
                                 val file = FileKit.openFilePicker(
@@ -171,11 +206,9 @@ fun HomeScreen(
                         subtitle = state.outputDir.ifBlank {
                             stringResource(Res.string.home_output_directory_hint)
                         },
-                        selected = state.outputDir.isNotBlank(),
                         badgeText = "Folder",
-                        badgeBackground = primaryLight,
-                        badgeContentColor = primaryColor,
                         minHeight = cardHeight,
+                        state = outputState,
                         onClick = {
                             scope.launch {
                                 val directory = FileKit.openDirectoryPicker()

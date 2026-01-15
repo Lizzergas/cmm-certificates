@@ -11,7 +11,8 @@
     <string name="home_source_excel_hint">Palieskite, kad pasirinktumėte skaičiuoklę</string>
     <string name="home_template_title">DOCX šablonas</string>
     <string name="home_template_hint">Palieskite, kad pasirinktumėte šabloną</string>
-    <string name="home_output_directory_title">Aplankas</string>
-    <string name="home_output_directory_hint">Palieskite, kad pasirinktumėte aplanką</string>
+    <string name="home_output_directory_title">Išvesties aplankas</string>
+    <string name="home_output_directory_hint">Palieskite, kad pasirinktumėte vietą</string>
     <string name="home_convert_button">Konvertuoti į PDF</string>
+    <string name="home_validation_hint">Norėdami tęsti, pasirinkite visus failus</string>
 </resources>
