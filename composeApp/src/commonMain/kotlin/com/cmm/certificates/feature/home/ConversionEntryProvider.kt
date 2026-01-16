@@ -4,7 +4,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
 import com.cmm.certificates.feature.progress.ProgressScreenRoute
-import com.cmm.certificates.feature.test.TestScreenRoute
+import com.cmm.certificates.feature.settings.SettingsScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -17,7 +17,7 @@ data object ConversionScreenRoute : NavKey
 fun EntryProviderScope<NavKey>.featureHomeEntryProvider(navigator: Navigator) {
     entry<ConversionScreenRoute> {
         ConversionScreen(
-            onProfileClick = { navigator.push(TestScreenRoute("Hello from Home Screen")) },
+            onProfileClick = { navigator.push(SettingsScreenRoute) },
             onStartConversion = { navigator.push(ProgressScreenRoute) },
         )
     }

@@ -27,6 +27,20 @@
     <string name="conversion_accredited_type_training">mokymuose</string>
     <string name="conversion_tooltip_xlsx">Data extracted from Google Forms</string>
     <string name="conversion_tooltip_docx">Template used for PDF generation</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">SMTP Configuration</string>
+    <string name="settings_section_title">SMTP Settings</string>
+    <string name="settings_server_label">SMTP Server</string>
+    <string name="settings_port_label">Port</string>
+    <string name="settings_transport_label">Transport</string>
+    <string name="settings_transport_smtp">SMTP</string>
+    <string name="settings_transport_smtps">SMTPS (SSL)</string>
+    <string name="settings_transport_tls">SMTP TLS</string>
+    <string name="settings_username_label">Username</string>
+    <string name="settings_password_label">Password</string>
+    <string name="settings_authenticate">Authenticate</string>
+    <string name="settings_authenticated">Authenticated</string>
+    <string name="settings_back">Back</string>
     <string name="progress_title">Converting entries...</string>
     <string name="progress_cancel">Cancel</string>
     <string name="progress_success_title">%d PDFs generated\nsuccessfully</string>
@@ -34,4 +48,11 @@
     <string name="progress_time_label">Process time</string>
     <string name="progress_open_folder">Open folder</string>
     <string name="progress_convert_another">Convert another</string>
+    <string name="progress_send_emails">Send emails</string>
+    <string name="progress_send_emails_hint">Authenticate SMTP in Settings to send emails</string>
+    <string name="email_progress_title">Sending emails...</string>
+    <string name="email_progress_success_title">%d emails sent\nsuccessfully</string>
+    <string name="email_progress_cancel">Cancel</string>
+    <string name="email_progress_back">Back</string>
+    <string name="email_progress_error_title">Failed to send emails</string>
 </resources>

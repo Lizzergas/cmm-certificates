@@ -1,54 +1,37 @@
-package com.cmm.certificates.feature.progress
+package com.cmm.certificates.feature.email
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
-import com.cmm.certificates.data.xlsx.RegistrationEntry
 
-data class ConversionProgressState(
+data class EmailProgressState(
     val current: Int = 0,
     val total: Int = 0,
     val inProgress: Boolean = false,
     val completed: Boolean = false,
     val errorMessage: String? = null,
-    val outputDir: String = "",
-    val docIdStart: Long? = null,
-    val entries: List<RegistrationEntry> = emptyList(),
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
 
-class ConversionProgressStore {
-    private val _state = MutableStateFlow(ConversionProgressState())
-    val state: StateFlow<ConversionProgressState> = _state
+class EmailProgressStore {
+    private val _state = MutableStateFlow(EmailProgressState())
+    val state: StateFlow<EmailProgressState> = _state
     private val cancelRequested = MutableStateFlow(false)
 
-    fun start(
-        total: Int,
-        outputDir: String,
-        docIdStart: Long,
-        entries: List<RegistrationEntry>,
-    ) {
+    fun start(total: Int) {
         cancelRequested.value = false
-        _state.value = ConversionProgressState(
+        _state.value = EmailProgressState(
             current = 0,
             total = total,
             inProgress = true,
-            outputDir = outputDir,
-            docIdStart = docIdStart,
-            entries = entries,
             startedAtMillis = nowMillis(),
         )
     }
 
     fun update(current: Int) {
-        _state.update {
-            it.copy(
-                current = current,
-                inProgress = true,
-            )
-        }
+        _state.update { it.copy(current = current, inProgress = true) }
     }
 
     fun finish() {

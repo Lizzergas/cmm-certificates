@@ -119,7 +119,12 @@ class ConversionViewModel(
         }
 
         withContext(Dispatchers.Default) {
-            progressStore.start(snapshot.entries.size, outputDir)
+            progressStore.start(
+                total = snapshot.entries.size,
+                outputDir = outputDir,
+                docIdStart = docIdStart,
+                entries = snapshot.entries,
+            )
             for ((index, entry) in snapshot.entries.withIndex()) {
                 if (progressStore.isCancelRequested()) return@withContext
                 println("Generating document for entry #${index + 1}: $entry")

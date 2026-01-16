@@ -22,6 +22,7 @@ kotlinx-serialization = "1.10.0-RC"
 filekit = "0.12.0"
 pdfbox = "2.0.30"
 poiOoxml = "5.5.1"
+simpleJavaMail = "8.12.5"
 
 
 [libraries]
@@ -59,6 +60,7 @@ filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref =
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poiOoxml" }
+simple-java-mail = { module = "org.simplejavamail:simple-java-mail", version.ref = "simpleJavaMail" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

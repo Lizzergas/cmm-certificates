@@ -42,10 +42,13 @@ import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
 import certificates.composeapp.generated.resources.progress_open_folder
 import certificates.composeapp.generated.resources.progress_output_label
+import certificates.composeapp.generated.resources.progress_send_emails
+import certificates.composeapp.generated.resources.progress_send_emails_hint
 import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
 import com.cmm.certificates.openFolder
+import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import kotlin.math.max
@@ -58,9 +61,12 @@ private const val SIZE_ANIMATION_DURATION_MS = 360
 fun ProgressScreen(
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
+    onSendEmails: () -> Unit,
     progressStore: ConversionProgressStore = koinInject(),
+    smtpSettingsStore: SmtpSettingsStore = koinInject(),
 ) {
     val progressState by progressStore.state.collectAsState()
+    val smtpState by smtpSettingsStore.state.collectAsState()
     val total = max(progressState.total, 0)
     val current = progressState.current.coerceAtLeast(0)
     val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
@@ -73,6 +79,8 @@ fun ProgressScreen(
             ProgressBottomBar(
                 progressState = progressState,
                 outputDir = outputDir,
+                isSendEmailsEnabled = smtpState.isAuthenticated,
+                onSendEmails = onSendEmails,
                 onConvertAnother = onConvertAnother,
                 onCancel = {
                     progressStore.requestCancel()
@@ -122,10 +130,12 @@ fun ProgressScreen(
 private fun ProgressBottomBar(
     progressState: ConversionProgressState,
     outputDir: String,
+    isSendEmailsEnabled: Boolean,
+    onSendEmails: () -> Unit,
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
 ) {
-    val bottomBarHeight = 128.dp
+    val bottomBarHeight = 200.dp
     Surface(
         modifier = Modifier.height(bottomBarHeight),
         color = Color.White,
@@ -144,6 +154,38 @@ private fun ProgressBottomBar(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    if (!isSendEmailsEnabled) {
+                        Text(
+                            text = stringResource(Res.string.progress_send_emails_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Color(0xFFF8FAFC),
+                                    MaterialTheme.shapes.small,
+                                )
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    androidx.compose.material3.Button(
+                        onClick = onSendEmails,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = isSendEmailsEnabled,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2563EB),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFE2E8F0),
+                            disabledContentColor = Color(0xFF94A3B8),
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.progress_send_emails),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                     OutlinedButton(
                         onClick = { openFolder(outputDir) },
                         modifier = Modifier.fillMaxWidth(),

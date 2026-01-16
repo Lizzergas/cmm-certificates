@@ -3,6 +3,7 @@ package com.cmm.certificates.feature.progress
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
+import com.cmm.certificates.feature.email.EmailProgressScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -19,6 +20,9 @@ fun EntryProviderScope<NavKey>.featureProgressEntryProvider(navigator: Navigator
             },
             onConvertAnother = {
                 navigator.back()
+            },
+            onSendEmails = {
+                navigator.push(EmailProgressScreenRoute)
             },
         )
     }
