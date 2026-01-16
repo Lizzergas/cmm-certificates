@@ -2,9 +2,9 @@ package com.cmm.certificates.feature.home
 
 import androidx.lifecycle.ViewModel
 import com.cmm.certificates.data.docx.DocxTemplate
-import com.cmm.certificates.feature.progress.ConversionProgressStore
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
+import com.cmm.certificates.feature.progress.ConversionProgressStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +44,8 @@ class ConversionViewModel(
     }
 
     fun setDocIdStart(value: String) {
-        _uiState.update { it.copy(docIdStart = value) }
+        val sanitized = value.filter { it in '0'..'9' }
+        _uiState.update { it.copy(docIdStart = sanitized) }
     }
 
     fun setAccreditedType(value: String) {
@@ -52,7 +53,8 @@ class ConversionViewModel(
     }
 
     fun setAccreditedHours(value: String) {
-        _uiState.update { it.copy(accreditedHours = value) }
+        val sanitized = value.filter { it in '0'..'9' }
+        _uiState.update { it.copy(accreditedHours = sanitized) }
     }
 
     fun setCertificateName(value: String) {

@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -285,6 +288,7 @@ private fun CertificateDetailsSection(
                     label = { Text(stringResource(Res.string.conversion_doc_id_label)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -292,14 +296,17 @@ private fun CertificateDetailsSection(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
             ) {
+                val fillMaxWidth = Modifier
+                    .fillMaxWidth()
                 OutlinedTextField(
                     value = accreditedType,
                     onValueChange = {},
                     label = { Text(stringResource(Res.string.conversion_accredited_type_label)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
+                    modifier = fillMaxWidth.menuAnchor(
+                        ExposedDropdownMenuAnchorType.PrimaryNotEditable,
+                        true
+                    ),
                     readOnly = true,
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
@@ -326,6 +333,7 @@ private fun CertificateDetailsSection(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
             OutlinedTextField(
                 value = certificateName,
