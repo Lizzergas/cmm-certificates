@@ -4,25 +4,45 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
+import com.cmm.certificates.data.email.SmtpSettingsRepository
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.feature.progress.ConversionProgressStore
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val EMAIL_SUBJECT = "Pa\u017Eyma"
-private const val EMAIL_BODY = "Certificate attached."
+private const val DEFAULT_SUBJECT = SmtpSettingsRepository.DEFAULT_EMAIL_SUBJECT
+private const val DEFAULT_BODY = SmtpSettingsRepository.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
     private val emailProgressStore: EmailProgressStore,
     private val conversionProgressStore: ConversionProgressStore,
     private val smtpSettingsStore: SmtpSettingsStore,
 ) : ViewModel() {
+    private var sendJob: Job? = null
+
     fun startSendingIfIdle() {
+        if (sendJob?.isActive == true) return
         val snapshot = emailProgressStore.state.value
         if (snapshot.inProgress) return
-        viewModelScope.launch { sendEmails() }
+        sendJob = viewModelScope.launch {
+            try {
+                sendEmails()
+            } finally {
+                sendJob = null
+            }
+        }
+    }
+
+    fun cancelSending() {
+        emailProgressStore.requestCancel()
+        sendJob?.cancel()
     }
 
     private suspend fun sendEmails() {
@@ -49,10 +69,14 @@ class EmailSenderViewModel(
         }
 
         try {
+            val subject = smtpState.subject.ifBlank { DEFAULT_SUBJECT }
+            val body = smtpState.body.ifBlank { DEFAULT_BODY }
             val requests = buildRequests(
                 conversionState.entries,
                 docIdStart,
                 conversionState.outputDir,
+                subject,
+                body,
             )
             if (requests.isEmpty()) {
                 emailProgressStore.fail("No emails to send.")
@@ -60,14 +84,22 @@ class EmailSenderViewModel(
             }
 
             emailProgressStore.start(requests.size)
+            val context = currentCoroutineContext()
             withContext(Dispatchers.IO) {
                 SmtpClient.sendBatch(
                     settings = settings,
                     requests = requests,
+                    onSending = { request ->
+                        val recipient = "${request.toName} <${request.toEmail}>"
+                        emailProgressStore.setCurrentRecipient(recipient)
+                    },
                     onProgress = { emailProgressStore.update(it) },
-                    isCancelRequested = { emailProgressStore.isCancelRequested() },
+                    isCancelRequested = {
+                        !context.isActive || emailProgressStore.isCancelRequested()
+                    },
                 )
             }
+            currentCoroutineContext().ensureActive()
             if (!emailProgressStore.isCancelRequested()) {
                 emailProgressStore.finish()
             }
@@ -80,6 +112,8 @@ class EmailSenderViewModel(
         entries: List<RegistrationEntry>,
         docIdStart: Long,
         outputDir: String,
+        subject: String,
+        body: String,
     ): List<EmailSendRequest> {
         return entries.mapIndexed { index, entry ->
             val email = entry.primaryEmail.trim()
@@ -94,8 +128,8 @@ class EmailSenderViewModel(
             EmailSendRequest(
                 toEmail = email,
                 toName = fullName,
-                subject = EMAIL_SUBJECT,
-                body = EMAIL_BODY,
+                subject = subject,
+                body = body,
                 attachmentPath = joinPath(outputDir, "${docId}.pdf"),
                 attachmentName = "${docId}.pdf",
             )

@@ -1,12 +1,18 @@
 package com.cmm.certificates.feature.settings
 
-import com.cmm.certificates.data.email.SmtpSettings
-import com.cmm.certificates.data.email.SmtpTransport
 import com.cmm.certificates.data.email.SmtpClient
+import com.cmm.certificates.data.email.SmtpSettings
+import com.cmm.certificates.data.email.SmtpSettingsRepository
+import com.cmm.certificates.data.email.SmtpTransport
+import com.cmm.certificates.data.email.StoredSmtpSettings
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class SmtpSettingsState(
@@ -15,6 +21,8 @@ data class SmtpSettingsState(
     val username: String = "",
     val password: String = "",
     val transport: SmtpTransport = SmtpTransport.SMTPS,
+    val subject: String = SmtpSettingsRepository.DEFAULT_EMAIL_SUBJECT,
+    val body: String = SmtpSettingsRepository.DEFAULT_EMAIL_BODY,
     val isAuthenticated: Boolean = false,
     val isAuthenticating: Boolean = false,
     val errorMessage: String? = null,
@@ -35,11 +43,30 @@ data class SmtpSettingsState(
             transport = transport,
         )
     }
+
+    fun toStoredSettings(): StoredSmtpSettings {
+        return StoredSmtpSettings(
+            host = host.trim(),
+            port = port.trim(),
+            username = username.trim(),
+            password = password,
+            transport = transport,
+            subject = subject,
+            body = body,
+        )
+    }
 }
 
-class SmtpSettingsStore {
+class SmtpSettingsStore(
+    private val repository: SmtpSettingsRepository,
+) {
     private val _state = MutableStateFlow(SmtpSettingsState())
     val state: StateFlow<SmtpSettingsState> = _state
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        scope.launch { loadFromStore() }
+    }
 
     fun setHost(value: String) {
         _state.update { it.copy(host = value, isAuthenticated = false, errorMessage = null) }
@@ -62,6 +89,16 @@ class SmtpSettingsStore {
         _state.update { it.copy(transport = value, isAuthenticated = false, errorMessage = null) }
     }
 
+    fun setSubject(value: String) {
+        _state.update { it.copy(subject = value, errorMessage = null) }
+        persistIfAuthenticated()
+    }
+
+    fun setBody(value: String) {
+        _state.update { it.copy(body = value, errorMessage = null) }
+        persistIfAuthenticated()
+    }
+
     suspend fun authenticate(): Boolean {
         val snapshot = _state.value
         val settings = snapshot.toSettings()
@@ -71,9 +108,10 @@ class SmtpSettingsStore {
         }
         _state.update { it.copy(isAuthenticating = true, errorMessage = null) }
         return try {
-            withContext(Dispatchers.Default) {
+            withContext(Dispatchers.IO) {
                 SmtpClient.testConnection(settings)
             }
+            repository.save(snapshot.toStoredSettings())
             _state.update { it.copy(isAuthenticated = true, isAuthenticating = false) }
             true
         } catch (e: Exception) {
@@ -85,6 +123,35 @@ class SmtpSettingsStore {
                 )
             }
             false
+        }
+    }
+
+    private suspend fun loadFromStore() {
+        val stored = repository.load() ?: return
+        _state.update {
+            it.copy(
+                host = stored.host,
+                port = stored.port,
+                username = stored.username,
+                password = stored.password,
+                transport = stored.transport,
+                subject = stored.subject,
+                body = stored.body,
+                isAuthenticated = false,
+                isAuthenticating = false,
+                errorMessage = null,
+            )
+        }
+        if (_state.value.canAuthenticate) {
+            authenticate()
+        }
+    }
+
+    private fun persistIfAuthenticated() {
+        val snapshot = _state.value
+        if (!snapshot.isAuthenticated) return
+        scope.launch {
+            repository.save(snapshot.toStoredSettings())
         }
     }
 }

@@ -14,12 +14,14 @@ actual object SmtpClient {
     actual suspend fun sendBatch(
         settings: SmtpSettings,
         requests: List<EmailSendRequest>,
+        onSending: (EmailSendRequest) -> Unit,
         onProgress: (Int) -> Unit,
         isCancelRequested: () -> Boolean,
     ) {
         val mailer = buildMailer(settings)
         requests.forEachIndexed { index, request ->
             if (isCancelRequested()) return
+            onSending(request)
             val attachmentFile = File(request.attachmentPath)
             require(attachmentFile.exists()) {
                 "Attachment not found: ${request.attachmentPath}"
@@ -32,6 +34,7 @@ actual object SmtpClient {
                 .withAttachment(request.attachmentName, FileDataSource(attachmentFile))
                 .buildEmail()
             mailer.sendMail(email)
+            if (isCancelRequested()) return
             onProgress(index + 1)
         }
     }

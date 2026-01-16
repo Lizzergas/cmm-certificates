@@ -38,6 +38,8 @@
     <string name="settings_transport_tls">SMTP TLS</string>
     <string name="settings_username_label">Username</string>
     <string name="settings_password_label">Password</string>
+    <string name="settings_subject_label">Email subject</string>
+    <string name="settings_body_label">Email body</string>
     <string name="settings_authenticate">Authenticate</string>
     <string name="settings_authenticated">Authenticated</string>
     <string name="settings_back">Back</string>
@@ -50,7 +52,9 @@
     <string name="progress_convert_another">Convert another</string>
     <string name="progress_send_emails">Send emails</string>
     <string name="progress_send_emails_hint">Authenticate SMTP in Settings to send emails</string>
+    <string name="progress_current_doc_label">Generating PDF: %d</string>
     <string name="email_progress_title">Sending emails...</string>
+    <string name="email_progress_recipient_label">Sending to: %s</string>
     <string name="email_progress_success_title">%d emails sent\nsuccessfully</string>
     <string name="email_progress_cancel">Cancel</string>
     <string name="email_progress_back">Back</string>

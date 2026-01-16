@@ -38,6 +38,8 @@
     <string name="settings_transport_tls">SMTP TLS</string>
     <string name="settings_username_label">Naudotojo vardas</string>
     <string name="settings_password_label">Slaptažodis</string>
+    <string name="settings_subject_label">Laiško tema</string>
+    <string name="settings_body_label">Laiško tekstas</string>
     <string name="settings_authenticate">Autentifikuoti</string>
     <string name="settings_authenticated">Autentifikuota</string>
     <string name="settings_back">Grįžti</string>
@@ -50,7 +52,9 @@
     <string name="progress_convert_another">Konvertuoti kitą</string>
     <string name="progress_send_emails">Siųsti el. laiškus</string>
     <string name="progress_send_emails_hint">Autentifikuokite SMTP nustatymuose, kad galėtumėte siųsti</string>
+    <string name="progress_current_doc_label">Generuojamas PDF: %d</string>
     <string name="email_progress_title">Siunčiami el. laiškai...</string>
+    <string name="email_progress_recipient_label">Siunčiama: %s</string>
     <string name="email_progress_success_title">Išsiųsta %d el. laiškų\nsėkmingai</string>
     <string name="email_progress_cancel">Atšaukti</string>
     <string name="email_progress_back">Grįžti</string>

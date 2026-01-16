@@ -132,6 +132,7 @@ class ConversionViewModel(
                     .filter { it.isNotBlank() }
                     .joinToString(" ")
                 val docId = docIdStart + index
+                progressStore.setCurrentDocId(docId)
                 val replacements = mapOf(
                     "{{full_name}}" to fullName,
                     "{{date}}" to entry.formattedDate,

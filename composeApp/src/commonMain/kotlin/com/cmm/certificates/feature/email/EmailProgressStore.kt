@@ -11,6 +11,7 @@ data class EmailProgressState(
     val inProgress: Boolean = false,
     val completed: Boolean = false,
     val errorMessage: String? = null,
+    val currentRecipient: String? = null,
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
@@ -26,6 +27,7 @@ class EmailProgressStore {
             current = 0,
             total = total,
             inProgress = true,
+            currentRecipient = null,
             startedAtMillis = nowMillis(),
         )
     }
@@ -34,12 +36,17 @@ class EmailProgressStore {
         _state.update { it.copy(current = current, inProgress = true) }
     }
 
+    fun setCurrentRecipient(recipient: String?) {
+        _state.update { it.copy(currentRecipient = recipient) }
+    }
+
     fun finish() {
         _state.update {
             it.copy(
                 current = it.total,
                 inProgress = false,
                 completed = true,
+                currentRecipient = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -50,6 +57,7 @@ class EmailProgressStore {
             it.copy(
                 inProgress = false,
                 errorMessage = message,
+                currentRecipient = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -60,6 +68,7 @@ class EmailProgressStore {
         _state.update {
             it.copy(
                 inProgress = false,
+                currentRecipient = null,
                 endedAtMillis = nowMillis(),
             )
         }

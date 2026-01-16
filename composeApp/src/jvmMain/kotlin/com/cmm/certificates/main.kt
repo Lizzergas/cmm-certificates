@@ -15,7 +15,7 @@ fun main() {
         )
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Certificates",
+            title = "Pažymos konverteris",
             state = state,
         ) {
             App()

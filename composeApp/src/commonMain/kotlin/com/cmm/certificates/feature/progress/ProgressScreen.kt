@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
+import certificates.composeapp.generated.resources.progress_current_doc_label
 import certificates.composeapp.generated.resources.progress_open_folder
 import certificates.composeapp.generated.resources.progress_output_label
 import certificates.composeapp.generated.resources.progress_send_emails
@@ -47,8 +48,8 @@ import certificates.composeapp.generated.resources.progress_send_emails_hint
 import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
-import com.cmm.certificates.openFolder
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.openFolder
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import kotlin.math.max
@@ -120,6 +121,7 @@ fun ProgressScreen(
                     current = current,
                     total = total,
                     progress = progress,
+                    currentDocId = progressState.currentDocId,
                 )
             }
         }
@@ -233,6 +235,7 @@ private fun ProgressContent(
     current: Int,
     total: Int,
     progress: Float,
+    currentDocId: Long?,
 ) {
     Column(
         modifier = modifier,
@@ -269,6 +272,16 @@ private fun ProgressContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (currentDocId != null) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = stringResource(Res.string.progress_current_doc_label)
+                    .replace("%d", currentDocId.toString()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

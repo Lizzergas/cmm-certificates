@@ -43,10 +43,12 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
+import certificates.composeapp.generated.resources.settings_body_label
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
+import certificates.composeapp.generated.resources.settings_subject_label
 import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_title
 import certificates.composeapp.generated.resources.settings_transport_label
@@ -250,6 +252,23 @@ fun SettingsScreen(
                             singleLine = true,
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        )
+                        OutlinedTextField(
+                            value = state.subject,
+                            onValueChange = store::setSubject,
+                            label = { Text(stringResource(Res.string.settings_subject_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = state.body,
+                            onValueChange = store::setBody,
+                            label = { Text(stringResource(Res.string.settings_body_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 3,
+                            maxLines = 3,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                     }

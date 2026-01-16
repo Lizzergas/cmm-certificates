@@ -41,6 +41,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_progress_back
 import certificates.composeapp.generated.resources.email_progress_cancel
 import certificates.composeapp.generated.resources.email_progress_error_title
+import certificates.composeapp.generated.resources.email_progress_recipient_label
 import certificates.composeapp.generated.resources.email_progress_success_title
 import certificates.composeapp.generated.resources.email_progress_title
 import org.jetbrains.compose.resources.stringResource
@@ -75,7 +76,7 @@ fun EmailProgressScreen(
                 progressState = progressState,
                 onBack = onBack,
                 onCancel = {
-                    emailProgressStore.requestCancel()
+                    viewModel.cancelSending()
                     onCancel()
                 },
             )
@@ -118,6 +119,7 @@ fun EmailProgressScreen(
                         current = current,
                         total = total,
                         progress = progress,
+                        currentRecipient = progressState.currentRecipient,
                     )
                 }
             }
@@ -187,6 +189,7 @@ private fun EmailProgressContent(
     current: Int,
     total: Int,
     progress: Float,
+    currentRecipient: String?,
 ) {
     Column(
         modifier = modifier,
@@ -223,6 +226,16 @@ private fun EmailProgressContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        if (!currentRecipient.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = stringResource(Res.string.email_progress_recipient_label)
+                    .replace("%s", currentRecipient),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

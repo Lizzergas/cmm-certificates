@@ -15,6 +15,7 @@ data class ConversionProgressState(
     val outputDir: String = "",
     val docIdStart: Long? = null,
     val entries: List<RegistrationEntry> = emptyList(),
+    val currentDocId: Long? = null,
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
@@ -51,12 +52,17 @@ class ConversionProgressStore {
         }
     }
 
+    fun setCurrentDocId(docId: Long?) {
+        _state.update { it.copy(currentDocId = docId) }
+    }
+
     fun finish() {
         _state.update {
             it.copy(
                 current = it.total,
                 inProgress = false,
                 completed = true,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -67,6 +73,7 @@ class ConversionProgressStore {
             it.copy(
                 inProgress = false,
                 errorMessage = message,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -77,6 +84,7 @@ class ConversionProgressStore {
         _state.update {
             it.copy(
                 inProgress = false,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }

@@ -6,6 +6,7 @@ expect object SmtpClient {
     suspend fun sendBatch(
         settings: SmtpSettings,
         requests: List<EmailSendRequest>,
+        onSending: (EmailSendRequest) -> Unit,
         onProgress: (Int) -> Unit,
         isCancelRequested: () -> Boolean,
     )
