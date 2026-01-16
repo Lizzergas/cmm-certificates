@@ -5,8 +5,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.ui.NavDisplay
-import com.cmm.certificates.di.appModule
-import com.cmm.certificates.i18n.AppEnvironment
+import com.cmm.certificates.core.di.appModule
+import com.cmm.certificates.core.i18n.AppEnvironment
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
 

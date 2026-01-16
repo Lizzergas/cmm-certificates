@@ -8,13 +8,13 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.cmm.certificates.features.home.HomeScreenRoute
-import com.cmm.certificates.features.home.featureHomeEntryProvider
-import com.cmm.certificates.features.home.homeNavSerializerModule
-import com.cmm.certificates.features.progress.featureProgressEntryProvider
-import com.cmm.certificates.features.progress.progressNavSerializerModule
-import com.cmm.certificates.features.test.featureTestEntryProvider
-import com.cmm.certificates.features.test.testNavSerializerModule
+import com.cmm.certificates.feature.home.ConversionScreenRoute
+import com.cmm.certificates.feature.home.featureHomeEntryProvider
+import com.cmm.certificates.feature.home.conversionNavSerializerModule
+import com.cmm.certificates.feature.progress.featureProgressEntryProvider
+import com.cmm.certificates.feature.progress.progressNavSerializerModule
+import com.cmm.certificates.feature.test.featureTestEntryProvider
+import com.cmm.certificates.feature.test.testNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -39,12 +39,12 @@ class Navigator internal constructor(
 
 @Composable
 fun rememberNavigator(
-    startDestination: NavKey = HomeScreenRoute,
+    startDestination: NavKey = ConversionScreenRoute,
 ): Navigator {
     val navSerializers = remember {
         SerializersModule {
             polymorphic(NavKey::class) {
-                include(homeNavSerializerModule)
+                include(conversionNavSerializerModule)
                 include(progressNavSerializerModule)
                 include(testNavSerializerModule)
             }
