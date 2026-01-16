@@ -27,7 +27,6 @@
     <string name="conversion_accredited_type_training">mokymuose</string>
     <string name="conversion_tooltip_xlsx">Duomenys iš Google Forms</string>
     <string name="conversion_tooltip_docx">Šablonas PDF generavimui</string>
-    <string name="conversion_tooltip_output">Čia bus išsaugoti PDF failai</string>
     <string name="progress_title">Konvertuojami įrašai...</string>
     <string name="progress_cancel">Atšaukti</string>
     <string name="progress_success_title">Sugeneruoti %d PDF\nsėkmingai</string>

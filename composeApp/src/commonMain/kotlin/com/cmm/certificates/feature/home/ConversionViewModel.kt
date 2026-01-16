@@ -1,6 +1,7 @@
 package com.cmm.certificates.feature.home
 
 import androidx.lifecycle.ViewModel
+import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.data.docx.DocxTemplate
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
@@ -11,29 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
+private const val DEFAULT_OUTPUT_PATH = "pdf/"
+
 class ConversionViewModel(
     private val progressStore: ConversionProgressStore,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(
-        ConversionUiState(
-            xlsxPath = "",
-            templatePath = "",
-            outputDir = "",
-            accreditedId = "IVP-10",
-            docIdStart = "",
-            accreditedType = "paskaitoje",
-            accreditedHours = "",
-            certificateName = "",
-            lector = "",
-            entries = emptyList(),
-            parseError = null,
-        )
-    )
+    private val _uiState = MutableStateFlow(ConversionUiState())
     val uiState = _uiState.asStateFlow()
-
-    fun setOutputDir(path: String) {
-        _uiState.update { it.copy(outputDir = path) }
-    }
 
     fun setTemplatePath(path: String) {
         _uiState.update { it.copy(templatePath = path) }
@@ -87,10 +72,10 @@ class ConversionViewModel(
 
     suspend fun generateDocuments() {
         val snapshot = _uiState.value
-        if (snapshot.templatePath.isBlank() || snapshot.outputDir.isBlank()) {
-            println("Template path or output directory is blank; cannot generate documents.")
-            _uiState.update { it.copy(parseError = "Template and output folder are required.") }
-            progressStore.fail("Template and output folder are required.")
+        if (snapshot.templatePath.isBlank()) {
+            println("Template path is blank; cannot generate documents.")
+            _uiState.update { it.copy(parseError = "Template is required.") }
+            progressStore.fail("Template is required.")
             return
         }
         if (snapshot.entries.isEmpty()) {
@@ -126,8 +111,15 @@ class ConversionViewModel(
             return
         }
 
+        val outputDir = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
+        if (!OutputDirectory.ensureExists(outputDir)) {
+            _uiState.update { it.copy(parseError = "Failed to create output folder: $outputDir") }
+            progressStore.fail("Failed to create output folder: $outputDir")
+            return
+        }
+
         withContext(Dispatchers.Default) {
-            progressStore.start(snapshot.entries.size, snapshot.outputDir)
+            progressStore.start(snapshot.entries.size, outputDir)
             for ((index, entry) in snapshot.entries.withIndex()) {
                 if (progressStore.isCancelRequested()) return@withContext
                 println("Generating document for entry #${index + 1}: $entry")
@@ -145,7 +137,7 @@ class ConversionViewModel(
                     "{{certificate_name}}" to snapshot.certificateName,
                     "{{lector}}" to snapshot.lector,
                 )
-                val outputPath = joinPath(snapshot.outputDir, "${docId}.pdf")
+                val outputPath = joinPath(outputDir, "${docId}.pdf")
                 try {
                     println("Writing output: $outputPath")
                     DocxTemplate.fillTemplateToPdf(
@@ -172,22 +164,20 @@ class ConversionViewModel(
 }
 
 data class ConversionUiState(
-    val xlsxPath: String,
-    val templatePath: String,
-    val outputDir: String,
-    val accreditedId: String,
-    val docIdStart: String,
-    val accreditedType: String,
-    val accreditedHours: String,
-    val certificateName: String,
-    val lector: String,
-    val entries: List<RegistrationEntry>,
-    val parseError: String?,
+    val xlsxPath: String = "",
+    val templatePath: String = "",
+    val accreditedId: String = "IVP-10",
+    val docIdStart: String = "",
+    val accreditedType: String = "paskaitoje",
+    val accreditedHours: String = "",
+    val certificateName: String = "",
+    val lector: String = "",
+    val entries: List<RegistrationEntry> = emptyList(),
+    val parseError: String? = null,
 ) {
     val isConversionEnabled: Boolean
         get() = xlsxPath.isNotBlank() &&
                 templatePath.isNotBlank() &&
-                outputDir.isNotBlank() &&
                 accreditedId.isNotBlank() &&
                 docIdStart.isNotBlank() &&
                 accreditedHours.isNotBlank() &&

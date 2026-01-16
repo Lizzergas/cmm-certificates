@@ -61,7 +61,6 @@ import certificates.composeapp.generated.resources.conversion_form_section_title
 import certificates.composeapp.generated.resources.conversion_lector_label
 import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
-import certificates.composeapp.generated.resources.conversion_tooltip_output
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
 import com.cmm.certificates.core.ui.FileIcon
@@ -69,7 +68,6 @@ import com.cmm.certificates.core.ui.PrimaryActionButton
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
@@ -110,7 +108,6 @@ fun ConversionScreen(
             ) {
                 val hasXlsx = state.xlsxPath.isNotBlank()
                 val hasTemplate = state.templatePath.isNotBlank()
-                val hasOutput = state.outputDir.isNotBlank()
                 val xlsxTooltip = buildPathTooltip(
                     Res.string.conversion_tooltip_xlsx,
                     state.xlsxPath,
@@ -119,11 +116,6 @@ fun ConversionScreen(
                 val docxTooltip = buildPathTooltip(
                     Res.string.conversion_tooltip_docx,
                     state.templatePath,
-                )
-
-                val outputTooltip = buildPathTooltip(
-                    Res.string.conversion_tooltip_output,
-                    state.outputDir,
                 )
 
                 Column(
@@ -187,18 +179,6 @@ fun ConversionScreen(
                                         type = FileKitType.File(listOf("docx")),
                                     )
                                     viewModel.setTemplatePath(file?.toString().orEmpty())
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        FileIcon(
-                            iconText = "DIR",
-                            selected = hasOutput,
-                            tooltipText = outputTooltip,
-                            onClick = {
-                                scope.launch {
-                                    val directory = FileKit.openDirectoryPicker()
-                                    viewModel.setOutputDir(directory?.toString().orEmpty())
                                 }
                             },
                             modifier = Modifier.weight(1f),

@@ -27,7 +27,6 @@
     <string name="conversion_accredited_type_training">mokymuose</string>
     <string name="conversion_tooltip_xlsx">Data extracted from Google Forms</string>
     <string name="conversion_tooltip_docx">Template used for PDF generation</string>
-    <string name="conversion_tooltip_output">Where PDFs will be saved</string>
     <string name="progress_title">Converting entries...</string>
     <string name="progress_cancel">Cancel</string>
     <string name="progress_success_title">%d PDFs generated\nsuccessfully</string>
