@@ -7,7 +7,6 @@ import com.cmm.certificates.data.email.SmtpTransport
 import com.cmm.certificates.data.email.StoredSmtpSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,7 +61,7 @@ class SmtpSettingsStore(
 ) {
     private val _state = MutableStateFlow(SmtpSettingsState())
     val state: StateFlow<SmtpSettingsState> = _state
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         scope.launch { loadFromStore() }
@@ -99,6 +98,10 @@ class SmtpSettingsStore(
         persistIfAuthenticated()
     }
 
+    suspend fun save() {
+        repository.save(_state.value.toStoredSettings())
+    }
+
     suspend fun authenticate(): Boolean {
         val snapshot = _state.value
         val settings = snapshot.toSettings()
@@ -111,7 +114,7 @@ class SmtpSettingsStore(
             withContext(Dispatchers.IO) {
                 SmtpClient.testConnection(settings)
             }
-            repository.save(snapshot.toStoredSettings())
+            repository.save(_state.value.toStoredSettings())
             _state.update { it.copy(isAuthenticated = true, isAuthenticating = false) }
             true
         } catch (e: Exception) {

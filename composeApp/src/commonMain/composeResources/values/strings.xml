@@ -40,6 +40,7 @@
     <string name="settings_password_label">Password</string>
     <string name="settings_subject_label">Email subject</string>
     <string name="settings_body_label">Email body</string>
+    <string name="settings_save">Save</string>
     <string name="settings_authenticate">Authenticate</string>
     <string name="settings_authenticated">Authenticated</string>
     <string name="settings_back">Back</string>
@@ -57,6 +58,6 @@
     <string name="email_progress_recipient_label">Sending to: %s</string>
     <string name="email_progress_success_title">%d emails sent\nsuccessfully</string>
     <string name="email_progress_cancel">Cancel</string>
-    <string name="email_progress_back">Back</string>
+    <string name="email_progress_finish">Finish</string>
     <string name="email_progress_error_title">Failed to send emails</string>
 </resources>

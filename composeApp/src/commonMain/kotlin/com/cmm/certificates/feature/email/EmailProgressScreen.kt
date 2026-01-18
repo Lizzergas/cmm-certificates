@@ -2,10 +2,10 @@ package com.cmm.certificates.feature.email
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,13 +20,11 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,12 +36,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
-import certificates.composeapp.generated.resources.email_progress_back
 import certificates.composeapp.generated.resources.email_progress_cancel
 import certificates.composeapp.generated.resources.email_progress_error_title
+import certificates.composeapp.generated.resources.email_progress_finish
 import certificates.composeapp.generated.resources.email_progress_recipient_label
 import certificates.composeapp.generated.resources.email_progress_success_title
 import certificates.composeapp.generated.resources.email_progress_title
+import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -55,7 +54,7 @@ private const val SIZE_ANIMATION_DURATION_MS = 360
 
 @Composable
 fun EmailProgressScreen(
-    onBack: () -> Unit,
+    onFinish: () -> Unit,
     onCancel: () -> Unit,
     emailProgressStore: EmailProgressStore = koinInject(),
     viewModel: EmailSenderViewModel = koinViewModel(),
@@ -74,7 +73,7 @@ fun EmailProgressScreen(
         bottomBar = {
             EmailProgressBottomBar(
                 progressState = progressState,
-                onBack = onBack,
+                onFinish = onFinish,
                 onCancel = {
                     viewModel.cancelSending()
                     onCancel()
@@ -93,11 +92,11 @@ fun EmailProgressScreen(
             contentAlignment = Alignment.Center,
             transitionSpec = {
                 fadeIn(animationSpec = tween(durationMillis = FADE_IN_DURATION_MS)) togetherWith
-                    fadeOut(animationSpec = tween(durationMillis = FADE_OUT_DURATION_MS)) using
-                    SizeTransform(
-                        clip = false,
-                        sizeAnimationSpec = { _, _ -> tween(durationMillis = SIZE_ANIMATION_DURATION_MS) },
-                    )
+                        fadeOut(animationSpec = tween(durationMillis = FADE_OUT_DURATION_MS)) using
+                        SizeTransform(
+                            clip = false,
+                            sizeAnimationSpec = { _, _ -> tween(durationMillis = SIZE_ANIMATION_DURATION_MS) },
+                        )
             },
         ) { completed ->
             when {
@@ -107,19 +106,25 @@ fun EmailProgressScreen(
                         message = progressState.errorMessage.orEmpty(),
                     )
                 }
+
                 completed -> {
                     EmailSuccessContent(
                         modifier = Modifier.fillMaxSize(),
                         total = total,
                     )
                 }
+
                 else -> {
-                    EmailProgressContent(
+                    val infoText = progressState.currentRecipient?.let {
+                        stringResource(Res.string.email_progress_recipient_label).replace("%s", it)
+                    }.orEmpty()
+                    ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
                         current = current,
                         total = total,
                         progress = progress,
-                        currentRecipient = progressState.currentRecipient,
+                        title = stringResource(Res.string.email_progress_title),
+                        infoText = infoText,
                     )
                 }
             }
@@ -130,7 +135,7 @@ fun EmailProgressScreen(
 @Composable
 private fun EmailProgressBottomBar(
     progressState: EmailProgressState,
-    onBack: () -> Unit,
+    onFinish: () -> Unit,
     onCancel: () -> Unit,
 ) {
     val bottomBarHeight = 128.dp
@@ -163,7 +168,7 @@ private fun EmailProgressBottomBar(
                 }
             } else {
                 androidx.compose.material3.Button(
-                    onClick = onBack,
+                    onClick = onFinish,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2563EB),
@@ -173,68 +178,12 @@ private fun EmailProgressBottomBar(
                     ),
                 ) {
                     Text(
-                        text = stringResource(Res.string.email_progress_back),
+                        text = stringResource(Res.string.email_progress_finish),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun EmailProgressContent(
-    modifier: Modifier,
-    current: Int,
-    total: Int,
-    progress: Float,
-    currentRecipient: String?,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .background(Color(0x1A2563EB), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.size(200.dp),
-                color = Color(0xFF2563EB),
-                strokeWidth = 6.dp,
-                trackColor = Color(0xFFF1F5F9),
-                strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$current / $total",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = stringResource(Res.string.email_progress_title),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        if (!currentRecipient.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = stringResource(Res.string.email_progress_recipient_label)
-                    .replace("%s", currentRecipient),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }

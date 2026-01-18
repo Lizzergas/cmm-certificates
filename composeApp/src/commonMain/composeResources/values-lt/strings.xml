@@ -40,6 +40,7 @@
     <string name="settings_password_label">Slaptažodis</string>
     <string name="settings_subject_label">Laiško tema</string>
     <string name="settings_body_label">Laiško tekstas</string>
+    <string name="settings_save">Išsaugoti</string>
     <string name="settings_authenticate">Autentifikuoti</string>
     <string name="settings_authenticated">Autentifikuota</string>
     <string name="settings_back">Grįžti</string>
@@ -57,6 +58,6 @@
     <string name="email_progress_recipient_label">Siunčiama: %s</string>
     <string name="email_progress_success_title">Išsiųsta %d el. laiškų\nsėkmingai</string>
     <string name="email_progress_cancel">Atšaukti</string>
-    <string name="email_progress_back">Grįžti</string>
+    <string name="email_progress_finish">Baigti</string>
     <string name="email_progress_error_title">Nepavyko išsiųsti el. laiškų</string>
 </resources>

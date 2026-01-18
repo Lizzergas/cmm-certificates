@@ -8,6 +8,8 @@ import com.cmm.certificates.data.email.SmtpSettingsRepository
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.feature.progress.ConversionProgressStore
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.joinPath
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
@@ -103,6 +105,8 @@ class EmailSenderViewModel(
             if (!emailProgressStore.isCancelRequested()) {
                 emailProgressStore.finish()
             }
+        } catch (e: CancellationException) {
+            emailProgressStore.requestCancel()
         } catch (e: Exception) {
             emailProgressStore.fail(e.message ?: "Failed to send emails.")
         }
@@ -135,9 +139,4 @@ class EmailSenderViewModel(
             )
         }
     }
-}
-
-private fun joinPath(directory: String, fileName: String): String {
-    val trimmed = directory.trimEnd('/', '\\')
-    return if (trimmed.isEmpty()) fileName else "$trimmed/$fileName"
 }

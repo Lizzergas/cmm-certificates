@@ -20,6 +20,7 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -46,6 +47,7 @@ import certificates.composeapp.generated.resources.settings_back
 import certificates.composeapp.generated.resources.settings_body_label
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
+import certificates.composeapp.generated.resources.settings_save
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
 import certificates.composeapp.generated.resources.settings_subject_label
@@ -91,22 +93,41 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
-                    Button(
-                        onClick = { scope.launch { store.authenticate() } },
-                        enabled = state.canAuthenticate && !state.isAuthenticating,
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2563EB),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFE2E8F0),
-                            disabledContentColor = Color(0xFF94A3B8),
-                        ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            text = stringResource(Res.string.settings_authenticate),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                        OutlinedButton(
+                            onClick = { scope.launch { store.save() } },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.settings_save),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        Button(
+                            onClick = { scope.launch { store.authenticate() } },
+                            enabled = state.canAuthenticate && !state.isAuthenticating,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2563EB),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFE2E8F0),
+                                disabledContentColor = Color(0xFF94A3B8),
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.settings_authenticate),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
             }

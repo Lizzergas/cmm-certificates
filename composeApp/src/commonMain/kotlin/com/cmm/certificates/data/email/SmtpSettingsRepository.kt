@@ -3,7 +3,9 @@ package com.cmm.certificates.data.email
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 
 data class StoredSmtpSettings(
@@ -28,7 +30,9 @@ class SmtpSettingsRepository(
     private val bodyKey = stringPreferencesKey("smtp_body")
 
     suspend fun load(): StoredSmtpSettings? {
-        val prefs = dataStore.data.first()
+        val prefs = dataStore.data
+            .catch { emit(emptyPreferences()) }
+            .first()
         val hasAny = prefs.contains(hostKey) ||
             prefs.contains(portKey) ||
             prefs.contains(usernameKey) ||

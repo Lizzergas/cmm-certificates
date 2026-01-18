@@ -6,7 +6,9 @@ import com.cmm.certificates.data.docx.DocxTemplate
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.feature.progress.ConversionProgressStore
+import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -118,7 +120,7 @@ class ConversionViewModel(
             return
         }
 
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             progressStore.start(
                 total = snapshot.entries.size,
                 outputDir = outputDir,
@@ -190,9 +192,4 @@ data class ConversionUiState(
                 certificateName.isNotBlank() &&
                 lector.isNotBlank() &&
                 entries.isNotEmpty()
-}
-
-private fun joinPath(directory: String, fileName: String): String {
-    val trimmed = directory.trimEnd('/', '\\')
-    return if (trimmed.isEmpty()) fileName else "$trimmed/$fileName"
 }

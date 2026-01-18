@@ -8,11 +8,11 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.cmm.certificates.feature.home.ConversionScreenRoute
-import com.cmm.certificates.feature.home.featureHomeEntryProvider
-import com.cmm.certificates.feature.home.conversionNavSerializerModule
 import com.cmm.certificates.feature.email.emailNavSerializerModule
 import com.cmm.certificates.feature.email.featureEmailEntryProvider
+import com.cmm.certificates.feature.home.ConversionScreenRoute
+import com.cmm.certificates.feature.home.conversionNavSerializerModule
+import com.cmm.certificates.feature.home.featureHomeEntryProvider
 import com.cmm.certificates.feature.progress.featureProgressEntryProvider
 import com.cmm.certificates.feature.progress.progressNavSerializerModule
 import com.cmm.certificates.feature.settings.featureSettingsEntryProvider
@@ -40,6 +40,11 @@ class Navigator internal constructor(
 
     fun back() {
         backStack.removeLastOrNull()
+    }
+
+    fun clearAndPush(key: NavKey) {
+        backStack.clear()
+        backStack.add(key)
     }
 }
 

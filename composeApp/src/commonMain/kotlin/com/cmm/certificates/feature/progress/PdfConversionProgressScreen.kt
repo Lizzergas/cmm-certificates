@@ -20,16 +20,13 @@ import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
@@ -48,43 +46,35 @@ import certificates.composeapp.generated.resources.progress_send_emails_hint
 import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
-import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import com.cmm.certificates.openFolder
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
-import kotlin.math.max
+import org.koin.compose.viewmodel.koinViewModel
 
 private const val FADE_IN_DURATION_MS = 420
 private const val FADE_OUT_DURATION_MS = 300
 private const val SIZE_ANIMATION_DURATION_MS = 360
 
 @Composable
-fun ProgressScreen(
+fun PdfConversionProgressScreen(
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
     onSendEmails: () -> Unit,
-    progressStore: ConversionProgressStore = koinInject(),
-    smtpSettingsStore: SmtpSettingsStore = koinInject(),
+    viewModel: PdfConversionProgressViewModel = koinViewModel(),
 ) {
-    val progressState by progressStore.state.collectAsState()
-    val smtpState by smtpSettingsStore.state.collectAsState()
-    val total = max(progressState.total, 0)
-    val current = progressState.current.coerceAtLeast(0)
-    val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
-    val durationText = formatDuration(progressState.startedAtMillis, progressState.endedAtMillis)
-    val outputDir = progressState.outputDir
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
         bottomBar = {
             ProgressBottomBar(
-                progressState = progressState,
-                outputDir = outputDir,
-                isSendEmailsEnabled = smtpState.isAuthenticated,
+                isCompleted = uiState.completed,
+                outputDir = uiState.outputDir,
+                isSendEmailsEnabled = uiState.isSendEmailsEnabled,
                 onSendEmails = onSendEmails,
                 onConvertAnother = onConvertAnother,
                 onCancel = {
-                    progressStore.requestCancel()
+                    viewModel.requestCancel()
                     onCancel()
                 }
             )
@@ -96,7 +86,7 @@ fun ProgressScreen(
             .safeContentPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
         AnimatedContent(
-            targetState = progressState.completed,
+            targetState = uiState.completed,
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
             transitionSpec = {
@@ -111,17 +101,24 @@ fun ProgressScreen(
             if (completed) {
                 SuccessContent(
                     modifier = Modifier.fillMaxSize(),
-                    total = total,
-                    outputDir = outputDir,
-                    durationText = durationText,
+                    total = uiState.total,
+                    outputDir = uiState.outputDir,
+                    durationText = uiState.durationText,
                 )
             } else {
-                ProgressContent(
+                val infoText = uiState.currentDocId?.let {
+                    stringResource(Res.string.progress_current_doc_label).replace(
+                        "%d",
+                        it.toString()
+                    )
+                }
+                ProgressIndicatorContent(
                     modifier = Modifier.fillMaxSize(),
-                    current = current,
-                    total = total,
-                    progress = progress,
-                    currentDocId = progressState.currentDocId,
+                    current = uiState.current,
+                    total = uiState.total,
+                    progress = uiState.progress,
+                    title = stringResource(Res.string.progress_title),
+                    infoText = infoText,
                 )
             }
         }
@@ -130,7 +127,7 @@ fun ProgressScreen(
 
 @Composable
 private fun ProgressBottomBar(
-    progressState: ConversionProgressState,
+    isCompleted: Boolean,
     outputDir: String,
     isSendEmailsEnabled: Boolean,
     onSendEmails: () -> Unit,
@@ -151,7 +148,7 @@ private fun ProgressBottomBar(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (progressState.completed) {
+            if (isCompleted) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -225,62 +222,6 @@ private fun ProgressBottomBar(
                     Text(text = stringResource(Res.string.progress_cancel))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ProgressContent(
-    modifier: Modifier,
-    current: Int,
-    total: Int,
-    progress: Float,
-    currentDocId: Long?,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .background(Color(0x1A2563EB), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.size(200.dp),
-                color = Color(0xFF2563EB),
-                strokeWidth = 6.dp,
-                trackColor = Color(0xFFF1F5F9),
-                strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$current / $total",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = stringResource(Res.string.progress_title),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        if (currentDocId != null) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = stringResource(Res.string.progress_current_doc_label)
-                    .replace("%d", currentDocId.toString()),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
@@ -375,18 +316,5 @@ private fun SuccessContent(
                 }
             }
         }
-    }
-}
-
-private fun formatDuration(startedAtMillis: Long?, endedAtMillis: Long?): String {
-    if (startedAtMillis == null) return "0s"
-    val end = endedAtMillis ?: return "0s"
-    val totalSeconds = ((end - startedAtMillis) / 1000).coerceAtLeast(0)
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return if (minutes > 0) {
-        "${minutes}m ${seconds}s"
-    } else {
-        "${seconds}s"
     }
 }

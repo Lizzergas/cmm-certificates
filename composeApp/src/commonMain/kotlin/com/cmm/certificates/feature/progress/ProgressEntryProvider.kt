@@ -14,7 +14,7 @@ data object ProgressScreenRoute : NavKey
 
 fun EntryProviderScope<NavKey>.featureProgressEntryProvider(navigator: Navigator) {
     entry<ProgressScreenRoute> {
-        ProgressScreen(
+        PdfConversionProgressScreen(
             onCancel = {
                 navigator.back()
             },
