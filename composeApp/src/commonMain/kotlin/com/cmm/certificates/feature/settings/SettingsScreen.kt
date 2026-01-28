@@ -51,6 +51,8 @@ import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_save
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
+import certificates.composeapp.generated.resources.settings_signature_html_hint
+import certificates.composeapp.generated.resources.settings_signature_html_label
 import certificates.composeapp.generated.resources.settings_subject_label
 import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_title
@@ -294,6 +296,21 @@ fun SettingsScreen(
                             minLines = 3,
                             maxLines = 3,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        )
+                        ClearableOutlinedTextField(
+                            value = state.signatureHtml,
+                            onValueChange = store::setSignatureHtml,
+                            label = { Text(stringResource(Res.string.settings_signature_html_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 4,
+                            maxLines = 8,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        )
+                        Text(
+                            text = stringResource(Res.string.settings_signature_html_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         ClearableOutlinedTextField(
                             value = state.accreditedTypeOptions,

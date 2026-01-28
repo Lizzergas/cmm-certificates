@@ -73,12 +73,17 @@ class EmailSenderViewModel(
         try {
             val subject = smtpState.subject.ifBlank { DEFAULT_SUBJECT }
             val body = smtpState.body.ifBlank { DEFAULT_BODY }
+            val htmlBody = buildHtmlBody(
+                body = body,
+                signatureHtml = smtpState.signatureHtml,
+            )
             val requests = buildRequests(
                 conversionState.entries,
                 docIdStart,
                 conversionState.outputDir,
                 subject,
                 body,
+                htmlBody,
             )
             if (requests.isEmpty()) {
                 emailProgressStore.fail("No emails to send.")
@@ -118,6 +123,7 @@ class EmailSenderViewModel(
         outputDir: String,
         subject: String,
         body: String,
+        htmlBody: String?,
     ): List<EmailSendRequest> {
         return entries.mapIndexed { index, entry ->
             val email = entry.primaryEmail.trim()
@@ -134,9 +140,36 @@ class EmailSenderViewModel(
                 toName = fullName,
                 subject = subject,
                 body = body,
+                htmlBody = htmlBody,
                 attachmentPath = joinPath(outputDir, "${docId}.pdf"),
                 attachmentName = "${docId}.pdf",
             )
+        }
+    }
+
+    private fun buildHtmlBody(
+        body: String,
+        signatureHtml: String,
+    ): String? {
+        val trimmedSignature = signatureHtml.trim()
+        if (trimmedSignature.isBlank()) return null
+        val escapedBody = escapeHtml(body).replace("\n", "<br>")
+        val baseHtml = if (escapedBody.isBlank()) "" else escapedBody + "<br><br>"
+        return baseHtml + trimmedSignature
+    }
+
+    private fun escapeHtml(text: String): String {
+        return buildString(text.length) {
+            text.forEach { ch ->
+                when (ch) {
+                    '&' -> append("&amp;")
+                    '<' -> append("&lt;")
+                    '>' -> append("&gt;")
+                    '"' -> append("&quot;")
+                    '\'' -> append("&#39;")
+                    else -> append(ch)
+                }
+            }
         }
     }
 }

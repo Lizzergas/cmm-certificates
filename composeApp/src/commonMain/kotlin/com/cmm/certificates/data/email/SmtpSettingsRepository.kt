@@ -17,6 +17,7 @@ data class StoredSmtpSettings(
     val subject: String,
     val body: String,
     val accreditedTypeOptions: String,
+    val signatureHtml: String,
 )
 
 class SmtpSettingsRepository(
@@ -30,6 +31,7 @@ class SmtpSettingsRepository(
     private val subjectKey = stringPreferencesKey("smtp_subject")
     private val bodyKey = stringPreferencesKey("smtp_body")
     private val accreditedTypeOptionsKey = stringPreferencesKey("accredited_type_options")
+    private val signatureHtmlKey = stringPreferencesKey("email_signature_html")
 
     suspend fun load(): StoredSmtpSettings? {
         val prefs = dataStore.data
@@ -42,7 +44,8 @@ class SmtpSettingsRepository(
                 prefs.contains(transportKey) ||
                 prefs.contains(subjectKey) ||
                 prefs.contains(bodyKey) ||
-                prefs.contains(accreditedTypeOptionsKey)
+                prefs.contains(accreditedTypeOptionsKey) ||
+                prefs.contains(signatureHtmlKey)
         if (!hasAny) return null
 
         val transportValue = prefs[transportKey]
@@ -64,6 +67,11 @@ class SmtpSettingsRepository(
         } else {
             DEFAULT_ACCREDITED_TYPE_OPTIONS
         }
+        val signatureHtml = if (prefs.contains(signatureHtmlKey)) {
+            prefs[signatureHtmlKey].orEmpty()
+        } else {
+            DEFAULT_SIGNATURE_HTML
+        }
         return StoredSmtpSettings(
             host = prefs[hostKey].orEmpty(),
             port = prefs[portKey].orEmpty(),
@@ -73,6 +81,7 @@ class SmtpSettingsRepository(
             subject = subject,
             body = body,
             accreditedTypeOptions = accreditedTypeOptions,
+            signatureHtml = signatureHtml,
         )
     }
 
@@ -86,6 +95,7 @@ class SmtpSettingsRepository(
             prefs[subjectKey] = settings.subject
             prefs[bodyKey] = settings.body
             prefs[accreditedTypeOptionsKey] = settings.accreditedTypeOptions
+            prefs[signatureHtmlKey] = settings.signatureHtml
         }
     }
 
@@ -94,5 +104,16 @@ class SmtpSettingsRepository(
         const val DEFAULT_EMAIL_BODY = "Certificate attached."
         const val DEFAULT_ACCREDITED_TYPE_OPTIONS =
             "paskaitoje\nseminare\nkonferencijoje\nmokymuose"
+        const val DEFAULT_SIGNATURE_HTML = """
+            <div style="font-family:'Times New Roman', Times, serif; font-size:8pt; font-style:italic; line-height:1.25; color:#000;">
+              <div>Pagarbiai</div>
+              <div>Raminta Čyplytė</div>
+              <div>Meninio ugdymo pedagogų kvalifikacijos tobulinimo centro metodininkė</div>
+              <div>Nacionalinė M. K. Čiurlionio menų mokykla</div>
+              <div>Tel. +370 67357212</div>
+              <div>El. p. raminta.cyplyte@cmm.lt</div>
+              <div>T. Kosciuškos g. 11 LT-01100, Vilnius</div>
+            </div>
+        """
     }
 }

@@ -41,6 +41,8 @@
     <string name="settings_password_label">Slaptažodis</string>
     <string name="settings_subject_label">Laiško tema</string>
     <string name="settings_body_label">Laiško tekstas</string>
+    <string name="settings_signature_html_label">El. parašas (HTML)</string>
+    <string name="settings_signature_html_hint">Įklijuokite HTML parašą.</string>
     <string name="settings_accredited_type_options_label">Akreditavimo tipų parinktys</string>
     <string name="settings_accredited_type_options_hint">Rašyti po vieną eilutėje</string>
     <string name="settings_save">Išsaugoti</string>

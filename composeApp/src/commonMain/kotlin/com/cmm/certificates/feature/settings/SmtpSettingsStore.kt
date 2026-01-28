@@ -24,6 +24,7 @@ data class SmtpSettingsState(
     val subject: String = SmtpSettingsRepository.DEFAULT_EMAIL_SUBJECT,
     val body: String = SmtpSettingsRepository.DEFAULT_EMAIL_BODY,
     val accreditedTypeOptions: String = SmtpSettingsRepository.DEFAULT_ACCREDITED_TYPE_OPTIONS,
+    val signatureHtml: String = SmtpSettingsRepository.DEFAULT_SIGNATURE_HTML,
     val isAuthenticated: Boolean = false,
     val isAuthenticating: Boolean = false,
     val errorMessage: String? = null,
@@ -55,6 +56,7 @@ data class SmtpSettingsState(
             subject = subject,
             body = body,
             accreditedTypeOptions = accreditedTypeOptions,
+            signatureHtml = signatureHtml,
         )
     }
 }
@@ -106,6 +108,11 @@ class SmtpSettingsStore(
         persistIfAuthenticated()
     }
 
+    fun setSignatureHtml(value: String) {
+        _state.update { it.copy(signatureHtml = value, errorMessage = null) }
+        persistIfAuthenticated()
+    }
+
     suspend fun save() {
         repository.save(_state.value.toStoredSettings())
     }
@@ -149,6 +156,7 @@ class SmtpSettingsStore(
                 subject = stored.subject,
                 body = stored.body,
                 accreditedTypeOptions = stored.accreditedTypeOptions,
+                signatureHtml = stored.signatureHtml,
                 isAuthenticated = false,
                 isAuthenticating = false,
                 errorMessage = null,

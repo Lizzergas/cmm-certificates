@@ -26,11 +26,16 @@ actual object SmtpClient {
             require(attachmentFile.exists()) {
                 "Attachment not found: ${request.attachmentPath}"
             }
-            val email = EmailBuilder.startingBlank()
+            val emailBuilder = EmailBuilder.startingBlank()
                 .from(settings.username, settings.username)
                 .to(request.toName, request.toEmail)
                 .withSubject(request.subject)
                 .withPlainText(request.body)
+            val htmlBody = request.htmlBody?.trim().orEmpty()
+            if (htmlBody.isNotBlank()) {
+                emailBuilder.withHTMLText(htmlBody)
+            }
+            val email = emailBuilder
                 .withAttachment(request.attachmentName, FileDataSource(attachmentFile))
                 .buildEmail()
             mailer.sendMail(email)
