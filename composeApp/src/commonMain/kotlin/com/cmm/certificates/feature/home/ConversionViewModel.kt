@@ -147,7 +147,9 @@ class ConversionViewModel(
             return
         }
 
-        val outputDir = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
+        val baseOutputDir = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
+        val sanitizedFolder = sanitizeFolderName(snapshot.certificateName)
+        val outputDir = joinPath(baseOutputDir, sanitizedFolder)
         if (!OutputDirectory.ensureExists(outputDir)) {
             _uiState.update { it.copy(parseError = "Failed to create output folder: $outputDir") }
             progressStore.fail("Failed to create output folder: $outputDir")
@@ -204,6 +206,17 @@ class ConversionViewModel(
             }
         }
     }
+}
+
+private fun sanitizeFolderName(rawName: String): String {
+    val trimmed = rawName.trim()
+    if (trimmed.isBlank()) return "certificate"
+    val cleaned = trimmed
+        .replace(Regex("""[\\/:*?"<>|]"""), "_")
+        .replace(Regex("""\s+"""), " ")
+        .trim()
+        .trim('.')
+    return if (cleaned.isBlank()) "certificate" else cleaned
 }
 
 data class ConversionUiState(
