@@ -28,8 +28,9 @@ internal object XlsxEntryMapper {
                     primaryEmail = row.valueAt(1, headers).orEmpty(),
                     name = row.valueAt(2, headers).orEmpty(),
                     surname = row.valueAt(3, headers).orEmpty(),
-                    institution = row.valueAt(5, headers).orEmpty(),
-                    forEvent = row.valueAt(6, headers).orEmpty(),
+                    institution = row.valueAt(4, headers).orEmpty(),
+                    paymentUrl = row.valueAt(6, headers).orEmpty(),
+                    forEvent = row.valueAt(5, headers).orEmpty(),
                     publicityApproval = row.valueAt(7, headers).orEmpty(),
                 ),
             )
