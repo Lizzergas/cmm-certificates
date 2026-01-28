@@ -41,6 +41,8 @@
     <string name="settings_password_label">Password</string>
     <string name="settings_subject_label">Email subject</string>
     <string name="settings_body_label">Email body</string>
+    <string name="settings_accredited_type_options_label">Accredited type options</string>
+    <string name="settings_accredited_type_options_hint">One option per line</string>
     <string name="settings_save">Save</string>
     <string name="settings_authenticate">Authenticate</string>
     <string name="settings_authenticated">Authenticated</string>

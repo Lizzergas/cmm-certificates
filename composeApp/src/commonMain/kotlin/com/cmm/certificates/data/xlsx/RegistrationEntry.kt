@@ -8,7 +8,6 @@ data class RegistrationEntry(
     val primaryEmail: String,
     val name: String,
     val surname: String,
-    val secondaryEmail: String,
     val institution: String,
     val forEvent: String,
     val publicityApproval: String,

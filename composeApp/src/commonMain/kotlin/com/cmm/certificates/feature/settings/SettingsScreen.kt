@@ -5,14 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,6 +41,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.settings_accredited_type_options_hint
+import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
@@ -143,6 +145,7 @@ fun SettingsScreen(
         ) {
             Column(
                 modifier = Modifier
+                    .verticalScroll(rememberScrollState())
                     .fillMaxWidth()
                     .widthIn(max = 480.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -291,7 +294,21 @@ fun SettingsScreen(
                             maxLines = 3,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        OutlinedTextField(
+                            value = state.accreditedTypeOptions,
+                            onValueChange = store::setAccreditedTypeOptions,
+                            label = { Text(stringResource(Res.string.settings_accredited_type_options_label)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 4,
+                            maxLines = 10,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        )
+                        Text(
+                            text = stringResource(Res.string.settings_accredited_type_options_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }

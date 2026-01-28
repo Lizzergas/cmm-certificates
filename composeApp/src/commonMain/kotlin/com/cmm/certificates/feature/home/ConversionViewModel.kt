@@ -1,26 +1,56 @@
 package com.cmm.certificates.feature.home
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.data.docx.DocxTemplate
+import com.cmm.certificates.data.email.SmtpSettingsRepository
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.feature.progress.ConversionProgressStore
+import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val DEFAULT_OUTPUT_PATH = "pdf/"
+private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
+    parseAccreditedTypeOptions(SmtpSettingsRepository.DEFAULT_ACCREDITED_TYPE_OPTIONS)
 
 class ConversionViewModel(
     private val progressStore: ConversionProgressStore,
+    private val smtpSettingsStore: SmtpSettingsStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ConversionUiState())
     val uiState = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            smtpSettingsStore.state.collect { settings ->
+                val parsedOptions = parseAccreditedTypeOptions(settings.accreditedTypeOptions)
+                val options = parsedOptions.ifEmpty {
+                    DEFAULT_ACCREDITED_TYPE_OPTIONS
+                }
+                _uiState.update { current ->
+                    val resolvedType =
+                        if (current.accreditedType.isBlank() || current.accreditedType !in options) {
+                            options.firstOrNull().orEmpty()
+                        } else {
+                            current.accreditedType
+                        }
+                    current.copy(
+                        accreditedTypeOptions = options,
+                        accreditedType = resolvedType,
+                    )
+                }
+            }
+        }
+    }
 
     fun setTemplatePath(path: String) {
         _uiState.update { it.copy(templatePath = path) }
@@ -181,7 +211,8 @@ data class ConversionUiState(
     val templatePath: String = "",
     val accreditedId: String = "IVP-10",
     val docIdStart: String = "",
-    val accreditedType: String = "paskaitoje",
+    val accreditedType: String = DEFAULT_ACCREDITED_TYPE_OPTIONS.firstOrNull().orEmpty(),
+    val accreditedTypeOptions: List<String> = DEFAULT_ACCREDITED_TYPE_OPTIONS,
     val accreditedHours: String = "",
     val certificateName: String = "",
     val lector: String = "",
@@ -198,4 +229,12 @@ data class ConversionUiState(
                 certificateName.isNotBlank() &&
                 lector.isNotBlank() &&
                 entries.isNotEmpty()
+}
+
+private fun parseAccreditedTypeOptions(raw: String): List<String> {
+    return raw.lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .distinct()
+        .toList()
 }

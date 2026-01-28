@@ -49,11 +49,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.cmm_logo
 import certificates.composeapp.generated.resources.conversion_accredited_hours_label
 import certificates.composeapp.generated.resources.conversion_accredited_id_label
-import certificates.composeapp.generated.resources.conversion_accredited_type_conference
 import certificates.composeapp.generated.resources.conversion_accredited_type_label
-import certificates.composeapp.generated.resources.conversion_accredited_type_lecture
-import certificates.composeapp.generated.resources.conversion_accredited_type_seminar
-import certificates.composeapp.generated.resources.conversion_accredited_type_training
 import certificates.composeapp.generated.resources.conversion_certificate_name_label
 import certificates.composeapp.generated.resources.conversion_convert_button
 import certificates.composeapp.generated.resources.conversion_doc_id_label
@@ -190,6 +186,7 @@ fun ConversionScreen(
                         accreditedId = state.accreditedId,
                         docIdStart = state.docIdStart,
                         accreditedType = state.accreditedType,
+                        accreditedTypeOptions = state.accreditedTypeOptions,
                         accreditedHours = state.accreditedHours,
                         certificateName = state.certificateName,
                         lector = state.lector,
@@ -216,6 +213,7 @@ private fun CertificateDetailsSection(
     accreditedId: String,
     docIdStart: String,
     accreditedType: String,
+    accreditedTypeOptions: List<String>,
     accreditedHours: String,
     certificateName: String,
     lector: String,
@@ -228,12 +226,6 @@ private fun CertificateDetailsSection(
     onLectorChange: (String) -> Unit,
     onLectorGenderChange: (String) -> Unit,
 ) {
-    val options = listOf(
-        stringResource(Res.string.conversion_accredited_type_lecture),
-        stringResource(Res.string.conversion_accredited_type_seminar),
-        stringResource(Res.string.conversion_accredited_type_conference),
-        stringResource(Res.string.conversion_accredited_type_training),
-    )
     var expanded by remember { mutableStateOf(false) }
 
     Surface(
@@ -300,7 +292,7 @@ private fun CertificateDetailsSection(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                 ) {
-                    options.forEach { option ->
+                    accreditedTypeOptions.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option) },
                             onClick = {

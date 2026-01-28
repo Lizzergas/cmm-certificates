@@ -16,6 +16,7 @@ data class StoredSmtpSettings(
     val transport: SmtpTransport,
     val subject: String,
     val body: String,
+    val accreditedTypeOptions: String,
 )
 
 class SmtpSettingsRepository(
@@ -28,18 +29,20 @@ class SmtpSettingsRepository(
     private val transportKey = stringPreferencesKey("smtp_transport")
     private val subjectKey = stringPreferencesKey("smtp_subject")
     private val bodyKey = stringPreferencesKey("smtp_body")
+    private val accreditedTypeOptionsKey = stringPreferencesKey("accredited_type_options")
 
     suspend fun load(): StoredSmtpSettings? {
         val prefs = dataStore.data
             .catch { emit(emptyPreferences()) }
             .first()
         val hasAny = prefs.contains(hostKey) ||
-            prefs.contains(portKey) ||
-            prefs.contains(usernameKey) ||
-            prefs.contains(passwordKey) ||
-            prefs.contains(transportKey) ||
-            prefs.contains(subjectKey) ||
-            prefs.contains(bodyKey)
+                prefs.contains(portKey) ||
+                prefs.contains(usernameKey) ||
+                prefs.contains(passwordKey) ||
+                prefs.contains(transportKey) ||
+                prefs.contains(subjectKey) ||
+                prefs.contains(bodyKey) ||
+                prefs.contains(accreditedTypeOptionsKey)
         if (!hasAny) return null
 
         val transportValue = prefs[transportKey]
@@ -56,6 +59,11 @@ class SmtpSettingsRepository(
         } else {
             DEFAULT_EMAIL_BODY
         }
+        val accreditedTypeOptions = if (prefs.contains(accreditedTypeOptionsKey)) {
+            prefs[accreditedTypeOptionsKey].orEmpty()
+        } else {
+            DEFAULT_ACCREDITED_TYPE_OPTIONS
+        }
         return StoredSmtpSettings(
             host = prefs[hostKey].orEmpty(),
             port = prefs[portKey].orEmpty(),
@@ -64,6 +72,7 @@ class SmtpSettingsRepository(
             transport = transport,
             subject = subject,
             body = body,
+            accreditedTypeOptions = accreditedTypeOptions,
         )
     }
 
@@ -76,11 +85,14 @@ class SmtpSettingsRepository(
             prefs[transportKey] = settings.transport.name
             prefs[subjectKey] = settings.subject
             prefs[bodyKey] = settings.body
+            prefs[accreditedTypeOptionsKey] = settings.accreditedTypeOptions
         }
     }
 
     companion object {
         const val DEFAULT_EMAIL_SUBJECT = "Pa\u017Eyma"
         const val DEFAULT_EMAIL_BODY = "Certificate attached."
+        const val DEFAULT_ACCREDITED_TYPE_OPTIONS =
+            "paskaitoje\nseminare\nkonferencijoje\nmokymuose"
     }
 }

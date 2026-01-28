@@ -7,6 +7,7 @@ import com.cmm.certificates.data.email.SmtpTransport
 import com.cmm.certificates.data.email.StoredSmtpSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ data class SmtpSettingsState(
     val transport: SmtpTransport = SmtpTransport.SMTPS,
     val subject: String = SmtpSettingsRepository.DEFAULT_EMAIL_SUBJECT,
     val body: String = SmtpSettingsRepository.DEFAULT_EMAIL_BODY,
+    val accreditedTypeOptions: String = SmtpSettingsRepository.DEFAULT_ACCREDITED_TYPE_OPTIONS,
     val isAuthenticated: Boolean = false,
     val isAuthenticating: Boolean = false,
     val errorMessage: String? = null,
@@ -52,6 +54,7 @@ data class SmtpSettingsState(
             transport = transport,
             subject = subject,
             body = body,
+            accreditedTypeOptions = accreditedTypeOptions,
         )
     }
 }
@@ -98,6 +101,11 @@ class SmtpSettingsStore(
         persistIfAuthenticated()
     }
 
+    fun setAccreditedTypeOptions(value: String) {
+        _state.update { it.copy(accreditedTypeOptions = value, errorMessage = null) }
+        persistIfAuthenticated()
+    }
+
     suspend fun save() {
         repository.save(_state.value.toStoredSettings())
     }
@@ -140,6 +148,7 @@ class SmtpSettingsStore(
                 transport = stored.transport,
                 subject = stored.subject,
                 body = stored.body,
+                accreditedTypeOptions = stored.accreditedTypeOptions,
                 isAuthenticated = false,
                 isAuthenticating = false,
                 errorMessage = null,
