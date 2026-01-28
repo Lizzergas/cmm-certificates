@@ -92,5 +92,10 @@ class ConversionProgressStore {
 
     fun isCancelRequested(): Boolean = cancelRequested.value
 
+    fun clear() {
+        cancelRequested.value = false
+        _state.value = ConversionProgressState()
+    }
+
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
 }

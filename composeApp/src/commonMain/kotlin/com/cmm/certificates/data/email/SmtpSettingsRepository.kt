@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.cmm.certificates.data.store.clearDataStore
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 
@@ -99,9 +100,17 @@ class SmtpSettingsRepository(
         }
     }
 
+    suspend fun clear() {
+        clearDataStore(dataStore)
+    }
+
     companion object {
         const val DEFAULT_EMAIL_SUBJECT = "Pa\u017Eyma"
-        const val DEFAULT_EMAIL_BODY = "Certificate attached."
+        const val DEFAULT_EMAIL_BODY = "Laba diena,\n\n" +
+                "Siunčiame parengtą dalyvio pažymėjimą ir maloniai kviečiame įvertinti renginio kokybę ir pakomentuoti, kas Jums buvo naudingiausia.\n\n" +
+                "Prašome anketą užpildyti šiuo adresu:\n" +
+                "anketos_nuoroda\n\n" +
+                "Dėkojame už bendradarbiavimą.\n"
         const val DEFAULT_ACCREDITED_TYPE_OPTIONS =
             "paskaitoje\nseminare\nkonferencijoje\nmokymuose"
         const val DEFAULT_SIGNATURE_HTML = """

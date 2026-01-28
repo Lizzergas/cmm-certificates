@@ -46,6 +46,7 @@ import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
 import certificates.composeapp.generated.resources.settings_body_label
+import certificates.composeapp.generated.resources.settings_clear_all
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_save
@@ -61,6 +62,7 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
+import com.cmm.certificates.core.usecase.ClearAllDataUseCase
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.data.email.SmtpTransport
 import kotlinx.coroutines.launch
@@ -72,6 +74,7 @@ import org.koin.compose.koinInject
 fun SettingsScreen(
     onBack: () -> Unit,
     store: SmtpSettingsStore = koinInject(),
+    clearAllDataUseCase: ClearAllDataUseCase = koinInject(),
 ) {
     val state by store.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -111,6 +114,20 @@ fun SettingsScreen(
                         ) {
                             Text(
                                 text = stringResource(Res.string.settings_save),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { scope.launch { clearAllDataUseCase.clearAll() } },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error,
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.settings_clear_all),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                             )
@@ -293,8 +310,8 @@ fun SettingsScreen(
                             label = { Text(stringResource(Res.string.settings_body_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = false,
-                            minLines = 3,
-                            maxLines = 3,
+                            minLines = 5,
+                            maxLines = 10,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         )
                         ClearableOutlinedTextField(
@@ -306,11 +323,6 @@ fun SettingsScreen(
                             minLines = 4,
                             maxLines = 8,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        )
-                        Text(
-                            text = stringResource(Res.string.settings_signature_html_hint),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         ClearableOutlinedTextField(
                             value = state.accreditedTypeOptions,

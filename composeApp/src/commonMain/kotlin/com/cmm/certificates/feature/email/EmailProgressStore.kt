@@ -76,5 +76,10 @@ class EmailProgressStore {
 
     fun isCancelRequested(): Boolean = cancelRequested.value
 
+    fun clear() {
+        cancelRequested.value = false
+        _state.value = EmailProgressState()
+    }
+
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
 }

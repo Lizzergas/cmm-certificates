@@ -113,6 +113,10 @@ class SmtpSettingsStore(
         persistIfAuthenticated()
     }
 
+    fun resetToDefaults() {
+        _state.value = SmtpSettingsState()
+    }
+
     suspend fun save() {
         repository.save(_state.value.toStoredSettings())
     }

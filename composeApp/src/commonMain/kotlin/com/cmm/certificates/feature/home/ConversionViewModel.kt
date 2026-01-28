@@ -172,15 +172,15 @@ class ConversionViewModel(
                 val docId = docIdStart + index
                 progressStore.setCurrentDocId(docId)
                 val replacements = mapOf(
-                    "{{full_name}}" to fullName,
-                    "{{date}}" to entry.formattedDate,
-                    "{{accredited_id}}" to snapshot.accreditedId,
-                    "{{doc_id}}" to docId.toString(),
-                    "{{accredited_type}}" to snapshot.accreditedType,
-                    "{{accredited_hours}}" to snapshot.accreditedHours,
-                    "{{certificate_name}}" to snapshot.certificateName,
-                    "{{lector}}" to snapshot.lector,
-                    "{{lector_gender}}" to snapshot.lectorGender,
+                    "{{vardas_pavarde}}" to fullName,
+                    "{{data}}" to entry.formattedDate,
+                    "{{akreditacijos_id}}" to snapshot.accreditedId,
+                    "{{dokumento_id}}" to docId.toString(),
+                    "{{akreditacijos_tipas}}" to snapshot.accreditedType,
+                    "{{akreditacijos_valandos}}" to snapshot.accreditedHours,
+                    "{{sertifikato_pavadinimas}}" to snapshot.certificateName,
+                    "{{destytojas}}" to snapshot.lector,
+                    "{{destytojo_tipas}}" to snapshot.lectorGender,
                 )
                 val outputPath = joinPath(outputDir, "${docId}.pdf")
                 try {
