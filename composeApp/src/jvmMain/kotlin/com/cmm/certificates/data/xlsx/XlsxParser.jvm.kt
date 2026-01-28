@@ -101,7 +101,7 @@ actual object XlsxParser {
                                 val name = r.getAttr("name") ?: ""
                                 val relId = r.getAttr("r:id") ?: r.getAttr("id")
                                 require(!relId.isNullOrBlank()) { "Sheet missing r:id" }
-                                sheets += WorkbookSheet(name = name, relId = relId!!)
+                                sheets += WorkbookSheet(name = name, relId = relId)
                             }
                         }
                     }
@@ -202,7 +202,7 @@ actual object XlsxParser {
                             // Excel row numbers are 1-based
                             currentRowIndex = rowNum?.minus(1)
                             if (currentRowIndex != null) {
-                                rowsByIndex.getOrPut(currentRowIndex!!) { mutableMapOf() }
+                                rowsByIndex.getOrPut(currentRowIndex) { mutableMapOf() }
                             }
                         }
 
@@ -225,7 +225,7 @@ actual object XlsxParser {
 
                         "t" -> {
                             if (currentCellType == "inlineStr" && currentInlineText != null) {
-                                currentInlineText!!.append(readElementTextPreserve(r))
+                                currentInlineText.append(readElementTextPreserve(r))
                             }
                         }
                     }

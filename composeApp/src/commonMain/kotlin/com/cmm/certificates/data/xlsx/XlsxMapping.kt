@@ -4,6 +4,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlin.math.floor
 import kotlin.math.roundToLong
@@ -83,7 +84,7 @@ internal object XlsxEntryMapper {
     }
 
     private fun formatLithuanianDate(date: LocalDate): String {
-        val monthName = when (date.monthNumber) {
+        val monthName = when (date.month.number) {
             1 -> "sausio"
             2 -> "vasario"
             3 -> "kovo"
@@ -98,7 +99,7 @@ internal object XlsxEntryMapper {
             12 -> "gruod\u017Eio"
             else -> ""
         }
-        return "${date.year} m. $monthName ${date.dayOfMonth} d."
+        return "${date.year} m. $monthName ${date.day} d."
     }
 
     private fun Map<String, String?>.isEmptyRow(): Boolean {

@@ -52,7 +52,6 @@ import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_save
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
-import certificates.composeapp.generated.resources.settings_signature_html_hint
 import certificates.composeapp.generated.resources.settings_signature_html_label
 import certificates.composeapp.generated.resources.settings_subject_label
 import certificates.composeapp.generated.resources.settings_subtitle
@@ -62,8 +61,8 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
-import com.cmm.certificates.core.usecase.ClearAllDataUseCase
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
+import com.cmm.certificates.core.usecase.ClearAllDataUseCase
 import com.cmm.certificates.data.email.SmtpTransport
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
