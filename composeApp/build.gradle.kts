@@ -60,7 +60,8 @@ kotlin {
             implementation(libs.filekit.dialogs.compose)
 
             implementation(libs.kotlinx.datetime)
-        }
+
+            implementation("com.composables:icons-lucide-cmp:2.2.1")        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

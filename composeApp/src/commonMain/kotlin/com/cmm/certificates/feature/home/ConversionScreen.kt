@@ -27,7 +27,6 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,6 +59,7 @@ import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
+import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.FileIcon
 import com.cmm.certificates.core.ui.PrimaryActionButton
 import io.github.vinceglb.filekit.FileKit
@@ -251,7 +251,7 @@ private fun CertificateDetailsSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                OutlinedTextField(
+                ClearableOutlinedTextField(
                     value = accreditedId,
                     onValueChange = onAccreditedIdChange,
                     label = { Text(stringResource(Res.string.conversion_accredited_id_label)) },
@@ -259,7 +259,7 @@ private fun CertificateDetailsSection(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(
+                ClearableOutlinedTextField(
                     value = docIdStart,
                     onValueChange = onDocIdStartChange,
                     label = { Text(stringResource(Res.string.conversion_doc_id_label)) },
@@ -275,7 +275,7 @@ private fun CertificateDetailsSection(
             ) {
                 val fillMaxWidth = Modifier
                     .fillMaxWidth()
-                OutlinedTextField(
+                ClearableOutlinedTextField(
                     value = accreditedType,
                     onValueChange = {},
                     label = { Text(stringResource(Res.string.conversion_accredited_type_label)) },
@@ -286,7 +286,9 @@ private fun CertificateDetailsSection(
                     ),
                     readOnly = true,
                     singleLine = true,
+                    showClearIcon = false,
                     textStyle = MaterialTheme.typography.bodySmall,
+                    onClear = { onAccreditedTypeChange("") },
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -303,7 +305,7 @@ private fun CertificateDetailsSection(
                     }
                 }
             }
-            OutlinedTextField(
+            ClearableOutlinedTextField(
                 value = accreditedHours,
                 onValueChange = onAccreditedHoursChange,
                 label = { Text(stringResource(Res.string.conversion_accredited_hours_label)) },
@@ -312,7 +314,7 @@ private fun CertificateDetailsSection(
                 textStyle = MaterialTheme.typography.bodySmall,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
-            OutlinedTextField(
+            ClearableOutlinedTextField(
                 value = certificateName,
                 onValueChange = onCertificateNameChange,
                 label = { Text(stringResource(Res.string.conversion_certificate_name_label)) },
@@ -320,7 +322,7 @@ private fun CertificateDetailsSection(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
             )
-            OutlinedTextField(
+            ClearableOutlinedTextField(
                 value = lectorGender,
                 onValueChange = onLectorGenderChange,
                 label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
@@ -328,7 +330,7 @@ private fun CertificateDetailsSection(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
             )
-            OutlinedTextField(
+            ClearableOutlinedTextField(
                 value = lector,
                 onValueChange = onLectorChange,
                 label = { Text(stringResource(Res.string.conversion_lector_label)) },

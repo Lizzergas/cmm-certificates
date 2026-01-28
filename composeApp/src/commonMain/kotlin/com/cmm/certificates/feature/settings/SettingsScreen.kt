@@ -21,7 +21,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,6 +59,7 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
+import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.data.email.SmtpTransport
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -211,14 +211,14 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            OutlinedTextField(
+                            ClearableOutlinedTextField(
                                 value = state.host,
                                 onValueChange = store::setHost,
                                 label = { Text(stringResource(Res.string.settings_server_label)) },
                                 modifier = Modifier.weight(2f),
                                 singleLine = true,
                             )
-                            OutlinedTextField(
+                            ClearableOutlinedTextField(
                                 value = state.port,
                                 onValueChange = store::setPort,
                                 label = { Text(stringResource(Res.string.settings_port_label)) },
@@ -232,7 +232,7 @@ fun SettingsScreen(
                             onExpandedChange = { transportExpanded = !transportExpanded },
                         ) {
                             val fillMaxWidth = Modifier.fillMaxWidth()
-                            OutlinedTextField(
+                            ClearableOutlinedTextField(
                                 value = transportLabels[state.transport].orEmpty(),
                                 onValueChange = {},
                                 label = { Text(stringResource(Res.string.settings_transport_label)) },
@@ -245,6 +245,7 @@ fun SettingsScreen(
                                 ),
                                 readOnly = true,
                                 singleLine = true,
+                                showClearIcon = false,
                             )
                             ExposedDropdownMenu(
                                 expanded = transportExpanded,
@@ -261,14 +262,14 @@ fun SettingsScreen(
                                 }
                             }
                         }
-                        OutlinedTextField(
+                        ClearableOutlinedTextField(
                             value = state.username,
                             onValueChange = store::setUsername,
                             label = { Text(stringResource(Res.string.settings_username_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
-                        OutlinedTextField(
+                        ClearableOutlinedTextField(
                             value = state.password,
                             onValueChange = store::setPassword,
                             label = { Text(stringResource(Res.string.settings_password_label)) },
@@ -277,14 +278,14 @@ fun SettingsScreen(
                             visualTransformation = PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         )
-                        OutlinedTextField(
+                        ClearableOutlinedTextField(
                             value = state.subject,
                             onValueChange = store::setSubject,
                             label = { Text(stringResource(Res.string.settings_subject_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
-                        OutlinedTextField(
+                        ClearableOutlinedTextField(
                             value = state.body,
                             onValueChange = store::setBody,
                             label = { Text(stringResource(Res.string.settings_body_label)) },
@@ -294,7 +295,7 @@ fun SettingsScreen(
                             maxLines = 3,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         )
-                        OutlinedTextField(
+                        ClearableOutlinedTextField(
                             value = state.accreditedTypeOptions,
                             onValueChange = store::setAccreditedTypeOptions,
                             label = { Text(stringResource(Res.string.settings_accredited_type_options_label)) },
