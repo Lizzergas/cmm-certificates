@@ -21,6 +21,7 @@
     <string name="conversion_accredited_hours_label">Akredituotos valandos</string>
     <string name="conversion_certificate_name_label">Sertifikato pavadinimas</string>
     <string name="conversion_lector_label">Lektorius</string>
+    <string name="conversion_lector_gender_label">Lektoriaus lytis</string>
     <string name="conversion_accredited_type_lecture">paskaitoje</string>
     <string name="conversion_accredited_type_seminar">seminare</string>
     <string name="conversion_accredited_type_conference">konferencijoje</string>

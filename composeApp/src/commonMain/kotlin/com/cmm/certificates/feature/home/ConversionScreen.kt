@@ -58,6 +58,7 @@ import certificates.composeapp.generated.resources.conversion_certificate_name_l
 import certificates.composeapp.generated.resources.conversion_convert_button
 import certificates.composeapp.generated.resources.conversion_doc_id_label
 import certificates.composeapp.generated.resources.conversion_form_section_title
+import certificates.composeapp.generated.resources.conversion_lector_gender_label
 import certificates.composeapp.generated.resources.conversion_lector_label
 import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
@@ -192,12 +193,14 @@ fun ConversionScreen(
                         accreditedHours = state.accreditedHours,
                         certificateName = state.certificateName,
                         lector = state.lector,
+                        lectorGender = state.lectorGender,
                         onAccreditedIdChange = viewModel::setAccreditedId,
                         onDocIdStartChange = viewModel::setDocIdStart,
                         onAccreditedTypeChange = viewModel::setAccreditedType,
                         onAccreditedHoursChange = viewModel::setAccreditedHours,
                         onCertificateNameChange = viewModel::setCertificateName,
                         onLectorChange = viewModel::setLector,
+                        onLectorGenderChange = viewModel::setLectorGender,
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -216,12 +219,14 @@ private fun CertificateDetailsSection(
     accreditedHours: String,
     certificateName: String,
     lector: String,
+    lectorGender: String,
     onAccreditedIdChange: (String) -> Unit,
     onDocIdStartChange: (String) -> Unit,
     onAccreditedTypeChange: (String) -> Unit,
     onAccreditedHoursChange: (String) -> Unit,
     onCertificateNameChange: (String) -> Unit,
     onLectorChange: (String) -> Unit,
+    onLectorGenderChange: (String) -> Unit,
 ) {
     val options = listOf(
         stringResource(Res.string.conversion_accredited_type_lecture),
@@ -319,6 +324,14 @@ private fun CertificateDetailsSection(
                 value = certificateName,
                 onValueChange = onCertificateNameChange,
                 label = { Text(stringResource(Res.string.conversion_certificate_name_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+            )
+            OutlinedTextField(
+                value = lectorGender,
+                onValueChange = onLectorGenderChange,
+                label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,

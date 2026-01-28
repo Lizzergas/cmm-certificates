@@ -52,6 +52,10 @@ class ConversionViewModel(
         _uiState.update { it.copy(lector = value) }
     }
 
+    fun setLectorGender(value: String) {
+        _uiState.update { it.copy(lectorGender = value) }
+    }
+
     fun selectXlsx(path: String) {
         _uiState.update { it.copy(xlsxPath = path, parseError = null) }
         if (path.isBlank()) {
@@ -144,6 +148,7 @@ class ConversionViewModel(
                     "{{accredited_hours}}" to snapshot.accreditedHours,
                     "{{certificate_name}}" to snapshot.certificateName,
                     "{{lector}}" to snapshot.lector,
+                    "{{lector_gender}}" to snapshot.lectorGender,
                 )
                 val outputPath = joinPath(outputDir, "${docId}.pdf")
                 try {
@@ -180,6 +185,7 @@ data class ConversionUiState(
     val accreditedHours: String = "",
     val certificateName: String = "",
     val lector: String = "",
+    val lectorGender: String = "Lektorius:",
     val entries: List<RegistrationEntry> = emptyList(),
     val parseError: String? = null,
 ) {

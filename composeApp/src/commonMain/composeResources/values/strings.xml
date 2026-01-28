@@ -21,6 +21,7 @@
     <string name="conversion_accredited_hours_label">Accredited hours</string>
     <string name="conversion_certificate_name_label">Certificate name</string>
     <string name="conversion_lector_label">Lector</string>
+    <string name="conversion_lector_gender_label">Lector label</string>
     <string name="conversion_accredited_type_lecture">paskaitoje</string>
     <string name="conversion_accredited_type_seminar">seminare</string>
     <string name="conversion_accredited_type_conference">konferencijoje</string>
