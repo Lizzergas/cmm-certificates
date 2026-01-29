@@ -10,6 +10,6 @@ data class RegistrationEntry(
     val surname: String,
     val institution: String,
     val forEvent: String,
-    val paymentUrl: String,
+    val paymentUrl: String = "",
     val publicityApproval: String,
 )

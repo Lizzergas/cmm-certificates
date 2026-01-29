@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    id("dev.hydraulic.conveyor") version "1.13"
 }
 
 kotlin {
@@ -29,6 +30,10 @@ kotlin {
     }
 
     jvm()
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+        vendor.set(JvmVendorSpec.JETBRAINS)
+    }
 
     sourceSets {
         androidMain.dependencies {
@@ -106,6 +111,10 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    linuxAmd64(compose.desktop.linux_x64)
+    macAmd64(compose.desktop.macos_x64)
+    macAarch64(compose.desktop.macos_arm64)
+    windowsAmd64(compose.desktop.windows_x64)
 }
 
 compose.desktop {
@@ -119,3 +128,12 @@ compose.desktop {
         }
     }
 }
+
+// region Work around temporary Compose bugs.
+configurations.all {
+    attributes {
+        // https://github.com/JetBrains/compose-jb/issues/1404#issuecomment-1146894731
+        attribute(Attribute.of("ui", String::class.java), "awt")
+    }
+}
+// endregion

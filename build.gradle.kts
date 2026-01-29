@@ -9,3 +9,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinSerialization) apply false
 }
+
+allprojects {
+    version = "1.0.0"
+}
