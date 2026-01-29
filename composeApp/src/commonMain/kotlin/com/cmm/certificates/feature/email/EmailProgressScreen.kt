@@ -45,9 +45,7 @@ import certificates.composeapp.generated.resources.email_progress_title
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.math.max
 
 private const val FADE_IN_DURATION_MS = 420
 private const val FADE_OUT_DURATION_MS = 300
@@ -57,13 +55,9 @@ private const val SIZE_ANIMATION_DURATION_MS = 360
 fun EmailProgressScreen(
     onFinish: () -> Unit,
     onCancel: () -> Unit,
-    emailProgressStore: EmailProgressStore = koinInject(),
     viewModel: EmailSenderViewModel = koinViewModel(),
 ) {
-    val progressState by emailProgressStore.state.collectAsStateWithLifecycle()
-    val total = max(progressState.total, 0)
-    val current = progressState.current.coerceAtLeast(0)
-    val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.startSendingIfIdle()
@@ -73,7 +67,7 @@ fun EmailProgressScreen(
         containerColor = Color(0xFFF8FAFC),
         bottomBar = {
             EmailProgressBottomBar(
-                progressState = progressState,
+                isInProgress = uiState.inProgress,
                 onFinish = onFinish,
                 onCancel = {
                     viewModel.cancelSending()
@@ -88,7 +82,7 @@ fun EmailProgressScreen(
             .safeContentPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
         AnimatedContent(
-            targetState = progressState.completed,
+            targetState = uiState.completed,
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
             transitionSpec = {
@@ -101,30 +95,30 @@ fun EmailProgressScreen(
             },
         ) { completed ->
             when {
-                progressState.errorMessage != null -> {
+                uiState.errorMessage != null -> {
                     ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
                         title = stringResource(Res.string.email_progress_error_title),
-                        message = progressState.errorMessage.orEmpty(),
+                        message = uiState.errorMessage.orEmpty(),
                     )
                 }
 
                 completed -> {
                     EmailSuccessContent(
                         modifier = Modifier.fillMaxSize(),
-                        total = total,
+                        total = uiState.total,
                     )
                 }
 
                 else -> {
-                    val infoText = progressState.currentRecipient?.let {
+                    val infoText = uiState.currentRecipient?.let {
                         stringResource(Res.string.email_progress_recipient_label).replace("%s", it)
                     }.orEmpty()
                     ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
-                        current = current,
-                        total = total,
-                        progress = progress,
+                        current = uiState.current,
+                        total = uiState.total,
+                        progress = uiState.progress,
                         title = stringResource(Res.string.email_progress_title),
                         infoText = infoText,
                     )
@@ -136,7 +130,7 @@ fun EmailProgressScreen(
 
 @Composable
 private fun EmailProgressBottomBar(
-    progressState: EmailProgressState,
+    isInProgress: Boolean,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -154,7 +148,7 @@ private fun EmailProgressBottomBar(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (progressState.inProgress) {
+            if (isInProgress) {
                 OutlinedButton(
                     onClick = onCancel,
                     modifier = Modifier.fillMaxWidth(),

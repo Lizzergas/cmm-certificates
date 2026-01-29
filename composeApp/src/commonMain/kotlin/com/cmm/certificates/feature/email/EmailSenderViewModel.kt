@@ -15,6 +15,10 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,6 +32,26 @@ class EmailSenderViewModel(
     private val smtpSettingsStore: SmtpSettingsStore,
 ) : ViewModel() {
     private var sendJob: Job? = null
+    val uiState: StateFlow<EmailProgressUiState> = emailProgressStore.state
+        .map { state ->
+            val total = state.total.coerceAtLeast(0)
+            val current = state.current.coerceAtLeast(0)
+            val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
+            EmailProgressUiState(
+                current = current,
+                total = total,
+                progress = progress,
+                inProgress = state.inProgress,
+                completed = state.completed,
+                errorMessage = state.errorMessage,
+                currentRecipient = state.currentRecipient,
+            )
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            EmailProgressUiState(),
+        )
 
     fun startSendingIfIdle() {
         if (sendJob?.isActive == true) return
@@ -173,3 +197,13 @@ class EmailSenderViewModel(
         }
     }
 }
+
+data class EmailProgressUiState(
+    val current: Int = 0,
+    val total: Int = 0,
+    val progress: Float = 0f,
+    val inProgress: Boolean = false,
+    val completed: Boolean = false,
+    val errorMessage: String? = null,
+    val currentRecipient: String? = null,
+)

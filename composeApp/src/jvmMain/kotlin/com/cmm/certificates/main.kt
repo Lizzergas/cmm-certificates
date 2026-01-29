@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.cmm.certificates.core.initializeSentry
 import io.github.vinceglb.filekit.FileKit
 import io.sentry.Sentry
 import java.nio.file.Paths

@@ -17,7 +17,6 @@ import com.cmm.certificates.feature.progress.featureProgressEntryProvider
 import com.cmm.certificates.feature.progress.progressNavSerializerModule
 import com.cmm.certificates.feature.settings.featureSettingsEntryProvider
 import com.cmm.certificates.feature.settings.settingsNavSerializerModule
-import com.cmm.certificates.feature.test.testNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 
@@ -57,7 +56,6 @@ fun rememberNavigator(
                 include(progressNavSerializerModule)
                 include(settingsNavSerializerModule)
                 include(emailNavSerializerModule)
-                include(testNavSerializerModule)
             }
         }
     }

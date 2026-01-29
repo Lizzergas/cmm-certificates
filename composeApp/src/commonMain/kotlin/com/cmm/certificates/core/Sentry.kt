@@ -1,4 +1,4 @@
-package com.cmm.certificates
+package com.cmm.certificates.core
 
 import io.sentry.kotlin.multiplatform.Sentry
 

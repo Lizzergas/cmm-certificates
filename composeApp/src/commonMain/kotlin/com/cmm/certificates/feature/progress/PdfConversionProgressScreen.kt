@@ -51,7 +51,7 @@ import certificates.composeapp.generated.resources.network_unavailable_message
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
-import com.cmm.certificates.openFolder
+import com.cmm.certificates.core.openFolder
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 

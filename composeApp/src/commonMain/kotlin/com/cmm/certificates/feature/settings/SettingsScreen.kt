@@ -1,6 +1,7 @@
 package com.cmm.certificates.feature.settings
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,10 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,21 +64,17 @@ import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
-import com.cmm.certificates.core.usecase.ClearAllDataUseCase
 import com.cmm.certificates.data.email.SmtpTransport
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    store: SmtpSettingsStore = koinInject(),
-    clearAllDataUseCase: ClearAllDataUseCase = koinInject(),
+    viewModel: SettingsViewModel = koinViewModel(),
 ) {
-    val state by store.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     val transportLabels = mapOf(
@@ -108,7 +103,7 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         OutlinedButton(
-                            onClick = { scope.launch { store.save() } },
+                            onClick = viewModel::save,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -122,7 +117,7 @@ fun SettingsScreen(
                             )
                         }
                         OutlinedButton(
-                            onClick = { scope.launch { clearAllDataUseCase.clearAll() } },
+                            onClick = viewModel::clearAll,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error,
@@ -136,7 +131,7 @@ fun SettingsScreen(
                             )
                         }
                         Button(
-                            onClick = { scope.launch { store.authenticate() } },
+                            onClick = viewModel::authenticate,
                             enabled = state.canAuthenticate && !state.isAuthenticating,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
@@ -235,14 +230,14 @@ fun SettingsScreen(
                         ) {
                             ClearableOutlinedTextField(
                                 value = state.host,
-                                onValueChange = store::setHost,
+                                onValueChange = viewModel::setHost,
                                 label = { Text(stringResource(Res.string.settings_server_label)) },
                                 modifier = Modifier.weight(2f),
                                 singleLine = true,
                             )
                             ClearableOutlinedTextField(
                                 value = state.port,
-                                onValueChange = store::setPort,
+                                onValueChange = viewModel::setPort,
                                 label = { Text(stringResource(Res.string.settings_port_label)) },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
@@ -277,7 +272,7 @@ fun SettingsScreen(
                                     androidx.compose.material3.DropdownMenuItem(
                                         text = { Text(label) },
                                         onClick = {
-                                            store.setTransport(transport)
+                                            viewModel.setTransport(transport)
                                             transportExpanded = false
                                         },
                                     )
@@ -286,14 +281,14 @@ fun SettingsScreen(
                         }
                         ClearableOutlinedTextField(
                             value = state.username,
-                            onValueChange = store::setUsername,
+                            onValueChange = viewModel::setUsername,
                             label = { Text(stringResource(Res.string.settings_username_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
                         ClearableOutlinedTextField(
                             value = state.password,
-                            onValueChange = store::setPassword,
+                            onValueChange = viewModel::setPassword,
                             label = { Text(stringResource(Res.string.settings_password_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
@@ -302,14 +297,14 @@ fun SettingsScreen(
                         )
                         ClearableOutlinedTextField(
                             value = state.subject,
-                            onValueChange = store::setSubject,
+                            onValueChange = viewModel::setSubject,
                             label = { Text(stringResource(Res.string.settings_subject_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                         )
                         ClearableOutlinedTextField(
                             value = state.body,
-                            onValueChange = store::setBody,
+                            onValueChange = viewModel::setBody,
                             label = { Text(stringResource(Res.string.settings_body_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = false,
@@ -319,7 +314,7 @@ fun SettingsScreen(
                         )
                         ClearableOutlinedTextField(
                             value = state.signatureHtml,
-                            onValueChange = store::setSignatureHtml,
+                            onValueChange = viewModel::setSignatureHtml,
                             label = { Text(stringResource(Res.string.settings_signature_html_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = false,
@@ -329,7 +324,7 @@ fun SettingsScreen(
                         )
                         ClearableOutlinedTextField(
                             value = state.accreditedTypeOptions,
-                            onValueChange = store::setAccreditedTypeOptions,
+                            onValueChange = viewModel::setAccreditedTypeOptions,
                             label = { Text(stringResource(Res.string.settings_accredited_type_options_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = false,
