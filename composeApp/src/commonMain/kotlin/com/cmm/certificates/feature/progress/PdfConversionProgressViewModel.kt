@@ -25,7 +25,7 @@ data class PdfConversionProgressUiState(
 )
 
 class PdfConversionProgressViewModel(
-    private val progressStore: ConversionProgressStore,
+    private val progressStore: PdfConversionProgressStore,
     smtpSettingsStore: SmtpSettingsStore,
     networkService: NetworkService,
 ) : ViewModel() {

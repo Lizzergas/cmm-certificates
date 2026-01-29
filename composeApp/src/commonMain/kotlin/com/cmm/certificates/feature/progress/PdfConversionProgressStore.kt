@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 
-data class ConversionProgressState(
+data class PdfConversionProgressState(
     val current: Int = 0,
     val total: Int = 0,
     val inProgress: Boolean = false,
@@ -20,9 +20,9 @@ data class ConversionProgressState(
     val endedAtMillis: Long? = null,
 )
 
-class ConversionProgressStore {
-    private val _state = MutableStateFlow(ConversionProgressState())
-    val state: StateFlow<ConversionProgressState> = _state
+class PdfConversionProgressStore {
+    private val _state = MutableStateFlow(PdfConversionProgressState())
+    val state: StateFlow<PdfConversionProgressState> = _state
     private val cancelRequested = MutableStateFlow(false)
 
     fun start(
@@ -32,7 +32,7 @@ class ConversionProgressStore {
         entries: List<RegistrationEntry>,
     ) {
         cancelRequested.value = false
-        _state.value = ConversionProgressState(
+        _state.value = PdfConversionProgressState(
             current = 0,
             total = total,
             inProgress = true,
@@ -94,7 +94,7 @@ class ConversionProgressStore {
 
     fun clear() {
         cancelRequested.value = false
-        _state.value = ConversionProgressState()
+        _state.value = PdfConversionProgressState()
     }
 
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()

@@ -64,7 +64,7 @@ import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
 import certificates.composeapp.generated.resources.network_unavailable_message
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
-import com.cmm.certificates.core.ui.FileIcon
+import com.cmm.certificates.core.ui.SelectFileIcon
 import com.cmm.certificates.core.ui.PrimaryActionButton
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
@@ -156,7 +156,7 @@ fun ConversionScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        FileIcon(
+                        SelectFileIcon(
                             iconText = "XLSX",
                             selected = hasXlsx,
                             tooltipText = xlsxTooltip,
@@ -171,7 +171,7 @@ fun ConversionScreen(
                             },
                             modifier = Modifier.weight(1f),
                         )
-                        FileIcon(
+                        SelectFileIcon(
                             iconText = "DOCX",
                             selected = hasTemplate,
                             tooltipText = docxTooltip,

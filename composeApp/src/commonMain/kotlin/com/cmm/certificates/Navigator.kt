@@ -17,7 +17,6 @@ import com.cmm.certificates.feature.progress.featureProgressEntryProvider
 import com.cmm.certificates.feature.progress.progressNavSerializerModule
 import com.cmm.certificates.feature.settings.featureSettingsEntryProvider
 import com.cmm.certificates.feature.settings.settingsNavSerializerModule
-import com.cmm.certificates.feature.test.featureTestEntryProvider
 import com.cmm.certificates.feature.test.testNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -31,7 +30,6 @@ class Navigator internal constructor(
         featureProgressEntryProvider(this@Navigator)
         featureSettingsEntryProvider(this@Navigator)
         featureEmailEntryProvider(this@Navigator)
-        featureTestEntryProvider(this@Navigator)
     }
 
     fun push(key: NavKey) {

@@ -9,7 +9,7 @@ import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
-import com.cmm.certificates.feature.progress.ConversionProgressStore
+import com.cmm.certificates.feature.progress.PdfConversionProgressStore
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +25,7 @@ private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
     parseAccreditedTypeOptions(SmtpSettingsRepository.DEFAULT_ACCREDITED_TYPE_OPTIONS)
 
 class ConversionViewModel(
-    private val progressStore: ConversionProgressStore,
+    private val progressStore: PdfConversionProgressStore,
     private val smtpSettingsStore: SmtpSettingsStore,
     private val networkService: NetworkService,
 ) : ViewModel() {

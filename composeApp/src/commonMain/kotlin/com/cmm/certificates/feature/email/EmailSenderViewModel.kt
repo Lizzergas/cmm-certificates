@@ -6,7 +6,7 @@ import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
 import com.cmm.certificates.data.email.SmtpSettingsRepository
 import com.cmm.certificates.data.xlsx.RegistrationEntry
-import com.cmm.certificates.feature.progress.ConversionProgressStore
+import com.cmm.certificates.feature.progress.PdfConversionProgressStore
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.CancellationException
@@ -24,7 +24,7 @@ private const val DEFAULT_BODY = SmtpSettingsRepository.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
     private val emailProgressStore: EmailProgressStore,
-    private val conversionProgressStore: ConversionProgressStore,
+    private val pdfConversionProgressStore: PdfConversionProgressStore,
     private val smtpSettingsStore: SmtpSettingsStore,
 ) : ViewModel() {
     private var sendJob: Job? = null
@@ -55,7 +55,7 @@ class EmailSenderViewModel(
             return
         }
 
-        val conversionState = conversionProgressStore.state.value
+        val conversionState = pdfConversionProgressStore.state.value
         val docIdStart = conversionState.docIdStart
         if (docIdStart == null) {
             emailProgressStore.fail("Document ID start is missing.")

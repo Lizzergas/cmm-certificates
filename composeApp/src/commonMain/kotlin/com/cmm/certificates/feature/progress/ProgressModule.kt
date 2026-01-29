@@ -5,6 +5,6 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val progressModule = module {
-    singleOf(::ConversionProgressStore)
+    singleOf(::PdfConversionProgressStore)
     viewModelOf(::PdfConversionProgressViewModel)
 }
