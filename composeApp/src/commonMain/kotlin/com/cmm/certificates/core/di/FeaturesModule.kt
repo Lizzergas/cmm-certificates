@@ -1,8 +1,8 @@
 package com.cmm.certificates.core.di
 
-import com.cmm.certificates.feature.email.emailModule
-import com.cmm.certificates.feature.home.conversionModule
-import com.cmm.certificates.feature.progress.di.progressModule
+import com.cmm.certificates.feature.emailsending.di.emailModule
+import com.cmm.certificates.feature.certificate.conversionModule
+import com.cmm.certificates.feature.pdfconversion.di.progressModule
 import com.cmm.certificates.feature.settings.di.settingsModule
 import org.koin.dsl.module
 

@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.email
+package com.cmm.certificates.feature.emailsending.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform

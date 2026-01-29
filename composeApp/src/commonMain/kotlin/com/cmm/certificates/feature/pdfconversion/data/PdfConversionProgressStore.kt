@@ -1,43 +1,59 @@
-package com.cmm.certificates.feature.email
+package com.cmm.certificates.feature.pdfconversion.data
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
+import com.cmm.certificates.data.xlsx.RegistrationEntry
 
-data class EmailProgressState(
+data class PdfConversionProgressState(
     val current: Int = 0,
     val total: Int = 0,
     val inProgress: Boolean = false,
     val completed: Boolean = false,
     val errorMessage: String? = null,
-    val currentRecipient: String? = null,
+    val outputDir: String = "",
+    val docIdStart: Long? = null,
+    val entries: List<RegistrationEntry> = emptyList(),
+    val currentDocId: Long? = null,
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
 
-class EmailProgressStore {
-    private val _state = MutableStateFlow(EmailProgressState())
-    val state: StateFlow<EmailProgressState> = _state
+class PdfConversionProgressStore {
+    private val _state = MutableStateFlow(PdfConversionProgressState())
+    val state: StateFlow<PdfConversionProgressState> = _state
     private val cancelRequested = MutableStateFlow(false)
 
-    fun start(total: Int) {
+    fun start(
+        total: Int,
+        outputDir: String,
+        docIdStart: Long,
+        entries: List<RegistrationEntry>,
+    ) {
         cancelRequested.value = false
-        _state.value = EmailProgressState(
+        _state.value = PdfConversionProgressState(
             current = 0,
             total = total,
             inProgress = true,
-            currentRecipient = null,
+            outputDir = outputDir,
+            docIdStart = docIdStart,
+            entries = entries,
             startedAtMillis = nowMillis(),
         )
     }
 
     fun update(current: Int) {
-        _state.update { it.copy(current = current, inProgress = true) }
+        _state.update {
+            it.copy(
+                current = current,
+                inProgress = true,
+            )
+        }
     }
 
-    fun setCurrentRecipient(recipient: String?) {
-        _state.update { it.copy(currentRecipient = recipient) }
+    fun setCurrentDocId(docId: Long?) {
+        _state.update { it.copy(currentDocId = docId) }
     }
 
     fun finish() {
@@ -46,7 +62,7 @@ class EmailProgressStore {
                 current = it.total,
                 inProgress = false,
                 completed = true,
-                currentRecipient = null,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -57,7 +73,7 @@ class EmailProgressStore {
             it.copy(
                 inProgress = false,
                 errorMessage = message,
-                currentRecipient = null,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -68,7 +84,7 @@ class EmailProgressStore {
         _state.update {
             it.copy(
                 inProgress = false,
-                currentRecipient = null,
+                currentDocId = null,
                 endedAtMillis = nowMillis(),
             )
         }
@@ -78,7 +94,7 @@ class EmailProgressStore {
 
     fun clear() {
         cancelRequested.value = false
-        _state.value = EmailProgressState()
+        _state.value = PdfConversionProgressState()
     }
 
     private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()

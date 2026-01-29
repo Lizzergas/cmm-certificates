@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.home
+package com.cmm.certificates.feature.certificate
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image

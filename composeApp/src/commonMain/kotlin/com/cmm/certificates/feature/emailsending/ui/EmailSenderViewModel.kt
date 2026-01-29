@@ -1,11 +1,12 @@
-package com.cmm.certificates.feature.email
+package com.cmm.certificates.feature.emailsending.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
 import com.cmm.certificates.data.xlsx.RegistrationEntry
-import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
+import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -27,12 +28,12 @@ private const val DEFAULT_SUBJECT = SettingsStore.DEFAULT_EMAIL_SUBJECT
 private const val DEFAULT_BODY = SettingsStore.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
-    private val emailProgressStore: EmailProgressStore,
+    private val emailProgressRepository: EmailProgressRepository,
     private val pdfConversionProgressRepository: PdfConversionProgressRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private var sendJob: Job? = null
-    val uiState: StateFlow<EmailProgressUiState> = emailProgressStore.state
+    val uiState: StateFlow<EmailProgressUiState> = emailProgressRepository.state
         .map { state ->
             val total = state.total.coerceAtLeast(0)
             val current = state.current.coerceAtLeast(0)
@@ -55,7 +56,7 @@ class EmailSenderViewModel(
 
     fun startSendingIfIdle() {
         if (sendJob?.isActive == true) return
-        val snapshot = emailProgressStore.state.value
+        val snapshot = emailProgressRepository.state.value
         if (snapshot.inProgress) return
         sendJob = viewModelScope.launch {
             try {
@@ -67,7 +68,7 @@ class EmailSenderViewModel(
     }
 
     fun cancelSending() {
-        emailProgressStore.requestCancel()
+        emailProgressRepository.requestCancel()
         sendJob?.cancel()
     }
 
@@ -76,22 +77,22 @@ class EmailSenderViewModel(
         val smtpState = settingsState.smtp
         val settings = smtpState.toSmtpSettings()
         if (settings == null || !smtpState.isAuthenticated) {
-            emailProgressStore.fail("SMTP authentication is required.")
+            emailProgressRepository.fail("SMTP authentication is required.")
             return
         }
 
         val conversionState = pdfConversionProgressRepository.state.value
         val docIdStart = conversionState.docIdStart
         if (docIdStart == null) {
-            emailProgressStore.fail("Document ID start is missing.")
+            emailProgressRepository.fail("Document ID start is missing.")
             return
         }
         if (conversionState.outputDir.isBlank()) {
-            emailProgressStore.fail("Output folder is missing.")
+            emailProgressRepository.fail("Output folder is missing.")
             return
         }
         if (conversionState.entries.isEmpty()) {
-            emailProgressStore.fail("No entries to send.")
+            emailProgressRepository.fail("No entries to send.")
             return
         }
 
@@ -111,11 +112,11 @@ class EmailSenderViewModel(
                 htmlBody,
             )
             if (requests.isEmpty()) {
-                emailProgressStore.fail("No emails to send.")
+                emailProgressRepository.fail("No emails to send.")
                 return
             }
 
-            emailProgressStore.start(requests.size)
+            emailProgressRepository.start(requests.size)
             val context = currentCoroutineContext()
             withContext(Dispatchers.IO) {
                 SmtpClient.sendBatch(
@@ -123,22 +124,22 @@ class EmailSenderViewModel(
                     requests = requests,
                     onSending = { request ->
                         val recipient = "${request.toName} <${request.toEmail}>"
-                        emailProgressStore.setCurrentRecipient(recipient)
+                        emailProgressRepository.setCurrentRecipient(recipient)
                     },
-                    onProgress = { emailProgressStore.update(it) },
+                    onProgress = { emailProgressRepository.update(it) },
                     isCancelRequested = {
-                        !context.isActive || emailProgressStore.isCancelRequested()
+                        !context.isActive || emailProgressRepository.isCancelRequested()
                     },
                 )
             }
             currentCoroutineContext().ensureActive()
-            if (!emailProgressStore.isCancelRequested()) {
-                emailProgressStore.finish()
+            if (!emailProgressRepository.isCancelRequested()) {
+                emailProgressRepository.finish()
             }
         } catch (e: CancellationException) {
-            emailProgressStore.requestCancel()
+            emailProgressRepository.requestCancel()
         } catch (e: Exception) {
-            emailProgressStore.fail(e.message ?: "Failed to send emails.")
+            emailProgressRepository.fail(e.message ?: "Failed to send emails.")
         }
     }
 
@@ -179,7 +180,7 @@ class EmailSenderViewModel(
         val trimmedSignature = signatureHtml.trim()
         if (trimmedSignature.isBlank()) return null
         val escapedBody = escapeHtml(body).replace("\n", "<br>")
-        val baseHtml = if (escapedBody.isBlank()) "" else escapedBody + "<br><br>"
+        val baseHtml = if (escapedBody.isBlank()) "" else "$escapedBody<br><br>"
         return baseHtml + trimmedSignature
     }
 

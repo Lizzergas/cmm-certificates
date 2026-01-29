@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.progress.ui
+package com.cmm.certificates.feature.pdfconversion.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform

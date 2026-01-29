@@ -1,9 +1,9 @@
-package com.cmm.certificates.feature.email
+package com.cmm.certificates.feature.emailsending.ui
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
-import com.cmm.certificates.feature.home.ConversionScreenRoute
+import com.cmm.certificates.feature.certificate.ConversionScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic

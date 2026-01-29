@@ -1,9 +1,9 @@
-package com.cmm.certificates.feature.home
+package com.cmm.certificates.feature.certificate
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
-import com.cmm.certificates.feature.progress.ui.ProgressScreenRoute
+import com.cmm.certificates.feature.pdfconversion.ui.ProgressScreenRoute
 import com.cmm.certificates.feature.settings.ui.SettingsScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule

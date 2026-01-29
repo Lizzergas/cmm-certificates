@@ -1,7 +1,7 @@
-package com.cmm.certificates.feature.progress.data
+package com.cmm.certificates.feature.pdfconversion.data
 
 import com.cmm.certificates.data.xlsx.RegistrationEntry
-import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import kotlinx.coroutines.flow.StateFlow
 
 class PdfConversionProgressRepositoryImpl(

@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.home
+package com.cmm.certificates.feature.certificate
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,7 +8,7 @@ import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
-import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath

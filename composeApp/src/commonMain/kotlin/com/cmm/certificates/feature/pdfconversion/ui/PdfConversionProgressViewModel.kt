@@ -1,9 +1,9 @@
-package com.cmm.certificates.feature.progress.ui
+package com.cmm.certificates.feature.pdfconversion.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.network.NetworkService
-import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

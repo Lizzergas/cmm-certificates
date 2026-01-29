@@ -33,8 +33,8 @@ Auth:
 
 ## Email Delivery
 Location:
-- Email progress screen: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/EmailProgressScreen.kt`
-- Email sending logic: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/EmailSenderViewModel.kt`
+- Email progress screen: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/ui/EmailProgressScreen.kt`
+- Email sending logic: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/ui/EmailSenderViewModel.kt`
 - SMTP client interface: `composeApp/src/commonMain/kotlin/com/cmm/certificates/data/email/SmtpClient.kt`
 - JVM implementation: `composeApp/src/jvmMain/kotlin/com/cmm/certificates/data/email/SmtpClient.jvm.kt`
 
@@ -74,10 +74,10 @@ The output directory and `docIdStart` are stored in `ConversionProgressStore` wh
 
 ## UI and Navigation
 - Settings screen entry: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/SettingsEntryProvider.kt`
-- Email progress screen entry: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/EmailEntryProvider.kt`
+- Email progress screen entry: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/email/ui/EmailEntryProvider.kt`
 - Navigation wiring: `composeApp/src/commonMain/kotlin/com/cmm/certificates/Navigator.kt`
 - "Send emails" button enablement:
-  - Located in `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/progress/ProgressScreen.kt`.
+  - Located in `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/progress/ui/PdfConversionProgressScreen.kt`.
   - Enabled only when `SmtpSettingsStore.state.isAuthenticated == true`.
 
 ## Troubleshooting

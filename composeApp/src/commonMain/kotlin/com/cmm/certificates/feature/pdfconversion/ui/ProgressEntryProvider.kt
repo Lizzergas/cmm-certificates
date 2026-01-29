@@ -1,9 +1,9 @@
-package com.cmm.certificates.feature.progress.ui
+package com.cmm.certificates.feature.pdfconversion.ui
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
-import com.cmm.certificates.feature.email.EmailProgressScreenRoute
+import com.cmm.certificates.feature.emailsending.ui.EmailProgressScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
