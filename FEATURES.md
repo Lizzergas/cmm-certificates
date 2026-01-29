@@ -6,8 +6,8 @@
 - Clicking "Convert to PDF" (currently) generates DOCX files in the output folder for each entry.
 
 ## Template Placeholders
-- Templates are plain DOCX files containing placeholders like `{{full_name}}`.
-- Each entry replaces `{{full_name}}` with `name + surname`.
+- Templates are plain DOCX files containing placeholders like `{{vardas_pavarde}}`.
+- Each entry replaces `{{vardas_pavarde}}` with `name + surname`.
 - Output files are written as `entry_{index}.docx`.
 
 ## XLSX Parsing (JVM)
@@ -33,5 +33,5 @@
 
 ## Known Gaps
 - "Convert to PDF" currently outputs DOCX files only.
-- Placeholder coverage is minimal (only `{{full_name}}`).
+- Placeholder coverage is limited to the supported keys (see README).
 - No error banner or progress UI; logging is used for diagnostics.

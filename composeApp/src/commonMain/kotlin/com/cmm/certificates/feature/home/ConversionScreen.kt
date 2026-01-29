@@ -322,22 +322,27 @@ private fun CertificateDetailsSection(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
             )
-            ClearableOutlinedTextField(
-                value = lectorGender,
-                onValueChange = onLectorGenderChange,
-                label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
-            )
-            ClearableOutlinedTextField(
-                value = lector,
-                onValueChange = onLectorChange,
-                label = { Text(stringResource(Res.string.conversion_lector_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
-            )
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                ClearableOutlinedTextField(
+                    value = lectorGender,
+                    onValueChange = onLectorGenderChange,
+                    label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                )
+                ClearableOutlinedTextField(
+                    value = lector,
+                    onValueChange = onLectorChange,
+                    label = { Text(stringResource(Res.string.conversion_lector_label)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
 }

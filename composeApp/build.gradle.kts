@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
-    id("dev.hydraulic.conveyor") version "1.13"
+    alias(libs.plugins.conveyor)
 }
 
 kotlin {
@@ -37,16 +37,16 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            implementation("org.jetbrains.compose.ui:ui-tooling-preview:1.10.0")
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
-            implementation("org.jetbrains.compose.runtime:runtime:1.10.0")
-            implementation("org.jetbrains.compose.foundation:foundation:1.10.0")
-            implementation("org.jetbrains.compose.material3:material3:1.9.0")
-            implementation("org.jetbrains.compose.ui:ui:1.10.0")
-            implementation("org.jetbrains.compose.components:components-resources:1.10.0")
-            implementation("org.jetbrains.compose.ui:ui-tooling-preview:1.10.0")
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.datastore)
@@ -54,7 +54,6 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.compose)
-            implementation(libs.koin.compose.viewmodel)
             implementation(libs.koin.compose.viewmodel)
 
             implementation(libs.jetbrains.navigation3.ui)
@@ -66,7 +65,8 @@ kotlin {
 
             implementation(libs.kotlinx.datetime)
 
-            implementation("com.composables:icons-lucide-cmp:2.2.1")        }
+            implementation(libs.icons.lucide.cmp)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
@@ -110,11 +110,11 @@ android {
 }
 
 dependencies {
-    debugImplementation(compose.uiTooling)
-    linuxAmd64(compose.desktop.linux_x64)
-    macAmd64(compose.desktop.macos_x64)
-    macAarch64(compose.desktop.macos_arm64)
-    windowsAmd64(compose.desktop.windows_x64)
+    debugImplementation(libs.compose.ui.tooling)
+    linuxAmd64(libs.compose.desktop.linux.x64)
+    macAmd64(libs.compose.desktop.macos.x64)
+    macAarch64(libs.compose.desktop.macos.arm64)
+    windowsAmd64(libs.compose.desktop.windows.x64)
 }
 
 compose.desktop {

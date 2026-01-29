@@ -9,14 +9,15 @@
 
 ## Šablono žymės
 DOCX šablone naudokite žymes:
-- `{{full_name}}`
-- `{{date}}`
-- `{{accredited_id}}`
-- `{{doc_id}}`
-- `{{accredited_type}}`
-- `{{accredited_hours}}`
-- `{{certificate_name}}`
-- `{{lector}}`
+- `{{vardas_pavarde}}`
+- `{{data}}`
+- `{{akreditacijos_id}}`
+- `{{dokumento_id}}`
+- `{{akreditacijos_tipas}}`
+- `{{akreditacijos_valandos}}`
+- `{{sertifikato_pavadinimas}}`
+- `{{destytojas}}`
+- `{{destytojo_tipas}}`
 
 ## Nauja eilutė šablone
 Jei norite įterpti naują eilutę lauke:
