@@ -2,6 +2,7 @@ package com.cmm.certificates.feature.progress
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.feature.settings.SmtpSettingsStore
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,20 +15,25 @@ data class PdfConversionProgressUiState(
     val total: Int = 0,
     val progress: Float = 0f,
     val completed: Boolean = false,
+    val errorMessage: String? = null,
     val outputDir: String = "",
     val durationText: String = "0s",
     val currentDocId: Long? = null,
+    val isNetworkAvailable: Boolean = true,
+    val isSmtpAuthenticated: Boolean = false,
     val isSendEmailsEnabled: Boolean = false,
 )
 
 class PdfConversionProgressViewModel(
     private val progressStore: ConversionProgressStore,
     smtpSettingsStore: SmtpSettingsStore,
+    networkService: NetworkService,
 ) : ViewModel() {
     val uiState: StateFlow<PdfConversionProgressUiState> = combine(
         progressStore.state,
         smtpSettingsStore.state,
-    ) { progressState, smtpState ->
+        networkService.isNetworkAvailable,
+    ) { progressState, smtpState, networkAvailable ->
         val total = max(progressState.total, 0)
         val current = progressState.current.coerceAtLeast(0)
         val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
@@ -36,13 +42,16 @@ class PdfConversionProgressViewModel(
             total = total,
             progress = progress,
             completed = progressState.completed,
+            errorMessage = progressState.errorMessage,
             outputDir = progressState.outputDir,
             durationText = formatDuration(
                 progressState.startedAtMillis,
                 progressState.endedAtMillis,
             ),
             currentDocId = progressState.currentDocId,
-            isSendEmailsEnabled = smtpState.isAuthenticated,
+            isNetworkAvailable = networkAvailable,
+            isSmtpAuthenticated = smtpState.isAuthenticated,
+            isSendEmailsEnabled = smtpState.isAuthenticated && networkAvailable,
         )
     }.stateIn(
         viewModelScope,

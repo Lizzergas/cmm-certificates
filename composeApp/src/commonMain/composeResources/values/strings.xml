@@ -59,6 +59,8 @@
     <string name="progress_send_emails">Send emails</string>
     <string name="progress_send_emails_hint">Authenticate SMTP in Settings to send emails</string>
     <string name="progress_current_doc_label">Generating PDF: %d</string>
+    <string name="progress_error_title">Conversion failed</string>
+    <string name="network_unavailable_message">No network connection</string>
     <string name="email_progress_title">Sending emails...</string>
     <string name="email_progress_recipient_label">Sending to: %s</string>
     <string name="email_progress_success_title">%d emails sent\nsuccessfully</string>

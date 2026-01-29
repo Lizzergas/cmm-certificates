@@ -39,6 +39,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
 import certificates.composeapp.generated.resources.progress_current_doc_label
+import certificates.composeapp.generated.resources.progress_error_title
 import certificates.composeapp.generated.resources.progress_open_folder
 import certificates.composeapp.generated.resources.progress_output_label
 import certificates.composeapp.generated.resources.progress_send_emails
@@ -46,7 +47,10 @@ import certificates.composeapp.generated.resources.progress_send_emails_hint
 import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
+import certificates.composeapp.generated.resources.network_unavailable_message
+import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
+import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.openFolder
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -71,6 +75,7 @@ fun PdfConversionProgressScreen(
                 isCompleted = uiState.completed,
                 outputDir = uiState.outputDir,
                 isSendEmailsEnabled = uiState.isSendEmailsEnabled,
+                isSmtpAuthenticated = uiState.isSmtpAuthenticated,
                 onSendEmails = onSendEmails,
                 onConvertAnother = onConvertAnother,
                 onCancel = {
@@ -98,28 +103,48 @@ fun PdfConversionProgressScreen(
                         )
             },
         ) { completed ->
-            if (completed) {
-                SuccessContent(
-                    modifier = Modifier.fillMaxSize(),
-                    total = uiState.total,
-                    outputDir = uiState.outputDir,
-                    durationText = uiState.durationText,
-                )
-            } else {
-                val infoText = uiState.currentDocId?.let {
-                    stringResource(Res.string.progress_current_doc_label).replace(
-                        "%d",
-                        it.toString()
+            when {
+                uiState.errorMessage != null -> {
+                    val resolvedMessage = if (uiState.errorMessage == NETWORK_UNAVAILABLE_MESSAGE) {
+                        stringResource(Res.string.network_unavailable_message)
+                    } else {
+                        uiState.errorMessage.orEmpty()
+                    }
+                    ProgressErrorContent(
+                        modifier = Modifier.fillMaxSize(),
+                        title = stringResource(Res.string.progress_error_title),
+                        message = resolvedMessage,
                     )
                 }
-                ProgressIndicatorContent(
-                    modifier = Modifier.fillMaxSize(),
-                    current = uiState.current,
-                    total = uiState.total,
-                    progress = uiState.progress,
-                    title = stringResource(Res.string.progress_title),
-                    infoText = infoText,
-                )
+
+                completed -> {
+                    SuccessContent(
+                        modifier = Modifier.fillMaxSize(),
+                        total = uiState.total,
+                        outputDir = uiState.outputDir,
+                        durationText = uiState.durationText,
+                        warningMessage = if (!uiState.isNetworkAvailable) {
+                            stringResource(Res.string.network_unavailable_message)
+                        } else null,
+                    )
+                }
+
+                else -> {
+                    val infoText = uiState.currentDocId?.let {
+                        stringResource(Res.string.progress_current_doc_label).replace(
+                            "%d",
+                            it.toString()
+                        )
+                    }
+                    ProgressIndicatorContent(
+                        modifier = Modifier.fillMaxSize(),
+                        current = uiState.current,
+                        total = uiState.total,
+                        progress = uiState.progress,
+                        title = stringResource(Res.string.progress_title),
+                        infoText = infoText,
+                    )
+                }
             }
         }
     }
@@ -130,6 +155,7 @@ private fun ProgressBottomBar(
     isCompleted: Boolean,
     outputDir: String,
     isSendEmailsEnabled: Boolean,
+    isSmtpAuthenticated: Boolean,
     onSendEmails: () -> Unit,
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
@@ -153,7 +179,7 @@ private fun ProgressBottomBar(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (!isSendEmailsEnabled) {
+                    if (!isSmtpAuthenticated) {
                         Text(
                             text = stringResource(Res.string.progress_send_emails_hint),
                             style = MaterialTheme.typography.labelSmall,
@@ -232,6 +258,7 @@ private fun SuccessContent(
     total: Int,
     outputDir: String,
     durationText: String,
+    warningMessage: String?,
 ) {
     val successTitle = stringResource(Res.string.progress_success_title)
         .replace("%d", total.toString())
@@ -268,6 +295,15 @@ private fun SuccessContent(
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
+        if (!warningMessage.isNullOrBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = warningMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(modifier = Modifier.height(20.dp))
         Surface(
             modifier = Modifier.fillMaxWidth(),

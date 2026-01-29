@@ -59,6 +59,8 @@
     <string name="progress_send_emails">Siųsti el. laiškus</string>
     <string name="progress_send_emails_hint">Autentifikuokite SMTP nustatymuose, kad galėtumėte siųsti</string>
     <string name="progress_current_doc_label">Generuojamas PDF: %d</string>
+    <string name="progress_error_title">Konvertuoti nepavyko</string>
+    <string name="network_unavailable_message">Nėra interneto ryšio</string>
     <string name="email_progress_title">Siunčiami el. laiškai...</string>
     <string name="email_progress_recipient_label">Siunčiama: %s</string>
     <string name="email_progress_success_title">Išsiųsta %d el. laiškų\nsėkmingai</string>

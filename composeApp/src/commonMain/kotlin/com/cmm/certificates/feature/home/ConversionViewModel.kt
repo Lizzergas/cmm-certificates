@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.data.docx.DocxTemplate
 import com.cmm.certificates.data.email.SmtpSettingsRepository
+import com.cmm.certificates.data.network.NetworkService
+import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.feature.progress.ConversionProgressStore
@@ -25,11 +27,17 @@ private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
 class ConversionViewModel(
     private val progressStore: ConversionProgressStore,
     private val smtpSettingsStore: SmtpSettingsStore,
+    private val networkService: NetworkService,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ConversionUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            networkService.isNetworkAvailable.collect { available ->
+                updateNetworkAvailability(available)
+            }
+        }
         viewModelScope.launch {
             smtpSettingsStore.state.collect { settings ->
                 val parsedOptions = parseAccreditedTypeOptions(settings.accreditedTypeOptions)
@@ -107,6 +115,13 @@ class ConversionViewModel(
     }
 
     suspend fun generateDocuments() {
+        networkService.refresh()
+        if (!networkService.isNetworkAvailable.value) {
+            updateNetworkAvailability(false)
+            _uiState.update { it.copy(parseError = NETWORK_UNAVAILABLE_MESSAGE) }
+            progressStore.fail(NETWORK_UNAVAILABLE_MESSAGE)
+            return
+        }
         val snapshot = _uiState.value
         if (snapshot.templatePath.isBlank()) {
             println("Template path is blank; cannot generate documents.")
@@ -206,6 +221,15 @@ class ConversionViewModel(
             }
         }
     }
+
+    private fun updateNetworkAvailability(available: Boolean) {
+        _uiState.update { current ->
+            current.copy(
+                isNetworkAvailable = available,
+                parseError = if (available && current.parseError == NETWORK_UNAVAILABLE_MESSAGE) null else current.parseError,
+            )
+        }
+    }
 }
 
 private fun sanitizeFolderName(rawName: String): String {
@@ -230,6 +254,7 @@ data class ConversionUiState(
     val certificateName: String = "",
     val lector: String = "",
     val lectorGender: String = "Lektorius:",
+    val isNetworkAvailable: Boolean = true,
     val entries: List<RegistrationEntry> = emptyList(),
     val parseError: String? = null,
 ) {
@@ -241,6 +266,7 @@ data class ConversionUiState(
                 accreditedHours.isNotBlank() &&
                 certificateName.isNotBlank() &&
                 lector.isNotBlank() &&
+                isNetworkAvailable &&
                 entries.isNotEmpty()
 }
 

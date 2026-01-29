@@ -42,6 +42,7 @@ import certificates.composeapp.generated.resources.email_progress_finish
 import certificates.composeapp.generated.resources.email_progress_recipient_label
 import certificates.composeapp.generated.resources.email_progress_success_title
 import certificates.composeapp.generated.resources.email_progress_title
+import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -101,8 +102,9 @@ fun EmailProgressScreen(
         ) { completed ->
             when {
                 progressState.errorMessage != null -> {
-                    EmailErrorContent(
+                    ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
+                        title = stringResource(Res.string.email_progress_error_title),
                         message = progressState.errorMessage.orEmpty(),
                     )
                 }
@@ -226,33 +228,6 @@ private fun EmailSuccessContent(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun EmailErrorContent(
-    modifier: Modifier,
-    message: String,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = stringResource(Res.string.email_progress_error_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
     }

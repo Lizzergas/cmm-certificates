@@ -2,6 +2,7 @@ package com.cmm.certificates.feature.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenuItem
@@ -59,6 +62,7 @@ import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
+import certificates.composeapp.generated.resources.network_unavailable_message
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.FileIcon
 import com.cmm.certificates.core.ui.PrimaryActionButton
@@ -81,6 +85,7 @@ fun ConversionScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     val backgroundColor = Color(0xFFF8FAFC)
 
@@ -90,6 +95,7 @@ fun ConversionScreen(
             bottomBar = {
                 ConversionBottomBar(
                     state.isConversionEnabled,
+                    state.isNetworkAvailable,
                     onConversionClick = {
                         onStartConversion()
                         scope.launch { viewModel.generateDocuments() }
@@ -120,8 +126,8 @@ fun ConversionScreen(
                         .fillMaxWidth()
                         .widthIn(max = 480.dp)
                         .align(Alignment.TopCenter)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .verticalScroll(scrollState)
+                        .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     Row(
@@ -202,6 +208,13 @@ fun ConversionScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
                 }
+                VerticalScrollbar(
+                    adapter = rememberScrollbarAdapter(scrollState),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(end = 4.dp),
+                )
             }
         }
     }
@@ -350,6 +363,7 @@ private fun CertificateDetailsSection(
 @Composable
 private fun ConversionBottomBar(
     isConversionEnabled: Boolean,
+    isNetworkAvailable: Boolean,
     onConversionClick: () -> Unit,
 ) {
     Surface(
@@ -367,11 +381,21 @@ private fun ConversionBottomBar(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (!isConversionEnabled) {
+                if (!isNetworkAvailable || !isConversionEnabled) {
+                    val hintText = if (!isNetworkAvailable) {
+                        stringResource(Res.string.network_unavailable_message)
+                    } else {
+                        stringResource(Res.string.conversion_validation_hint)
+                    }
+                    val hintColor = if (!isNetworkAvailable) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                     Text(
-                        text = stringResource(Res.string.conversion_validation_hint),
+                        text = hintText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = hintColor,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(

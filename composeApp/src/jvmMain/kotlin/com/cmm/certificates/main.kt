@@ -8,11 +8,13 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import io.github.vinceglb.filekit.FileKit
+import io.sentry.Sentry
 import java.nio.file.Paths
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 
 fun main() {
+    initializeSentry()
     FileKit.init(appId = "com.cmm.certificates")
     val version = System.getProperty("app.version") ?: "Development"
     application {
@@ -36,5 +38,13 @@ fun main() {
         ) {
             App()
         }
+    }
+}
+
+fun captureError() {
+    try {
+        throw Exception("This is a test.")
+    } catch (e: Exception) {
+        Sentry.captureException(e)
     }
 }
