@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -51,6 +52,8 @@ private const val FADE_IN_DURATION_MS = 420
 private const val FADE_OUT_DURATION_MS = 300
 private const val SIZE_ANIMATION_DURATION_MS = 360
 
+private enum class EmailMode { Running, Success, Error }
+
 @Composable
 fun EmailProgressScreen(
     onFinish: () -> Unit,
@@ -58,13 +61,18 @@ fun EmailProgressScreen(
     viewModel: EmailSenderViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val mode = when {
+        uiState.errorMessage != null -> EmailMode.Error
+        uiState.completed -> EmailMode.Success
+        else -> EmailMode.Running
+    }
 
     LaunchedEffect(Unit) {
         viewModel.startSendingIfIdle()
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             EmailProgressBottomBar(
                 isInProgress = uiState.inProgress,
@@ -82,7 +90,7 @@ fun EmailProgressScreen(
             .safeContentPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
         AnimatedContent(
-            targetState = uiState.completed,
+            targetState = mode,
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
             transitionSpec = {
@@ -93,9 +101,9 @@ fun EmailProgressScreen(
                             sizeAnimationSpec = { _, _ -> tween(durationMillis = SIZE_ANIMATION_DURATION_MS) },
                         )
             },
-        ) { completed ->
-            when {
-                uiState.errorMessage != null -> {
+        ) { mode ->
+            when (mode) {
+                EmailMode.Error -> {
                     ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
                         title = stringResource(Res.string.email_progress_error_title),
@@ -103,14 +111,14 @@ fun EmailProgressScreen(
                     )
                 }
 
-                completed -> {
+                EmailMode.Success -> {
                     EmailSuccessContent(
                         modifier = Modifier.fillMaxSize(),
                         total = uiState.total,
                     )
                 }
 
-                else -> {
+                EmailMode.Running -> {
                     val infoText = uiState.currentRecipient?.let {
                         stringResource(Res.string.email_progress_recipient_label, it)
                     }.orEmpty()
@@ -134,13 +142,11 @@ private fun EmailProgressBottomBar(
     onFinish: () -> Unit,
     onCancel: () -> Unit,
 ) {
-    val bottomBarHeight = 128.dp
     Surface(
-        modifier = Modifier.height(bottomBarHeight),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp,
         shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Box(
             modifier = Modifier
@@ -163,12 +169,12 @@ private fun EmailProgressBottomBar(
                     Text(text = stringResource(Res.string.email_progress_cancel))
                 }
             } else {
-                androidx.compose.material3.Button(
+                Button(
                     onClick = onFinish,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2563EB),
-                        contentColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         disabledContainerColor = Color(0xFFE2E8F0),
                         disabledContentColor = Color(0xFF94A3B8),
                     ),
@@ -198,20 +204,20 @@ private fun EmailSuccessContent(
         Box(
             modifier = Modifier
                 .size(128.dp)
-                .background(Color(0x332563EB), CircleShape),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
                     .size(96.dp)
-                    .background(Color(0x1A2563EB), CircleShape),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "OK",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2563EB),
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

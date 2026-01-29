@@ -2,6 +2,7 @@ package com.cmm.certificates.feature.pdfconversion.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
@@ -24,6 +25,7 @@ class PdfConversionProgressViewModel(
         val total = max(progressState.total, 0)
         val current = progressState.current.coerceAtLeast(0)
         val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
+        val isNetworkError = progressState.errorMessage == NETWORK_UNAVAILABLE_MESSAGE
         PdfConversionProgressUiState(
             current = current,
             total = total,
@@ -37,6 +39,7 @@ class PdfConversionProgressViewModel(
             ),
             currentDocId = progressState.currentDocId,
             isNetworkAvailable = networkAvailable,
+            isNetworkError = isNetworkError,
             isSmtpAuthenticated = settingsState.smtp.isAuthenticated,
             isSendEmailsEnabled = settingsState.smtp.isAuthenticated && networkAvailable,
         )
@@ -61,6 +64,7 @@ data class PdfConversionProgressUiState(
     val durationText: String = "0s",
     val currentDocId: Long? = null,
     val isNetworkAvailable: Boolean = true,
+    val isNetworkError: Boolean = false,
     val isSmtpAuthenticated: Boolean = false,
     val isSendEmailsEnabled: Boolean = false,
 )

@@ -70,21 +70,19 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-private object Ui {
-    val bg = Color(0xFFF8FAFC)
-    val card = Color.White
-    val border = Color(0xFFE2E8F0)
-    val primary = Color(0xFF2563EB)
-    val success = Color(0xFF16A34A)
-    val disabledBg = Color(0xFFE2E8F0)
-    val disabledFg = Color(0xFF94A3B8)
+private val BackgroundColor = Color(0xFFF8FAFC)
+private val CardColor = Color.White
+private val BorderColor = Color(0xFFE2E8F0)
+private val PrimaryColor = Color(0xFF2563EB)
+private val SuccessColor = Color(0xFF16A34A)
+private val DisabledBackground = Color(0xFFE2E8F0)
+private val DisabledForeground = Color(0xFF94A3B8)
 
-    val maxWidth = 480.dp
-    val padH = 16.dp
-    val padV = 12.dp
-    val cardPad = 16.dp
-    val cardGap = 12.dp
-}
+private val MaxWidth = 480.dp
+private val PaddingHorizontal = 16.dp
+private val PaddingVertical = 12.dp
+private val CardPadding = 16.dp
+private val CardGap = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +93,7 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        containerColor = Ui.bg,
+        containerColor = BackgroundColor,
         topBar = {
             SettingsTopBar(
                 title = Res.string.settings_title,
@@ -120,7 +118,7 @@ fun SettingsScreen(
                 .padding(padding)
                 .safeContentPadding()
                 .fillMaxSize()
-                .padding(horizontal = Ui.padH, vertical = Ui.padV),
+                .padding(horizontal = PaddingHorizontal, vertical = PaddingVertical),
             contentAlignment = Alignment.TopCenter,
         ) {
             SettingsContent(
@@ -149,7 +147,7 @@ private fun BoxScope.SettingsContent(
         modifier = Modifier
             .verticalScroll(scrollState)
             .fillMaxWidth()
-            .widthIn(max = Ui.maxWidth),
+            .widthIn(max = MaxWidth),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         SettingsCard(title = Res.string.settings_section_title) {
@@ -278,15 +276,15 @@ private fun SettingsBottomBar(
     canAuthenticate: Boolean,
 ) {
     Surface(
-        color = Ui.card,
+        color = CardColor,
         tonalElevation = 6.dp,
         shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, Ui.border),
+        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Ui.cardPad),
+                .padding(CardPadding),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
@@ -307,10 +305,10 @@ private fun SettingsBottomBar(
                 enabled = canAuthenticate,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Ui.primary,
+                    containerColor = PrimaryColor,
                     contentColor = Color.White,
-                    disabledContainerColor = Ui.disabledBg,
-                    disabledContentColor = Ui.disabledFg,
+                    disabledContainerColor = DisabledBackground,
+                    disabledContentColor = DisabledForeground,
                 ),
             ) {
                 Text(
@@ -330,16 +328,16 @@ private fun SettingsCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Ui.card,
+        color = CardColor,
         shape = MaterialTheme.shapes.extraLarge,
-        border = BorderStroke(1.dp, Ui.border),
+        border = BorderStroke(1.dp, BorderColor),
         tonalElevation = 2.dp,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Ui.cardPad),
-            verticalArrangement = Arrangement.spacedBy(Ui.cardGap),
+                .padding(CardPadding),
+            verticalArrangement = Arrangement.spacedBy(CardGap),
         ) {
             Text(
                 text = stringResource(title),
@@ -367,7 +365,7 @@ private fun StatusLines(
         Text(
             text = stringResource(Res.string.settings_authenticated),
             style = MaterialTheme.typography.labelSmall,
-            color = Ui.success,
+            color = SuccessColor,
         )
     }
 }

@@ -16,6 +16,7 @@ data class PdfConversionProgressState(
     val docIdStart: Long? = null,
     val entries: List<RegistrationEntry> = emptyList(),
     val currentDocId: Long? = null,
+    val cancelRequested: Boolean = false,
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
@@ -23,7 +24,6 @@ data class PdfConversionProgressState(
 class PdfConversionProgressStore {
     private val _state = MutableStateFlow(PdfConversionProgressState())
     val state: StateFlow<PdfConversionProgressState> = _state
-    private val cancelRequested = MutableStateFlow(false)
 
     fun start(
         total: Int,
@@ -31,7 +31,6 @@ class PdfConversionProgressStore {
         docIdStart: Long,
         entries: List<RegistrationEntry>,
     ) {
-        cancelRequested.value = false
         _state.value = PdfConversionProgressState(
             current = 0,
             total = total,
@@ -39,6 +38,7 @@ class PdfConversionProgressStore {
             outputDir = outputDir,
             docIdStart = docIdStart,
             entries = entries,
+            cancelRequested = false,
             startedAtMillis = nowMillis(),
         )
     }
@@ -80,20 +80,19 @@ class PdfConversionProgressStore {
     }
 
     fun requestCancel() {
-        cancelRequested.value = true
         _state.update {
             it.copy(
                 inProgress = false,
                 currentDocId = null,
+                cancelRequested = true,
                 endedAtMillis = nowMillis(),
             )
         }
     }
 
-    fun isCancelRequested(): Boolean = cancelRequested.value
+    fun isCancelRequested(): Boolean = _state.value.cancelRequested
 
     fun clear() {
-        cancelRequested.value = false
         _state.value = PdfConversionProgressState()
     }
 

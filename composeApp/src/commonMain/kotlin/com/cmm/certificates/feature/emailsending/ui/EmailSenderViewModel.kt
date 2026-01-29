@@ -7,7 +7,6 @@ import com.cmm.certificates.data.email.SmtpClient
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
-import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.CancellationException
@@ -23,9 +22,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-private const val DEFAULT_SUBJECT = SettingsStore.DEFAULT_EMAIL_SUBJECT
-private const val DEFAULT_BODY = SettingsStore.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
     private val emailProgressRepository: EmailProgressRepository,
@@ -58,6 +54,9 @@ class EmailSenderViewModel(
         if (sendJob?.isActive == true) return
         val snapshot = emailProgressRepository.state.value
         if (snapshot.inProgress) return
+        if (snapshot.completed || snapshot.errorMessage != null) {
+            emailProgressRepository.clear()
+        }
         sendJob = viewModelScope.launch {
             try {
                 sendEmails()
@@ -97,12 +96,21 @@ class EmailSenderViewModel(
         }
 
         try {
-            val subject = settingsState.email.subject.ifBlank { DEFAULT_SUBJECT }
-            val body = settingsState.email.body.ifBlank { DEFAULT_BODY }
+            val subject = settingsState.email.subject
+            val body = settingsState.email.body
             val htmlBody = buildHtmlBody(
                 body = body,
                 signatureHtml = settingsState.email.signatureHtml,
             )
+            val missingEmailIndexes = conversionState.entries.mapIndexedNotNull { index, entry ->
+                if (entry.primaryEmail.isBlank()) index + 1 else null
+            }
+            if (missingEmailIndexes.isNotEmpty()) {
+                val preview = missingEmailIndexes.take(3).joinToString(", ")
+                val suffix = if (missingEmailIndexes.size > 3) "..." else ""
+                emailProgressRepository.fail("Missing email address for entries: $preview$suffix")
+                return
+            }
             val requests = buildRequests(
                 conversionState.entries,
                 docIdStart,
@@ -117,7 +125,7 @@ class EmailSenderViewModel(
             }
 
             emailProgressRepository.start(requests.size)
-            val context = currentCoroutineContext()
+            val parentContext = currentCoroutineContext()
             withContext(Dispatchers.IO) {
                 SmtpClient.sendBatch(
                     settings = settings,
@@ -128,7 +136,7 @@ class EmailSenderViewModel(
                     },
                     onProgress = { emailProgressRepository.update(it) },
                     isCancelRequested = {
-                        !context.isActive || emailProgressRepository.isCancelRequested()
+                        !parentContext.isActive || emailProgressRepository.isCancelRequested()
                     },
                 )
             }
@@ -153,9 +161,6 @@ class EmailSenderViewModel(
     ): List<EmailSendRequest> {
         return entries.mapIndexed { index, entry ->
             val email = entry.primaryEmail.trim()
-            if (email.isBlank()) {
-                throw IllegalStateException("Missing email address for entry ${index + 1}.")
-            }
             val fullName = listOf(entry.name, entry.surname)
                 .filter { it.isNotBlank() }
                 .joinToString(" ")
@@ -179,7 +184,10 @@ class EmailSenderViewModel(
     ): String? {
         val trimmedSignature = signatureHtml.trim()
         if (trimmedSignature.isBlank()) return null
-        val escapedBody = escapeHtml(body).replace("\n", "<br>")
+        val escapedBody = escapeHtml(body)
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "<br>")
         val baseHtml = if (escapedBody.isBlank()) "" else "$escapedBody<br><br>"
         return baseHtml + trimmedSignature
     }

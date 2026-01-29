@@ -12,6 +12,7 @@ data class EmailProgressState(
     val completed: Boolean = false,
     val errorMessage: String? = null,
     val currentRecipient: String? = null,
+    val cancelRequested: Boolean = false,
     val startedAtMillis: Long? = null,
     val endedAtMillis: Long? = null,
 )
@@ -19,15 +20,14 @@ data class EmailProgressState(
 class EmailProgressStore {
     private val _state = MutableStateFlow(EmailProgressState())
     val state: StateFlow<EmailProgressState> = _state
-    private val cancelRequested = MutableStateFlow(false)
 
     fun start(total: Int) {
-        cancelRequested.value = false
         _state.value = EmailProgressState(
             current = 0,
             total = total,
             inProgress = true,
             currentRecipient = null,
+            cancelRequested = false,
             startedAtMillis = nowMillis(),
         )
     }
@@ -64,20 +64,19 @@ class EmailProgressStore {
     }
 
     fun requestCancel() {
-        cancelRequested.value = true
         _state.update {
             it.copy(
                 inProgress = false,
                 currentRecipient = null,
+                cancelRequested = true,
                 endedAtMillis = nowMillis(),
             )
         }
     }
 
-    fun isCancelRequested(): Boolean = cancelRequested.value
+    fun isCancelRequested(): Boolean = _state.value.cancelRequested
 
     fun clear() {
-        cancelRequested.value = false
         _state.value = EmailProgressState()
     }
 

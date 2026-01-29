@@ -64,8 +64,8 @@ import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
 import certificates.composeapp.generated.resources.network_unavailable_message
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
-import com.cmm.certificates.core.ui.SelectFileIcon
 import com.cmm.certificates.core.ui.PrimaryActionButton
+import com.cmm.certificates.core.ui.SelectFileIcon
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -87,135 +87,133 @@ fun ConversionScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    val backgroundColor = Color(0xFFF8FAFC)
+    val backgroundColor = MaterialTheme.colorScheme.background
 
-    MaterialTheme {
-        Scaffold(
-            containerColor = backgroundColor,
-            bottomBar = {
-                ConversionBottomBar(
-                    state.isConversionEnabled,
-                    state.isNetworkAvailable,
-                    onConversionClick = {
-                        onStartConversion()
-                        scope.launch { viewModel.generateDocuments() }
-                    }
-                )
-            },
-        ) { padding ->
-            BoxWithConstraints(
+    Scaffold(
+        containerColor = backgroundColor,
+        bottomBar = {
+            ConversionBottomBar(
+                state.isConversionEnabled,
+                state.isNetworkAvailable,
+                onConversionClick = {
+                    onStartConversion()
+                    scope.launch { viewModel.generateDocuments() }
+                }
+            )
+        },
+    ) { padding ->
+        BoxWithConstraints(
+            modifier = Modifier
+                .padding(padding)
+                .safeContentPadding()
+                .fillMaxSize(),
+        ) {
+            val hasXlsx = state.xlsxPath.isNotBlank()
+            val hasTemplate = state.templatePath.isNotBlank()
+            val xlsxTooltip = buildPathTooltip(
+                Res.string.conversion_tooltip_xlsx,
+                state.xlsxPath,
+            )
+
+            val docxTooltip = buildPathTooltip(
+                Res.string.conversion_tooltip_docx,
+                state.templatePath,
+            )
+
+            Column(
                 modifier = Modifier
-                    .padding(padding)
-                    .safeContentPadding()
-                    .fillMaxSize(),
+                    .fillMaxWidth()
+                    .widthIn(max = 480.dp)
+                    .align(Alignment.TopCenter)
+                    .verticalScroll(scrollState)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                val hasXlsx = state.xlsxPath.isNotBlank()
-                val hasTemplate = state.templatePath.isNotBlank()
-                val xlsxTooltip = buildPathTooltip(
-                    Res.string.conversion_tooltip_xlsx,
-                    state.xlsxPath,
-                )
-
-                val docxTooltip = buildPathTooltip(
-                    Res.string.conversion_tooltip_docx,
-                    state.templatePath,
-                )
-
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .widthIn(max = 480.dp)
-                        .align(Alignment.TopCenter)
-                        .verticalScroll(scrollState)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                        .clickable(onClick = onProfileClick),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onProfileClick),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Image(
-                            painter = painterResource(Res.drawable.cmm_logo),
-                            contentDescription = null,
-                            modifier = Modifier.size(120.dp),
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(Res.string.conversion_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        SelectFileIcon(
-                            iconText = "XLSX",
-                            selected = hasXlsx,
-                            tooltipText = xlsxTooltip,
-                            onClick = {
-                                scope.launch {
-                                    val file = FileKit.openFilePicker(
-                                        mode = FileKitMode.Single,
-                                        type = FileKitType.File(listOf("xlsx")),
-                                    )
-                                    viewModel.selectXlsx(file?.toString().orEmpty())
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                        SelectFileIcon(
-                            iconText = "DOCX",
-                            selected = hasTemplate,
-                            tooltipText = docxTooltip,
-                            onClick = {
-                                scope.launch {
-                                    val file = FileKit.openFilePicker(
-                                        mode = FileKitMode.Single,
-                                        type = FileKitType.File(listOf("docx")),
-                                    )
-                                    viewModel.setTemplatePath(file?.toString().orEmpty())
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-
-                    CertificateDetailsSection(
-                        accreditedId = state.accreditedId,
-                        docIdStart = state.docIdStart,
-                        accreditedType = state.accreditedType,
-                        accreditedTypeOptions = state.accreditedTypeOptions,
-                        accreditedHours = state.accreditedHours,
-                        certificateName = state.certificateName,
-                        lector = state.lector,
-                        lectorGender = state.lectorGender,
-                        onAccreditedIdChange = viewModel::setAccreditedId,
-                        onDocIdStartChange = viewModel::setDocIdStart,
-                        onAccreditedTypeChange = viewModel::setAccreditedType,
-                        onAccreditedHoursChange = viewModel::setAccreditedHours,
-                        onCertificateNameChange = viewModel::setCertificateName,
-                        onLectorChange = viewModel::setLector,
-                        onLectorGenderChange = viewModel::setLectorGender,
+                    Image(
+                        painter = painterResource(Res.drawable.cmm_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp),
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(Res.string.conversion_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
                 }
-                VerticalScrollbar(
-                    adapter = rememberScrollbarAdapter(scrollState),
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .padding(end = 4.dp),
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    SelectFileIcon(
+                        iconText = "XLSX",
+                        selected = hasXlsx,
+                        tooltipText = xlsxTooltip,
+                        onClick = {
+                            scope.launch {
+                                val file = FileKit.openFilePicker(
+                                    mode = FileKitMode.Single,
+                                    type = FileKitType.File(listOf("xlsx")),
+                                )
+                                viewModel.selectXlsx(file?.toString().orEmpty())
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    SelectFileIcon(
+                        iconText = "DOCX",
+                        selected = hasTemplate,
+                        tooltipText = docxTooltip,
+                        onClick = {
+                            scope.launch {
+                                val file = FileKit.openFilePicker(
+                                    mode = FileKitMode.Single,
+                                    type = FileKitType.File(listOf("docx")),
+                                )
+                                viewModel.setTemplatePath(file?.toString().orEmpty())
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                CertificateDetailsSection(
+                    accreditedId = state.accreditedId,
+                    docIdStart = state.docIdStart,
+                    accreditedType = state.accreditedType,
+                    accreditedTypeOptions = state.accreditedTypeOptions,
+                    accreditedHours = state.accreditedHours,
+                    certificateName = state.certificateName,
+                    lector = state.lector,
+                    lectorGender = state.lectorGender,
+                    onAccreditedIdChange = viewModel::setAccreditedId,
+                    onDocIdStartChange = viewModel::setDocIdStart,
+                    onAccreditedTypeChange = viewModel::setAccreditedType,
+                    onAccreditedHoursChange = viewModel::setAccreditedHours,
+                    onCertificateNameChange = viewModel::setCertificateName,
+                    onLectorChange = viewModel::setLector,
+                    onLectorGenderChange = viewModel::setLectorGender,
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
+            VerticalScrollbar(
+                adapter = rememberScrollbarAdapter(scrollState),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .padding(end = 4.dp),
+            )
         }
     }
 }

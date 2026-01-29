@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -51,7 +52,6 @@ import certificates.composeapp.generated.resources.progress_title
 import com.cmm.certificates.core.openFolder
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
-import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -76,7 +76,7 @@ fun PdfConversionProgressScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8FAFC),
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             ProgressBottomBar(
                 isCompleted = uiState.completed,
@@ -138,7 +138,7 @@ fun PdfConversionProgressScreen(
                 }
 
                 ProgressMode.Error -> {
-                    val resolvedMessage = if (uiState.errorMessage == NETWORK_UNAVAILABLE_MESSAGE) {
+                    val resolvedMessage = if (uiState.isNetworkError) {
                         stringResource(Res.string.network_unavailable_message)
                     } else {
                         uiState.errorMessage.orEmpty()
@@ -164,13 +164,11 @@ private fun ProgressBottomBar(
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
 ) {
-    val bottomBarHeight = 200.dp
     Surface(
-        modifier = Modifier.height(bottomBarHeight),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp,
         shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Box(
             modifier = Modifier
@@ -191,20 +189,20 @@ private fun ProgressBottomBar(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
-                                    Color(0xFFF8FAFC),
+                                    MaterialTheme.colorScheme.surfaceVariant,
                                     MaterialTheme.shapes.small,
                                 )
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                             textAlign = TextAlign.Center,
                         )
                     }
-                    androidx.compose.material3.Button(
+                    Button(
                         onClick = onSendEmails,
                         modifier = Modifier.fillMaxWidth(),
                         enabled = isSendEmailsEnabled,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2563EB),
-                            contentColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                             disabledContainerColor = Color(0xFFE2E8F0),
                             disabledContentColor = Color(0xFF94A3B8),
                         ),
@@ -223,7 +221,7 @@ private fun ProgressBottomBar(
                         ),
                         border = BorderStroke(
                             1.dp,
-                            Color(0xFFE2E8F0),
+                            MaterialTheme.colorScheme.outline,
                         ),
                     ) {
                         Text(text = stringResource(Res.string.progress_open_folder))
@@ -273,20 +271,20 @@ private fun SuccessContent(
         Box(
             modifier = Modifier
                 .size(128.dp)
-                .background(Color(0x332563EB), CircleShape),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
                     .size(96.dp)
-                    .background(Color(0x1A2563EB), CircleShape),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "OK",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2563EB),
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -310,9 +308,9 @@ private fun SuccessContent(
         Spacer(modifier = Modifier.height(20.dp))
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             shape = MaterialTheme.shapes.large,
-            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             tonalElevation = 2.dp,
         ) {
             Column(
@@ -338,7 +336,7 @@ private fun SuccessContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(Color(0xFFE2E8F0)),
+                        .background(MaterialTheme.colorScheme.outline),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
