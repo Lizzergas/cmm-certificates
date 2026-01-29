@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.settings
+package com.cmm.certificates.feature.settings.ui
 
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey

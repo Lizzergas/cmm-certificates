@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
-import com.cmm.certificates.data.email.SmtpSettingsRepository
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.feature.progress.PdfConversionProgressStore
-import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.feature.settings.data.SettingsStore
+import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -23,13 +23,13 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val DEFAULT_SUBJECT = SmtpSettingsRepository.DEFAULT_EMAIL_SUBJECT
-private const val DEFAULT_BODY = SmtpSettingsRepository.DEFAULT_EMAIL_BODY
+private const val DEFAULT_SUBJECT = SettingsStore.DEFAULT_EMAIL_SUBJECT
+private const val DEFAULT_BODY = SettingsStore.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
     private val emailProgressStore: EmailProgressStore,
     private val pdfConversionProgressStore: PdfConversionProgressStore,
-    private val smtpSettingsStore: SmtpSettingsStore,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private var sendJob: Job? = null
     val uiState: StateFlow<EmailProgressUiState> = emailProgressStore.state
@@ -72,8 +72,9 @@ class EmailSenderViewModel(
     }
 
     private suspend fun sendEmails() {
-        val smtpState = smtpSettingsStore.state.value
-        val settings = smtpState.toSettings()
+        val settingsState = settingsRepository.state.value
+        val smtpState = settingsState.smtp
+        val settings = smtpState.toSmtpSettings()
         if (settings == null || !smtpState.isAuthenticated) {
             emailProgressStore.fail("SMTP authentication is required.")
             return
@@ -95,11 +96,11 @@ class EmailSenderViewModel(
         }
 
         try {
-            val subject = smtpState.subject.ifBlank { DEFAULT_SUBJECT }
-            val body = smtpState.body.ifBlank { DEFAULT_BODY }
+            val subject = settingsState.email.subject.ifBlank { DEFAULT_SUBJECT }
+            val body = settingsState.email.body.ifBlank { DEFAULT_BODY }
             val htmlBody = buildHtmlBody(
                 body = body,
-                signatureHtml = smtpState.signatureHtml,
+                signatureHtml = settingsState.email.signatureHtml,
             )
             val requests = buildRequests(
                 conversionState.entries,

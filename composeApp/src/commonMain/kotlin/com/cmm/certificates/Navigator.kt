@@ -15,8 +15,8 @@ import com.cmm.certificates.feature.home.conversionNavSerializerModule
 import com.cmm.certificates.feature.home.featureHomeEntryProvider
 import com.cmm.certificates.feature.progress.featureProgressEntryProvider
 import com.cmm.certificates.feature.progress.progressNavSerializerModule
-import com.cmm.certificates.feature.settings.featureSettingsEntryProvider
-import com.cmm.certificates.feature.settings.settingsNavSerializerModule
+import com.cmm.certificates.feature.settings.ui.featureSettingsEntryProvider
+import com.cmm.certificates.feature.settings.ui.settingsNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 

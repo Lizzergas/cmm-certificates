@@ -43,8 +43,6 @@
     <string name="settings_body_label">Email body</string>
     <string name="settings_signature_html_label">Email signature (HTML)</string>
     <string name="settings_accredited_type_options_label">Accredited type options</string>
-    <string name="settings_accredited_type_options_hint">One option per line</string>
-    <string name="settings_save">Save</string>
     <string name="settings_clear_all">Clear all data</string>
     <string name="settings_authenticate">Authenticate</string>
     <string name="settings_authenticated">Authenticated</string>

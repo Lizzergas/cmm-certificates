@@ -3,7 +3,7 @@ package com.cmm.certificates.feature.progress
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.network.NetworkService
-import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -26,14 +26,14 @@ data class PdfConversionProgressUiState(
 
 class PdfConversionProgressViewModel(
     private val progressStore: PdfConversionProgressStore,
-    smtpSettingsStore: SmtpSettingsStore,
+    settingsRepository: SettingsRepository,
     networkService: NetworkService,
 ) : ViewModel() {
     val uiState: StateFlow<PdfConversionProgressUiState> = combine(
         progressStore.state,
-        smtpSettingsStore.state,
+        settingsRepository.state,
         networkService.isNetworkAvailable,
-    ) { progressState, smtpState, networkAvailable ->
+    ) { progressState, settingsState, networkAvailable ->
         val total = max(progressState.total, 0)
         val current = progressState.current.coerceAtLeast(0)
         val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
@@ -50,8 +50,8 @@ class PdfConversionProgressViewModel(
             ),
             currentDocId = progressState.currentDocId,
             isNetworkAvailable = networkAvailable,
-            isSmtpAuthenticated = smtpState.isAuthenticated,
-            isSendEmailsEnabled = smtpState.isAuthenticated && networkAvailable,
+            isSmtpAuthenticated = settingsState.smtp.isAuthenticated,
+            isSendEmailsEnabled = settingsState.smtp.isAuthenticated && networkAvailable,
         )
     }.stateIn(
         viewModelScope,

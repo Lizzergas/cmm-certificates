@@ -4,13 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.data.docx.DocxTemplate
-import com.cmm.certificates.data.email.SmtpSettingsRepository
-import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
+import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.feature.progress.PdfConversionProgressStore
-import com.cmm.certificates.feature.settings.SmtpSettingsStore
+import com.cmm.certificates.feature.settings.data.SettingsStore
+import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -22,11 +22,11 @@ import kotlinx.coroutines.withContext
 
 private const val DEFAULT_OUTPUT_PATH = "pdf/"
 private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
-    parseAccreditedTypeOptions(SmtpSettingsRepository.DEFAULT_ACCREDITED_TYPE_OPTIONS)
+    parseAccreditedTypeOptions(SettingsStore.DEFAULT_ACCREDITED_TYPE_OPTIONS)
 
 class ConversionViewModel(
     private val progressStore: PdfConversionProgressStore,
-    private val smtpSettingsStore: SmtpSettingsStore,
+    private val settingsRepository: SettingsRepository,
     private val networkService: NetworkService,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ConversionUiState())
@@ -39,8 +39,9 @@ class ConversionViewModel(
             }
         }
         viewModelScope.launch {
-            smtpSettingsStore.state.collect { settings ->
-                val parsedOptions = parseAccreditedTypeOptions(settings.accreditedTypeOptions)
+            settingsRepository.state.collect { settings ->
+                val parsedOptions =
+                    parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
                 val options = parsedOptions.ifEmpty {
                     DEFAULT_ACCREDITED_TYPE_OPTIONS
                 }
@@ -240,7 +241,7 @@ private fun sanitizeFolderName(rawName: String): String {
         .replace(Regex("""\s+"""), " ")
         .trim()
         .trim('.')
-    return if (cleaned.isBlank()) "certificate" else cleaned
+    return cleaned.ifBlank { "certificate" }
 }
 
 data class ConversionUiState(

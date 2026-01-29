@@ -4,7 +4,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
 import com.cmm.certificates.feature.progress.ProgressScreenRoute
-import com.cmm.certificates.feature.settings.SettingsScreenRoute
+import com.cmm.certificates.feature.settings.ui.SettingsScreenRoute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
