@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.progress
+package com.cmm.certificates.feature.progress.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.network_unavailable_message
 import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
 import certificates.composeapp.generated.resources.progress_current_doc_label
@@ -47,17 +48,18 @@ import certificates.composeapp.generated.resources.progress_send_emails_hint
 import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
-import certificates.composeapp.generated.resources.network_unavailable_message
+import com.cmm.certificates.core.openFolder
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
-import com.cmm.certificates.core.openFolder
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val FADE_IN_DURATION_MS = 420
 private const val FADE_OUT_DURATION_MS = 300
 private const val SIZE_ANIMATION_DURATION_MS = 360
+
+private enum class ProgressMode { Running, Success, Error }
 
 @Composable
 fun PdfConversionProgressScreen(
@@ -67,6 +69,11 @@ fun PdfConversionProgressScreen(
     viewModel: PdfConversionProgressViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val mode = when {
+        uiState.errorMessage != null -> ProgressMode.Error
+        uiState.completed -> ProgressMode.Success
+        else -> ProgressMode.Running
+    }
 
     Scaffold(
         containerColor = Color(0xFFF8FAFC),
@@ -91,7 +98,7 @@ fun PdfConversionProgressScreen(
             .safeContentPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
         AnimatedContent(
-            targetState = uiState.completed,
+            targetState = mode,
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
             transitionSpec = {
@@ -102,22 +109,23 @@ fun PdfConversionProgressScreen(
                             sizeAnimationSpec = { _, _ -> tween(durationMillis = SIZE_ANIMATION_DURATION_MS) },
                         )
             },
-        ) { completed ->
-            when {
-                uiState.errorMessage != null -> {
-                    val resolvedMessage = if (uiState.errorMessage == NETWORK_UNAVAILABLE_MESSAGE) {
-                        stringResource(Res.string.network_unavailable_message)
-                    } else {
-                        uiState.errorMessage.orEmpty()
+        ) { mode ->
+            when (mode) {
+                ProgressMode.Running -> {
+                    val infoText = uiState.currentDocId?.let {
+                        stringResource(Res.string.progress_current_doc_label, it)
                     }
-                    ProgressErrorContent(
+                    ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
-                        title = stringResource(Res.string.progress_error_title),
-                        message = resolvedMessage,
+                        current = uiState.current,
+                        total = uiState.total,
+                        progress = uiState.progress,
+                        title = stringResource(Res.string.progress_title),
+                        infoText = infoText,
                     )
                 }
 
-                completed -> {
+                ProgressMode.Success -> {
                     SuccessContent(
                         modifier = Modifier.fillMaxSize(),
                         total = uiState.total,
@@ -129,20 +137,16 @@ fun PdfConversionProgressScreen(
                     )
                 }
 
-                else -> {
-                    val infoText = uiState.currentDocId?.let {
-                        stringResource(Res.string.progress_current_doc_label).replace(
-                            "%d",
-                            it.toString()
-                        )
+                ProgressMode.Error -> {
+                    val resolvedMessage = if (uiState.errorMessage == NETWORK_UNAVAILABLE_MESSAGE) {
+                        stringResource(Res.string.network_unavailable_message)
+                    } else {
+                        uiState.errorMessage.orEmpty()
                     }
-                    ProgressIndicatorContent(
+                    ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
-                        current = uiState.current,
-                        total = uiState.total,
-                        progress = uiState.progress,
-                        title = stringResource(Res.string.progress_title),
-                        infoText = infoText,
+                        title = stringResource(Res.string.progress_error_title),
+                        message = resolvedMessage,
                     )
                 }
             }
@@ -260,8 +264,7 @@ private fun SuccessContent(
     durationText: String,
     warningMessage: String?,
 ) {
-    val successTitle = stringResource(Res.string.progress_success_title)
-        .replace("%d", total.toString())
+    val successTitle = stringResource(Res.string.progress_success_title, total)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,

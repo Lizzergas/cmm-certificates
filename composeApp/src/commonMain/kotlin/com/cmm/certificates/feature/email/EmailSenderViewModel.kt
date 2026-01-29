@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
 import com.cmm.certificates.data.xlsx.RegistrationEntry
-import com.cmm.certificates.feature.progress.PdfConversionProgressStore
+import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -28,7 +28,7 @@ private const val DEFAULT_BODY = SettingsStore.DEFAULT_EMAIL_BODY
 
 class EmailSenderViewModel(
     private val emailProgressStore: EmailProgressStore,
-    private val pdfConversionProgressStore: PdfConversionProgressStore,
+    private val pdfConversionProgressRepository: PdfConversionProgressRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private var sendJob: Job? = null
@@ -80,7 +80,7 @@ class EmailSenderViewModel(
             return
         }
 
-        val conversionState = pdfConversionProgressStore.state.value
+        val conversionState = pdfConversionProgressRepository.state.value
         val docIdStart = conversionState.docIdStart
         if (docIdStart == null) {
             emailProgressStore.fail("Document ID start is missing.")

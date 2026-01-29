@@ -112,7 +112,7 @@ fun EmailProgressScreen(
 
                 else -> {
                     val infoText = uiState.currentRecipient?.let {
-                        stringResource(Res.string.email_progress_recipient_label).replace("%s", it)
+                        stringResource(Res.string.email_progress_recipient_label, it)
                     }.orEmpty()
                     ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
@@ -189,8 +189,7 @@ private fun EmailSuccessContent(
     modifier: Modifier,
     total: Int,
 ) {
-    val successTitle = stringResource(Res.string.email_progress_success_title)
-        .replace("%d", total.toString())
+    val successTitle = stringResource(Res.string.email_progress_success_title, total)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,

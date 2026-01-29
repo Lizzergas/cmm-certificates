@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.progress
+package com.cmm.certificates.feature.progress.data
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

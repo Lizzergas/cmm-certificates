@@ -8,7 +8,7 @@ import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
-import com.cmm.certificates.feature.progress.PdfConversionProgressStore
+import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -25,7 +25,7 @@ private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
     parseAccreditedTypeOptions(SettingsStore.DEFAULT_ACCREDITED_TYPE_OPTIONS)
 
 class ConversionViewModel(
-    private val progressStore: PdfConversionProgressStore,
+    private val progressRepository: PdfConversionProgressRepository,
     private val settingsRepository: SettingsRepository,
     private val networkService: NetworkService,
 ) : ViewModel() {
@@ -120,20 +120,20 @@ class ConversionViewModel(
         if (!networkService.isNetworkAvailable.value) {
             updateNetworkAvailability(false)
             _uiState.update { it.copy(parseError = NETWORK_UNAVAILABLE_MESSAGE) }
-            progressStore.fail(NETWORK_UNAVAILABLE_MESSAGE)
+            progressRepository.fail(NETWORK_UNAVAILABLE_MESSAGE)
             return
         }
         val snapshot = _uiState.value
         if (snapshot.templatePath.isBlank()) {
             println("Template path is blank; cannot generate documents.")
             _uiState.update { it.copy(parseError = "Template is required.") }
-            progressStore.fail("Template is required.")
+            progressRepository.fail("Template is required.")
             return
         }
         if (snapshot.entries.isEmpty()) {
             println("No entries to process; nothing to generate.")
             _uiState.update { it.copy(parseError = "No XLSX entries to generate.") }
-            progressStore.fail("No XLSX entries to generate.")
+            progressRepository.fail("No XLSX entries to generate.")
             return
         }
         if (snapshot.accreditedId.isBlank() ||
@@ -143,7 +143,7 @@ class ConversionViewModel(
             snapshot.lector.isBlank()
         ) {
             _uiState.update { it.copy(parseError = "All certificate fields are required.") }
-            progressStore.fail("All certificate fields are required.")
+            progressRepository.fail("All certificate fields are required.")
             return
         }
 
@@ -152,14 +152,14 @@ class ConversionViewModel(
         } catch (e: Exception) {
             println("Failed to load template: ${e.message}")
             _uiState.update { it.copy(parseError = e.message ?: "Failed to load template.") }
-            progressStore.fail(e.message ?: "Failed to load template.")
+            progressRepository.fail(e.message ?: "Failed to load template.")
             return
         }
 
         val docIdStart = snapshot.docIdStart.trim().toLongOrNull()
         if (docIdStart == null) {
             _uiState.update { it.copy(parseError = "Document ID start must be a number.") }
-            progressStore.fail("Document ID start must be a number.")
+            progressRepository.fail("Document ID start must be a number.")
             return
         }
 
@@ -168,25 +168,25 @@ class ConversionViewModel(
         val outputDir = joinPath(baseOutputDir, sanitizedFolder)
         if (!OutputDirectory.ensureExists(outputDir)) {
             _uiState.update { it.copy(parseError = "Failed to create output folder: $outputDir") }
-            progressStore.fail("Failed to create output folder: $outputDir")
+            progressRepository.fail("Failed to create output folder: $outputDir")
             return
         }
 
         withContext(Dispatchers.IO) {
-            progressStore.start(
+            progressRepository.start(
                 total = snapshot.entries.size,
                 outputDir = outputDir,
                 docIdStart = docIdStart,
                 entries = snapshot.entries,
             )
             for ((index, entry) in snapshot.entries.withIndex()) {
-                if (progressStore.isCancelRequested()) return@withContext
+                if (progressRepository.isCancelRequested()) return@withContext
                 println("Generating document for entry #${index + 1}: $entry")
                 val fullName = listOf(entry.name, entry.surname)
                     .filter { it.isNotBlank() }
                     .joinToString(" ")
                 val docId = docIdStart + index
-                progressStore.setCurrentDocId(docId)
+                progressRepository.setCurrentDocId(docId)
                 val replacements = mapOf(
                     "{{vardas_pavarde}}" to fullName,
                     "{{data}}" to entry.formattedDate,
@@ -206,19 +206,19 @@ class ConversionViewModel(
                         outputPath = outputPath,
                         replacements = replacements,
                     )
-                    if (progressStore.isCancelRequested()) return@withContext
-                    progressStore.update(index + 1)
+                    if (progressRepository.isCancelRequested()) return@withContext
+                    progressRepository.update(index + 1)
                 } catch (e: Exception) {
                     println("Failed to generate document for $fullName: ${e.message}")
                     _uiState.update {
                         it.copy(parseError = e.message ?: "Failed to write $outputPath")
                     }
-                    progressStore.fail(e.message ?: "Failed to write $outputPath")
+                    progressRepository.fail(e.message ?: "Failed to write $outputPath")
                     return@withContext
                 }
             }
-            if (!progressStore.isCancelRequested()) {
-                progressStore.finish()
+            if (!progressRepository.isCancelRequested()) {
+                progressRepository.finish()
             }
         }
     }

@@ -1,8 +1,9 @@
-package com.cmm.certificates.feature.progress
+package com.cmm.certificates.feature.progress.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.data.network.NetworkService
+import com.cmm.certificates.feature.progress.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -10,27 +11,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlin.math.max
 
-data class PdfConversionProgressUiState(
-    val current: Int = 0,
-    val total: Int = 0,
-    val progress: Float = 0f,
-    val completed: Boolean = false,
-    val errorMessage: String? = null,
-    val outputDir: String = "",
-    val durationText: String = "0s",
-    val currentDocId: Long? = null,
-    val isNetworkAvailable: Boolean = true,
-    val isSmtpAuthenticated: Boolean = false,
-    val isSendEmailsEnabled: Boolean = false,
-)
-
 class PdfConversionProgressViewModel(
-    private val progressStore: PdfConversionProgressStore,
+    private val progressRepository: PdfConversionProgressRepository,
     settingsRepository: SettingsRepository,
     networkService: NetworkService,
 ) : ViewModel() {
     val uiState: StateFlow<PdfConversionProgressUiState> = combine(
-        progressStore.state,
+        progressRepository.state,
         settingsRepository.state,
         networkService.isNetworkAvailable,
     ) { progressState, settingsState, networkAvailable ->
@@ -60,9 +47,23 @@ class PdfConversionProgressViewModel(
     )
 
     fun requestCancel() {
-        progressStore.requestCancel()
+        progressRepository.requestCancel()
     }
 }
+
+data class PdfConversionProgressUiState(
+    val current: Int = 0,
+    val total: Int = 0,
+    val progress: Float = 0f,
+    val completed: Boolean = false,
+    val errorMessage: String? = null,
+    val outputDir: String = "",
+    val durationText: String = "0s",
+    val currentDocId: Long? = null,
+    val isNetworkAvailable: Boolean = true,
+    val isSmtpAuthenticated: Boolean = false,
+    val isSendEmailsEnabled: Boolean = false,
+)
 
 private fun formatDuration(startedAtMillis: Long?, endedAtMillis: Long?): String {
     if (startedAtMillis == null) return "0s"
