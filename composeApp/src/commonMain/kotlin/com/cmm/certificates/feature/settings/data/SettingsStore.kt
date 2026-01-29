@@ -24,6 +24,7 @@ class SettingsStore(
         val body = stringPreferencesKey("smtp_body")
         val accreditedTypeOptions = stringPreferencesKey("accredited_type_options")
         val signatureHtml = stringPreferencesKey("email_signature_html")
+        val previewEmail = stringPreferencesKey("email_preview_address")
     }
 
     suspend fun loadOrDefault(): StoredSettings {
@@ -44,6 +45,7 @@ class SettingsStore(
                 DEFAULT_ACCREDITED_TYPE_OPTIONS
             ),
             signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, DEFAULT_SIGNATURE_HTML),
+            previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
         )
     }
 
@@ -58,6 +60,7 @@ class SettingsStore(
             prefs[Keys.body] = settings.body
             prefs[Keys.accreditedTypeOptions] = settings.accreditedTypeOptions
             prefs[Keys.signatureHtml] = settings.signatureHtml
+            prefs[Keys.previewEmail] = settings.previewEmail
         }
     }
 
@@ -75,6 +78,7 @@ class SettingsStore(
         val body: String,
         val accreditedTypeOptions: String,
         val signatureHtml: String,
+        val previewEmail: String,
     )
 
     companion object {
@@ -89,6 +93,8 @@ class SettingsStore(
         const val DEFAULT_ACCREDITED_TYPE_OPTIONS =
             "paskaitoje\nseminare\nkonferencijoje\nmokymuose"
 
+        const val DEFAULT_PREVIEW_EMAIL = ""
+
         const val DEFAULT_SIGNATURE_HTML = """
             <div style="font-family:'Times New Roman', Times, serif; font-size:8pt; font-style:italic; line-height:1.25; color:#000;">
               <div>Pagarbiai</div>
@@ -102,4 +108,3 @@ class SettingsStore(
         """
     }
 }
-

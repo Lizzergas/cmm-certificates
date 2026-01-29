@@ -22,10 +22,6 @@ actual object SmtpClient {
         requests.forEachIndexed { index, request ->
             if (isCancelRequested()) return
             onSending(request)
-            val attachmentFile = File(request.attachmentPath)
-            require(attachmentFile.exists()) {
-                "Attachment not found: ${request.attachmentPath}"
-            }
             val emailBuilder = EmailBuilder.startingBlank()
                 .from(settings.username, settings.username)
                 .to(request.toName, request.toEmail)
@@ -35,9 +31,16 @@ actual object SmtpClient {
             if (htmlBody.isNotBlank()) {
                 emailBuilder.withHTMLText(htmlBody)
             }
-            val email = emailBuilder
-                .withAttachment(request.attachmentName, FileDataSource(attachmentFile))
-                .buildEmail()
+            val attachmentPath = request.attachmentPath
+            val attachmentName = request.attachmentName
+            if (!attachmentPath.isNullOrBlank() && !attachmentName.isNullOrBlank()) {
+                val attachmentFile = File(attachmentPath)
+                require(attachmentFile.exists()) {
+                    "Attachment not found: $attachmentPath"
+                }
+                emailBuilder.withAttachment(attachmentName, FileDataSource(attachmentFile))
+            }
+            val email = emailBuilder.buildEmail()
             mailer.sendMail(email)
             if (isCancelRequested()) return
             onProgress(index + 1)

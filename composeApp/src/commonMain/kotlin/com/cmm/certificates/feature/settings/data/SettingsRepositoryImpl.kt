@@ -74,6 +74,15 @@ class SettingsRepositoryImpl(
         }
     }
 
+    override fun setPreviewEmail(value: String) {
+        _state.update { current ->
+            current.copy(
+                smtp = current.smtp.copy(errorMessage = null),
+                email = current.email.copy(previewEmail = value),
+            )
+        }
+    }
+
     override fun setAccreditedTypeOptions(value: String) {
         _state.update { current ->
             current.copy(
@@ -138,6 +147,7 @@ class SettingsRepositoryImpl(
                     subject = stored.subject,
                     body = stored.body,
                     signatureHtml = stored.signatureHtml,
+                    previewEmail = stored.previewEmail,
                 ),
                 certificate = current.certificate.copy(
                     accreditedTypeOptions = stored.accreditedTypeOptions,
@@ -187,6 +197,7 @@ data class EmailTemplateSettingsState(
     val subject: String = SettingsStore.DEFAULT_EMAIL_SUBJECT,
     val body: String = SettingsStore.DEFAULT_EMAIL_BODY,
     val signatureHtml: String = SettingsStore.DEFAULT_SIGNATURE_HTML,
+    val previewEmail: String = SettingsStore.DEFAULT_PREVIEW_EMAIL,
 )
 
 data class CertificateSettingsState(
@@ -209,6 +220,7 @@ data class SettingsState(
             body = email.body,
             accreditedTypeOptions = certificate.accreditedTypeOptions,
             signatureHtml = email.signatureHtml,
+            previewEmail = email.previewEmail,
         )
     }
 

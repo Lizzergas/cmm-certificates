@@ -65,4 +65,10 @@
     <string name="email_progress_cancel">Cancel</string>
     <string name="email_progress_finish">Finish</string>
     <string name="email_progress_error_title">Failed to send emails</string>
+    <string name="email_preview_button">Send preview email</string>
+    <string name="email_preview_title">Send preview email</string>
+    <string name="email_preview_description">This will send the first generated PDF to the email address below.</string>
+    <string name="email_preview_email_label">Preview email address</string>
+    <string name="email_preview_send">Send preview</string>
+    <string name="email_preview_success">Success!</string>
 </resources>

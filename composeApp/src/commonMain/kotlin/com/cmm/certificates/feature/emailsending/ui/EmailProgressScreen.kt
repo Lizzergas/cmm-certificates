@@ -52,8 +52,6 @@ private const val FADE_IN_DURATION_MS = 420
 private const val FADE_OUT_DURATION_MS = 300
 private const val SIZE_ANIMATION_DURATION_MS = 360
 
-private enum class EmailMode { Running, Success, Error }
-
 @Composable
 fun EmailProgressScreen(
     onFinish: () -> Unit,
@@ -61,11 +59,6 @@ fun EmailProgressScreen(
     viewModel: EmailSenderViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val mode = when {
-        uiState.errorMessage != null -> EmailMode.Error
-        uiState.completed -> EmailMode.Success
-        else -> EmailMode.Running
-    }
 
     LaunchedEffect(Unit) {
         viewModel.startSendingIfIdle()
@@ -75,7 +68,7 @@ fun EmailProgressScreen(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             EmailProgressBottomBar(
-                isInProgress = uiState.inProgress,
+                isInProgress = (uiState.mode as? EmailProgress.Running)?.isInProgress == true,
                 onFinish = onFinish,
                 onCancel = {
                     viewModel.cancelSending()
@@ -90,7 +83,7 @@ fun EmailProgressScreen(
             .safeContentPadding()
             .padding(horizontal = 24.dp, vertical = 16.dp)
         AnimatedContent(
-            targetState = mode,
+            targetState = uiState.mode,
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
             transitionSpec = {
@@ -103,30 +96,30 @@ fun EmailProgressScreen(
             },
         ) { mode ->
             when (mode) {
-                EmailMode.Error -> {
+                is EmailProgress.Error -> {
                     ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
                         title = stringResource(Res.string.email_progress_error_title),
-                        message = uiState.errorMessage.orEmpty(),
+                        message = mode.message,
                     )
                 }
 
-                EmailMode.Success -> {
+                is EmailProgress.Success -> {
                     EmailSuccessContent(
                         modifier = Modifier.fillMaxSize(),
-                        total = uiState.total,
+                        total = mode.total,
                     )
                 }
 
-                EmailMode.Running -> {
-                    val infoText = uiState.currentRecipient?.let {
+                is EmailProgress.Running -> {
+                    val infoText = mode.currentRecipient?.let {
                         stringResource(Res.string.email_progress_recipient_label, it)
                     }.orEmpty()
                     ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
-                        current = uiState.current,
-                        total = uiState.total,
-                        progress = uiState.progress,
+                        current = mode.current,
+                        total = mode.total,
+                        progress = mode.progress,
                         title = stringResource(Res.string.email_progress_title),
                         infoText = infoText,
                     )
@@ -163,7 +156,7 @@ private fun EmailProgressBottomBar(
                     ),
                     border = BorderStroke(
                         1.dp,
-                        Color(0xFFE2E8F0),
+                        MaterialTheme.colorScheme.outline,
                     ),
                 ) {
                     Text(text = stringResource(Res.string.email_progress_cancel))

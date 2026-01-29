@@ -2,26 +2,35 @@ package com.cmm.certificates.feature.pdfconversion.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.core.usecase.SendPreviewEmailUseCase
 import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 class PdfConversionProgressViewModel(
     private val progressRepository: PdfConversionProgressRepository,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     networkService: NetworkService,
+    private val sendPreviewEmailUseCase: SendPreviewEmailUseCase,
 ) : ViewModel() {
+    private val previewState = MutableStateFlow(
+        PdfPreviewUiState(email = settingsRepository.state.value.email.previewEmail)
+    )
     val uiState: StateFlow<PdfConversionProgressUiState> = combine(
         progressRepository.state,
         settingsRepository.state,
         networkService.isNetworkAvailable,
-    ) { progressState, settingsState, networkAvailable ->
+        previewState,
+    ) { progressState, settingsState, networkAvailable, preview ->
         val total = max(progressState.total, 0)
         val current = progressState.current.coerceAtLeast(0)
         val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
@@ -42,6 +51,7 @@ class PdfConversionProgressViewModel(
             isNetworkError = isNetworkError,
             isSmtpAuthenticated = settingsState.smtp.isAuthenticated,
             isSendEmailsEnabled = settingsState.smtp.isAuthenticated && networkAvailable,
+            preview = preview,
         )
     }.stateIn(
         viewModelScope,
@@ -51,6 +61,46 @@ class PdfConversionProgressViewModel(
 
     fun requestCancel() {
         progressRepository.requestCancel()
+    }
+
+    fun preparePreviewDialog() {
+        previewState.value = PdfPreviewUiState(
+            email = settingsRepository.state.value.email.previewEmail
+        )
+    }
+
+    fun setPreviewEmail(value: String) {
+        previewState.update { current ->
+            current.copy(email = value, errorMessage = null, sent = false)
+        }
+    }
+
+    fun sendPreviewEmail(attachFirstPdf: Boolean) {
+        val email = previewState.value.email
+        viewModelScope.launch {
+            previewState.update { it.copy(isSending = true, errorMessage = null, sent = false) }
+            val result = sendPreviewEmailUseCase.sendPreviewEmail(
+                toEmail = email,
+                attachFirstPdf = attachFirstPdf,
+            )
+            previewState.update { current ->
+                if (result.isSuccess) {
+                    current.copy(isSending = false, sent = true)
+                } else {
+                    current.copy(
+                        isSending = false,
+                        errorMessage = result.exceptionOrNull()?.message
+                            ?: "Failed to send preview email.",
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearPreviewStatus() {
+        previewState.update { current ->
+            current.copy(errorMessage = null, sent = false, isSending = false)
+        }
     }
 }
 
@@ -67,6 +117,14 @@ data class PdfConversionProgressUiState(
     val isNetworkError: Boolean = false,
     val isSmtpAuthenticated: Boolean = false,
     val isSendEmailsEnabled: Boolean = false,
+    val preview: PdfPreviewUiState = PdfPreviewUiState(),
+)
+
+data class PdfPreviewUiState(
+    val email: String = "",
+    val isSending: Boolean = false,
+    val errorMessage: String? = null,
+    val sent: Boolean = false,
 )
 
 private fun formatDuration(startedAtMillis: Long?, endedAtMillis: Long?): String {

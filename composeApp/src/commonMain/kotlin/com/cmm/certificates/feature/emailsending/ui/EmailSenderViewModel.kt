@@ -2,6 +2,7 @@ package com.cmm.certificates.feature.emailsending.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.data.email.buildEmailHtmlBody
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
 import com.cmm.certificates.data.xlsx.RegistrationEntry
@@ -29,22 +30,27 @@ class EmailSenderViewModel(
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private var sendJob: Job? = null
-    val uiState: StateFlow<EmailProgressUiState> = emailProgressRepository.state
-        .map { state ->
-            val total = state.total.coerceAtLeast(0)
-            val current = state.current.coerceAtLeast(0)
+    val uiState: StateFlow<EmailProgressUiState> =
+        emailProgressRepository.state.map { progressState ->
+            val total = progressState.total.coerceAtLeast(0)
+            val current = progressState.current.coerceAtLeast(0)
             val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
-            EmailProgressUiState(
-                current = current,
-                total = total,
-                progress = progress,
-                inProgress = state.inProgress,
-                completed = state.completed,
-                errorMessage = state.errorMessage,
-                currentRecipient = state.currentRecipient,
-            )
-        }
-        .stateIn(
+            val mode = when {
+                progressState.errorMessage != null -> EmailProgress.Error(
+                    message = progressState.errorMessage
+                )
+
+                progressState.completed -> EmailProgress.Success(total = total)
+                else -> EmailProgress.Running(
+                    current = current,
+                    total = total,
+                    progress = progress,
+                    currentRecipient = progressState.currentRecipient,
+                    isInProgress = progressState.inProgress,
+                )
+            }
+            EmailProgressUiState(mode = mode)
+        }.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
             EmailProgressUiState(),
@@ -98,7 +104,7 @@ class EmailSenderViewModel(
         try {
             val subject = settingsState.email.subject
             val body = settingsState.email.body
-            val htmlBody = buildHtmlBody(
+            val htmlBody = buildEmailHtmlBody(
                 body = body,
                 signatureHtml = settingsState.email.signatureHtml,
             )
@@ -178,42 +184,22 @@ class EmailSenderViewModel(
         }
     }
 
-    private fun buildHtmlBody(
-        body: String,
-        signatureHtml: String,
-    ): String? {
-        val trimmedSignature = signatureHtml.trim()
-        if (trimmedSignature.isBlank()) return null
-        val escapedBody = escapeHtml(body)
-            .replace("\r\n", "\n")
-            .replace("\r", "\n")
-            .replace("\n", "<br>")
-        val baseHtml = if (escapedBody.isBlank()) "" else "$escapedBody<br><br>"
-        return baseHtml + trimmedSignature
-    }
-
-    private fun escapeHtml(text: String): String {
-        return buildString(text.length) {
-            text.forEach { ch ->
-                when (ch) {
-                    '&' -> append("&amp;")
-                    '<' -> append("&lt;")
-                    '>' -> append("&gt;")
-                    '"' -> append("&quot;")
-                    '\'' -> append("&#39;")
-                    else -> append(ch)
-                }
-            }
-        }
-    }
 }
 
 data class EmailProgressUiState(
-    val current: Int = 0,
-    val total: Int = 0,
-    val progress: Float = 0f,
-    val inProgress: Boolean = false,
-    val completed: Boolean = false,
-    val errorMessage: String? = null,
-    val currentRecipient: String? = null,
+    val mode: EmailProgress = EmailProgress.Running(),
 )
+
+sealed interface EmailProgress {
+    data class Running(
+        val current: Int = 0,
+        val total: Int = 0,
+        val progress: Float = 0f,
+        val currentRecipient: String? = null,
+        val isInProgress: Boolean = false,
+    ) : EmailProgress
+
+    data class Success(val total: Int) : EmailProgress
+
+    data class Error(val message: String) : EmailProgress
+}

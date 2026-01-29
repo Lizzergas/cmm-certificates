@@ -6,6 +6,6 @@ data class EmailSendRequest(
     val subject: String,
     val body: String,
     val htmlBody: String? = null,
-    val attachmentPath: String,
-    val attachmentName: String,
+    val attachmentPath: String? = null,
+    val attachmentName: String? = null,
 )

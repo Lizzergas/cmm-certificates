@@ -29,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +40,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.email_preview_button
+import certificates.composeapp.generated.resources.email_preview_description
+import certificates.composeapp.generated.resources.email_preview_email_label
+import certificates.composeapp.generated.resources.email_preview_send
+import certificates.composeapp.generated.resources.email_preview_success
+import certificates.composeapp.generated.resources.email_preview_title
+import certificates.composeapp.generated.resources.email_progress_cancel
 import certificates.composeapp.generated.resources.network_unavailable_message
 import certificates.composeapp.generated.resources.progress_cancel
 import certificates.composeapp.generated.resources.progress_convert_another
@@ -50,6 +60,7 @@ import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
 import com.cmm.certificates.core.openFolder
+import com.cmm.certificates.core.ui.PreviewEmailDialog
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
 import org.jetbrains.compose.resources.stringResource
@@ -69,10 +80,33 @@ fun PdfConversionProgressScreen(
     viewModel: PdfConversionProgressViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var isPreviewDialogVisible by remember { mutableStateOf(false) }
     val mode = when {
         uiState.errorMessage != null -> ProgressMode.Error
         uiState.completed -> ProgressMode.Success
         else -> ProgressMode.Running
+    }
+
+    if (isPreviewDialogVisible) {
+        PreviewEmailDialog(
+            title = Res.string.email_preview_title,
+            description = Res.string.email_preview_description,
+            emailLabel = Res.string.email_preview_email_label,
+            confirmText = Res.string.email_preview_send,
+            cancelText = Res.string.email_progress_cancel,
+            successText = Res.string.email_preview_success,
+            email = uiState.preview.email,
+            isSending = uiState.preview.isSending,
+            isSuccess = uiState.preview.sent,
+            errorMessage = uiState.preview.errorMessage,
+            onEmailChange = viewModel::setPreviewEmail,
+            onSend = { viewModel.sendPreviewEmail(attachFirstPdf = true) },
+            onDismiss = {
+                if (!uiState.preview.isSending) {
+                    viewModel.clearPreviewStatus()
+                }
+            },
+        )
     }
 
     Scaffold(
@@ -83,6 +117,10 @@ fun PdfConversionProgressScreen(
                 outputDir = uiState.outputDir,
                 isSendEmailsEnabled = uiState.isSendEmailsEnabled,
                 isSmtpAuthenticated = uiState.isSmtpAuthenticated,
+                isPreviewSending = uiState.preview.isSending,
+                onSendPreview = {
+                    viewModel.preparePreviewDialog()
+                },
                 onSendEmails = onSendEmails,
                 onConvertAnother = onConvertAnother,
                 onCancel = {
@@ -160,6 +198,8 @@ private fun ProgressBottomBar(
     outputDir: String,
     isSendEmailsEnabled: Boolean,
     isSmtpAuthenticated: Boolean,
+    isPreviewSending: Boolean,
+    onSendPreview: () -> Unit,
     onSendEmails: () -> Unit,
     onCancel: () -> Unit,
     onConvertAnother: () -> Unit,
@@ -181,6 +221,20 @@ private fun ProgressBottomBar(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    OutlinedButton(
+                        onClick = onSendPreview,
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isPreviewSending,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outline,
+                        ),
+                    ) {
+                        Text(text = stringResource(Res.string.email_preview_button))
+                    }
                     if (!isSmtpAuthenticated) {
                         Text(
                             text = stringResource(Res.string.progress_send_emails_hint),

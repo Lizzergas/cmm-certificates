@@ -65,4 +65,10 @@
     <string name="email_progress_cancel">Atšaukti</string>
     <string name="email_progress_finish">Baigti</string>
     <string name="email_progress_error_title">Nepavyko išsiųsti el. laiškų</string>
+    <string name="email_preview_button">Siųsti peržiūros laišką</string>
+    <string name="email_preview_title">Siųsti peržiūros laišką</string>
+    <string name="email_preview_description">Bus išsiųstas pirmasis sugeneruotas PDF į nurodytą el. paštą.</string>
+    <string name="email_preview_email_label">Peržiūros el. paštas</string>
+    <string name="email_preview_send">Siųsti peržiūrą</string>
+    <string name="email_preview_success">Sėkmingai!</string>
 </resources>
