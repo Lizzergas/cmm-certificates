@@ -1,11 +1,16 @@
 package com.cmm.certificates.core.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,6 +20,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_signature_action_cancel
+import certificates.composeapp.generated.resources.settings_signature_action_pick_color
 import certificates.composeapp.generated.resources.settings_signature_action_reset
 import certificates.composeapp.generated.resources.settings_signature_action_save
 import certificates.composeapp.generated.resources.settings_signature_action_validate
@@ -54,6 +62,7 @@ import certificates.composeapp.generated.resources.settings_signature_builder_mo
 import certificates.composeapp.generated.resources.settings_signature_builder_remove
 import certificates.composeapp.generated.resources.settings_signature_builder_size
 import certificates.composeapp.generated.resources.settings_signature_custom_html_notice
+import certificates.composeapp.generated.resources.settings_signature_dialog_color_title
 import certificates.composeapp.generated.resources.settings_signature_dialog_title
 import certificates.composeapp.generated.resources.settings_signature_error_forbidden_attr
 import certificates.composeapp.generated.resources.settings_signature_error_forbidden_tag
@@ -71,10 +80,18 @@ import com.cmm.certificates.core.signature.SignatureBuilderState
 import com.cmm.certificates.core.signature.SignatureEditorMode
 import com.cmm.certificates.core.signature.SignatureEditorUiState
 import com.cmm.certificates.core.signature.SignatureFont
+import com.cmm.certificates.core.signature.SignatureHtmlCodec
 import com.cmm.certificates.core.signature.SignatureValidationError
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Pipette
+import com.github.skydoves.colorpicker.compose.BrightnessSlider
+import com.github.skydoves.colorpicker.compose.ColorEnvelope
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.roundToInt
 
 @Composable
 fun SignatureEditorDialog(
@@ -302,6 +319,7 @@ private fun SignatureStylePanel(
     onSetColorHex: (String) -> Unit,
 ) {
     var fontExpanded by remember { mutableStateOf(false) }
+    var isColorPickerOpen by remember { mutableStateOf(false) }
 
     val style = builder.style
     Column(verticalArrangement = Arrangement.spacedBy(Grid.x4)) {
@@ -357,11 +375,13 @@ private fun SignatureStylePanel(
                 selected = style.italic,
                 label = stringResource(Res.string.settings_signature_builder_italic),
                 onClick = onToggleItalic,
+                fontStyle = FontStyle.Italic,
             )
             ToggleChip(
                 selected = style.bold,
                 label = stringResource(Res.string.settings_signature_builder_bold),
                 onClick = onToggleBold,
+                fontWeight = FontWeight.Bold,
             )
         }
 
@@ -377,14 +397,39 @@ private fun SignatureStylePanel(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
             )
-            OutlinedTextField(
-                value = builder.colorInput,
-                onValueChange = onSetColorHex,
-                label = { Text(text = stringResource(Res.string.settings_signature_builder_color)) },
+            Row(
                 modifier = Modifier.weight(1f),
-                singleLine = true,
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Grid.x2),
+            ) {
+                OutlinedTextField(
+                    value = builder.colorInput,
+                    onValueChange = onSetColorHex,
+                    label = { Text(text = stringResource(Res.string.settings_signature_builder_color)) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                )
+                IconButton(
+                    onClick = { isColorPickerOpen = true },
+                ) {
+                    Icon(
+                        imageVector = Lucide.Pipette,
+                        contentDescription = stringResource(Res.string.settings_signature_action_pick_color),
+                    )
+                }
+            }
         }
+    }
+
+    if (isColorPickerOpen) {
+        SignatureColorPickerDialog(
+            initialHex = builder.colorInput,
+            onDismiss = { isColorPickerOpen = false },
+            onConfirm = {
+                onSetColorHex(it)
+                isColorPickerOpen = false
+            },
+        )
     }
 }
 
@@ -393,6 +438,8 @@ private fun ToggleChip(
     selected: Boolean,
     label: String,
     onClick: () -> Unit,
+    fontWeight: FontWeight? = null,
+    fontStyle: FontStyle? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val background = if (selected) colors.secondaryContainer else colors.surface
@@ -407,8 +454,97 @@ private fun ToggleChip(
         border = BorderStroke(Stroke.thin, colors.outlineVariant),
     ) {
         Text(
-            text = label
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = fontWeight,
+                fontStyle = fontStyle,
+            ),
         )
+    }
+}
+
+@Composable
+private fun SignatureColorPickerDialog(
+    initialHex: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    val controller = rememberColorPickerController()
+    val colors = MaterialTheme.colorScheme
+    var selectedHex by remember { mutableStateOf(normalizeHexInput(initialHex)) }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = Grid.x3,
+            shadowElevation = Grid.x3,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Grid.x6),
+                verticalArrangement = Arrangement.spacedBy(Grid.x4),
+            ) {
+                Text(
+                    text = stringResource(Res.string.settings_signature_dialog_color_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                HsvColorPicker(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(Grid.x240)
+                        .padding(Grid.x5),
+                    controller = controller,
+                    onColorChanged = { envelope: ColorEnvelope ->
+                        selectedHex = normalizeHexInput(envelopeToHex(envelope))
+                    }
+                )
+                BrightnessSlider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(Grid.x18)
+                        .padding(horizontal = Grid.x5),
+                    controller = controller,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Grid.x3),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(Grid.x12)
+                                .height(Grid.x12)
+                                .background(
+                                    parseHexColor(selectedHex, colors.onSurface),
+                                    MaterialTheme.shapes.small
+                                )
+                                .border(
+                                    BorderStroke(Stroke.thin, colors.outlineVariant),
+                                    MaterialTheme.shapes.small
+                                ),
+                        )
+                        Text(
+                            text = selectedHex,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Grid.x3)) {
+                        TextButton(onClick = onDismiss) {
+                            Text(text = stringResource(Res.string.settings_signature_action_cancel))
+                        }
+                        Button(onClick = { onConfirm(selectedHex) }) {
+                            Text(text = stringResource(Res.string.settings_signature_action_pick_color))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -526,6 +662,19 @@ private fun parseHexColor(hex: String, fallback: Color): Color {
         else -> return fallback
     }
     return runCatching { Color(0xFF000000 or value.toLong(16)) }.getOrDefault(fallback)
+}
+
+private fun normalizeHexInput(hex: String): String {
+    if (hex.isBlank()) return "#000000"
+    return SignatureHtmlCodec.normalizeColorHex(hex)
+}
+
+private fun envelopeToHex(envelope: ColorEnvelope): String {
+    val color = envelope.color
+    val red = (color.red * 255).roundToInt().coerceIn(0, 255)
+    val green = (color.green * 255).roundToInt().coerceIn(0, 255)
+    val blue = (color.blue * 255).roundToInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(red, green, blue)
 }
 
 @Composable

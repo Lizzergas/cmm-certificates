@@ -67,6 +67,8 @@ kotlin {
             implementation(libs.kotlinx.datetime)
 
             implementation(libs.icons.lucide.cmp)
+
+            implementation(libs.skydoves.colorpicker)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

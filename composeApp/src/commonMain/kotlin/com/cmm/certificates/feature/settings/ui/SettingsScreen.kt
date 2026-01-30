@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.widthIn
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
@@ -226,10 +228,7 @@ private fun BoxScope.SettingsContent(
                 onValueChange = viewModel::setBody,
                 minLines = 5,
                 maxLines = 10,
-            )
-            SignatureSummaryCard(
-                signatureHtml = state.email.signatureHtml,
-                onEdit = viewModel::openSignatureEditor,
+                showClearIcon = false,
             )
             SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
@@ -237,6 +236,11 @@ private fun BoxScope.SettingsContent(
                 onValueChange = viewModel::setAccreditedTypeOptions,
                 minLines = 4,
                 maxLines = 10,
+                showClearIcon = false,
+            )
+            SignatureSummaryCard(
+                signatureHtml = state.email.signatureHtml,
+                onEdit = viewModel::openSignatureEditor,
             )
         }
     }

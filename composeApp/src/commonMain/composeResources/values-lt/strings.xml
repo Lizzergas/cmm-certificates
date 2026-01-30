@@ -86,6 +86,8 @@
     <string name="settings_signature_action_reset">Atstatyti</string>
     <string name="settings_signature_action_save">Išsaugoti</string>
     <string name="settings_signature_action_validate">Tikrinti</string>
+    <string name="settings_signature_action_pick_color">Naudoti spalvą</string>
+    <string name="settings_signature_dialog_color_title">Pasirinkti spalvą</string>
     <string name="settings_signature_builder_font">Šriftas</string>
     <string name="settings_signature_builder_size">Dydis (pt)</string>
     <string name="settings_signature_builder_italic">Kursyvas</string>

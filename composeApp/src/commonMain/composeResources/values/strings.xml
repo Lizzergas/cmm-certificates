@@ -86,6 +86,8 @@
     <string name="settings_signature_action_reset">Reset to default</string>
     <string name="settings_signature_action_save">Save</string>
     <string name="settings_signature_action_validate">Validate</string>
+    <string name="settings_signature_action_pick_color">Use color</string>
+    <string name="settings_signature_dialog_color_title">Choose color</string>
     <string name="settings_signature_builder_font">Font</string>
     <string name="settings_signature_builder_size">Size (pt)</string>
     <string name="settings_signature_builder_italic">Italic</string>
