@@ -12,7 +12,7 @@ import com.cmm.certificates.feature.emailsending.ui.emailNavSerializerModule
 import com.cmm.certificates.feature.emailsending.ui.featureEmailEntryProvider
 import com.cmm.certificates.feature.certificate.ConversionScreenRoute
 import com.cmm.certificates.feature.certificate.conversionNavSerializerModule
-import com.cmm.certificates.feature.certificate.featureHomeEntryProvider
+import com.cmm.certificates.feature.certificate.featureConversionEntryProvider
 import com.cmm.certificates.feature.pdfconversion.ui.featureProgressEntryProvider
 import com.cmm.certificates.feature.pdfconversion.ui.progressNavSerializerModule
 import com.cmm.certificates.feature.settings.ui.featureSettingsEntryProvider
@@ -25,7 +25,7 @@ class Navigator internal constructor(
     val backStack: NavBackStack<NavKey>,
 ) {
     val entries = entryProvider {
-        featureHomeEntryProvider(this@Navigator)
+        featureConversionEntryProvider(this@Navigator)
         featureProgressEntryProvider(this@Navigator)
         featureSettingsEntryProvider(this@Navigator)
         featureEmailEntryProvider(this@Navigator)

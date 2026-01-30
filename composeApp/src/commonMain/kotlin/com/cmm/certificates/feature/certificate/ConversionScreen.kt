@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,15 +36,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.cmm_logo
@@ -63,18 +59,22 @@ import certificates.composeapp.generated.resources.conversion_tooltip_docx
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
 import certificates.composeapp.generated.resources.network_unavailable_message
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.PrimaryActionButton
 import com.cmm.certificates.core.ui.SelectFileIcon
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.dialogs.FileKitMode
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.openFilePicker
-import kotlinx.coroutines.launch
+import com.cmm.certificates.core.ui.rememberFilePickerLauncher
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+
+private val MaxWidth = Grid.x240
+private val ContentPadding = Grid.x8
+private val ContentSpacing = Grid.x10
+private val CardPadding = Grid.x8
+private val BottomBarPadding = Grid.x6
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,50 +84,47 @@ fun ConversionScreen(
     viewModel: ConversionViewModel = koinViewModel<ConversionViewModel>(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
+    val launchFilePicker = rememberFilePickerLauncher()
     val scrollState = rememberScrollState()
 
-    val backgroundColor = MaterialTheme.colorScheme.background
-
     Scaffold(
-        containerColor = backgroundColor,
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             ConversionBottomBar(
-                state.isConversionEnabled,
-                state.isNetworkAvailable,
+                state = state,
                 onConversionClick = {
                     onStartConversion()
-                    scope.launch { viewModel.generateDocuments() }
+                    viewModel.generateDocuments()
                 }
             )
         },
     ) { padding ->
-        BoxWithConstraints(
+        Box(
             modifier = Modifier
                 .padding(padding)
                 .safeContentPadding()
                 .fillMaxSize(),
         ) {
-            val hasXlsx = state.xlsxPath.isNotBlank()
-            val hasTemplate = state.templatePath.isNotBlank()
+            val hasXlsx = state.files.hasXlsx
+            val hasTemplate = state.files.hasTemplate
             val xlsxTooltip = buildPathTooltip(
                 Res.string.conversion_tooltip_xlsx,
-                state.xlsxPath,
+                state.files.xlsxPath,
             )
 
             val docxTooltip = buildPathTooltip(
                 Res.string.conversion_tooltip_docx,
-                state.templatePath,
+                state.files.templatePath,
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 480.dp)
+                    .widthIn(max = MaxWidth)
                     .align(Alignment.TopCenter)
                     .verticalScroll(scrollState)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                    .padding(ContentPadding),
+                verticalArrangement = Arrangement.spacedBy(ContentSpacing),
             ) {
                 Row(
                     modifier = Modifier
@@ -139,9 +136,9 @@ fun ConversionScreen(
                     Image(
                         painter = painterResource(Res.drawable.cmm_logo),
                         contentDescription = null,
-                        modifier = Modifier.size(120.dp),
+                        modifier = Modifier.size(Grid.x60),
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(Grid.x6))
                     Text(
                         text = stringResource(Res.string.conversion_title),
                         style = MaterialTheme.typography.titleLarge,
@@ -153,66 +150,46 @@ fun ConversionScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Grid.x5),
                 ) {
                     SelectFileIcon(
                         iconText = "XLSX",
                         selected = hasXlsx,
                         tooltipText = xlsxTooltip,
-                        onClick = {
-                            scope.launch {
-                                val file = FileKit.openFilePicker(
-                                    mode = FileKitMode.Single,
-                                    type = FileKitType.File(listOf("xlsx")),
-                                )
-                                viewModel.selectXlsx(file?.toString().orEmpty())
-                            }
-                        },
+                        onClick = { launchFilePicker("xlsx", viewModel::selectXlsx) },
                         modifier = Modifier.weight(1f),
                     )
                     SelectFileIcon(
                         iconText = "DOCX",
                         selected = hasTemplate,
                         tooltipText = docxTooltip,
-                        onClick = {
-                            scope.launch {
-                                val file = FileKit.openFilePicker(
-                                    mode = FileKitMode.Single,
-                                    type = FileKitType.File(listOf("docx")),
-                                )
-                                viewModel.setTemplatePath(file?.toString().orEmpty())
-                            }
-                        },
+                        onClick = { launchFilePicker("docx", viewModel::setTemplatePath) },
                         modifier = Modifier.weight(1f),
                     )
                 }
 
                 CertificateDetailsSection(
-                    accreditedId = state.accreditedId,
-                    docIdStart = state.docIdStart,
-                    accreditedType = state.accreditedType,
+                    form = state.form,
                     accreditedTypeOptions = state.accreditedTypeOptions,
-                    accreditedHours = state.accreditedHours,
-                    certificateName = state.certificateName,
-                    lector = state.lector,
-                    lectorGender = state.lectorGender,
-                    onAccreditedIdChange = viewModel::setAccreditedId,
-                    onDocIdStartChange = viewModel::setDocIdStart,
-                    onAccreditedTypeChange = viewModel::setAccreditedType,
-                    onAccreditedHoursChange = viewModel::setAccreditedHours,
-                    onCertificateNameChange = viewModel::setCertificateName,
-                    onLectorChange = viewModel::setLector,
-                    onLectorGenderChange = viewModel::setLectorGender,
+                    actions = ConversionFormActions(
+                        onAccreditedIdChange = viewModel::setAccreditedId,
+                        onDocIdStartChange = viewModel::setDocIdStart,
+                        onAccreditedTypeChange = viewModel::setAccreditedType,
+                        onAccreditedHoursChange = viewModel::setAccreditedHours,
+                        onCertificateNameChange = viewModel::setCertificateName,
+                        onLectorChange = viewModel::setLector,
+                        onLectorGenderChange = viewModel::setLectorGender,
+                    ),
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Grid.x6))
             }
             VerticalScrollbar(
                 adapter = rememberScrollbarAdapter(scrollState),
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
-                    .padding(end = 4.dp),
+                    .padding(end = Grid.x2),
             )
         }
     }
@@ -221,36 +198,23 @@ fun ConversionScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CertificateDetailsSection(
-    accreditedId: String,
-    docIdStart: String,
-    accreditedType: String,
+    form: ConversionFormState,
     accreditedTypeOptions: List<String>,
-    accreditedHours: String,
-    certificateName: String,
-    lector: String,
-    lectorGender: String,
-    onAccreditedIdChange: (String) -> Unit,
-    onDocIdStartChange: (String) -> Unit,
-    onAccreditedTypeChange: (String) -> Unit,
-    onAccreditedHoursChange: (String) -> Unit,
-    onCertificateNameChange: (String) -> Unit,
-    onLectorChange: (String) -> Unit,
-    onLectorGenderChange: (String) -> Unit,
+    actions: ConversionFormActions,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
         shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        tonalElevation = 2.dp,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
+        tonalElevation = Grid.x1,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(CardPadding),
+            verticalArrangement = Arrangement.spacedBy(Grid.x6),
         ) {
             Text(
                 text = stringResource(Res.string.conversion_form_section_title),
@@ -260,19 +224,19 @@ private fun CertificateDetailsSection(
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
             ) {
                 ClearableOutlinedTextField(
-                    value = accreditedId,
-                    onValueChange = onAccreditedIdChange,
+                    value = form.accreditedId,
+                    onValueChange = actions.onAccreditedIdChange,
                     label = { Text(stringResource(Res.string.conversion_accredited_id_label)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
                 ClearableOutlinedTextField(
-                    value = docIdStart,
-                    onValueChange = onDocIdStartChange,
+                    value = form.docIdStart,
+                    onValueChange = actions.onDocIdStartChange,
                     label = { Text(stringResource(Res.string.conversion_doc_id_label)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
@@ -284,10 +248,9 @@ private fun CertificateDetailsSection(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
             ) {
-                val fillMaxWidth = Modifier
-                    .fillMaxWidth()
+                val fillMaxWidth = Modifier.fillMaxWidth()
                 ClearableOutlinedTextField(
-                    value = accreditedType,
+                    value = form.accreditedType,
                     onValueChange = {},
                     label = { Text(stringResource(Res.string.conversion_accredited_type_label)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -299,7 +262,7 @@ private fun CertificateDetailsSection(
                     singleLine = true,
                     showClearIcon = false,
                     textStyle = MaterialTheme.typography.bodySmall,
-                    onClear = { onAccreditedTypeChange("") },
+                    onClear = { actions.onAccreditedTypeChange("") },
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -309,7 +272,7 @@ private fun CertificateDetailsSection(
                         DropdownMenuItem(
                             text = { Text(option) },
                             onClick = {
-                                onAccreditedTypeChange(option)
+                                actions.onAccreditedTypeChange(option)
                                 expanded = false
                             },
                         )
@@ -317,8 +280,8 @@ private fun CertificateDetailsSection(
                 }
             }
             ClearableOutlinedTextField(
-                value = accreditedHours,
-                onValueChange = onAccreditedHoursChange,
+                value = form.accreditedHours,
+                onValueChange = actions.onAccreditedHoursChange,
                 label = { Text(stringResource(Res.string.conversion_accredited_hours_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -326,8 +289,8 @@ private fun CertificateDetailsSection(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
             ClearableOutlinedTextField(
-                value = certificateName,
-                onValueChange = onCertificateNameChange,
+                value = form.certificateName,
+                onValueChange = actions.onCertificateNameChange,
                 label = { Text(stringResource(Res.string.conversion_certificate_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -335,19 +298,19 @@ private fun CertificateDetailsSection(
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
             ) {
                 ClearableOutlinedTextField(
-                    value = lectorGender,
-                    onValueChange = onLectorGenderChange,
+                    value = form.lectorGender,
+                    onValueChange = actions.onLectorGenderChange,
                     label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
                 ClearableOutlinedTextField(
-                    value = lector,
-                    onValueChange = onLectorChange,
+                    value = form.lector,
+                    onValueChange = actions.onLectorChange,
                     label = { Text(stringResource(Res.string.conversion_lector_label)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
@@ -358,34 +321,43 @@ private fun CertificateDetailsSection(
     }
 }
 
+private data class ConversionFormActions(
+    val onAccreditedIdChange: (String) -> Unit,
+    val onDocIdStartChange: (String) -> Unit,
+    val onAccreditedTypeChange: (String) -> Unit,
+    val onAccreditedHoursChange: (String) -> Unit,
+    val onCertificateNameChange: (String) -> Unit,
+    val onLectorChange: (String) -> Unit,
+    val onLectorGenderChange: (String) -> Unit,
+)
+
 @Composable
 private fun ConversionBottomBar(
-    isConversionEnabled: Boolean,
-    isNetworkAvailable: Boolean,
+    state: ConversionUiState,
     onConversionClick: () -> Unit,
 ) {
     Surface(
-        color = Color.White,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = Grid.x3,
+        shadowElevation = Grid.x3,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = ContentPadding, vertical = BottomBarPadding),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(Grid.x4),
             ) {
-                if (!isNetworkAvailable || !isConversionEnabled) {
-                    val hintText = if (!isNetworkAvailable) {
+                if (!state.isNetworkAvailable || !state.isConversionEnabled) {
+                    val hintText = if (!state.isNetworkAvailable) {
                         stringResource(Res.string.network_unavailable_message)
                     } else {
                         stringResource(Res.string.conversion_validation_hint)
                     }
-                    val hintColor = if (!isNetworkAvailable) {
+                    val hintColor = if (!state.isNetworkAvailable) {
                         MaterialTheme.colorScheme.error
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -397,10 +369,10 @@ private fun ConversionBottomBar(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                Color(0xFFF8FAFC),
+                                MaterialTheme.colorScheme.surfaceVariant,
                                 MaterialTheme.shapes.small
                             )
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                            .padding(horizontal = Grid.x6, vertical = Grid.x3),
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -408,7 +380,7 @@ private fun ConversionBottomBar(
                     text = stringResource(Res.string.conversion_convert_button),
                     onClick = onConversionClick,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = isConversionEnabled,
+                    enabled = state.isConversionEnabled,
                 )
             }
         }

@@ -23,9 +23,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
+import com.cmm.certificates.core.theme.Grid
 import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import kotlinx.coroutines.delay
@@ -49,7 +48,7 @@ fun PreviewEmailDialog(
     onDismiss: () -> Unit,
 ) {
     val isError = !errorMessage.isNullOrBlank()
-    val successColor = Color(0xFF16A34A)
+    val successColor = MaterialTheme.colorScheme.primary
     val indicatorColor by animateColorAsState(
         targetValue = if (isSuccess) successColor else MaterialTheme.colorScheme.onPrimary,
         label = "PreviewEmailIndicatorColor",
@@ -79,18 +78,18 @@ fun PreviewEmailDialog(
                                 Icon(
                                     imageVector = Lucide.Check,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(Grid.x8),
                                     tint = indicatorColor,
                                 )
                             } else {
                                 CircularProgressIndicator(
                                     color = indicatorColor,
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = Grid.x1,
+                                    modifier = Modifier.size(Grid.x8),
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Grid.x4))
                         Text(
                             text = stringResource(if (isSuccess) successText else confirmText),
                             color = if (isSuccess) successColor else MaterialTheme.colorScheme.onPrimary,
@@ -111,7 +110,7 @@ fun PreviewEmailDialog(
         },
         title = { Text(text = stringResource(title)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Grid.x6)) {
                 Text(
                     text = stringResource(description),
                     style = MaterialTheme.typography.bodySmall,
@@ -129,7 +128,7 @@ fun PreviewEmailDialog(
                     supportingText = {
                         if (isError) {
                             Text(
-                                text = errorMessage.orEmpty(),
+                                text = errorMessage,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                             )

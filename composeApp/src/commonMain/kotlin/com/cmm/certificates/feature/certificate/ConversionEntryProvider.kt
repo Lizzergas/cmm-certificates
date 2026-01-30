@@ -14,7 +14,7 @@ import kotlinx.serialization.modules.subclass
 @Serializable
 data object ConversionScreenRoute : NavKey
 
-fun EntryProviderScope<NavKey>.featureHomeEntryProvider(navigator: Navigator) {
+fun EntryProviderScope<NavKey>.featureConversionEntryProvider(navigator: Navigator) {
     entry<ConversionScreenRoute> {
         ConversionScreen(
             onProfileClick = { navigator.push(SettingsScreenRoute) },

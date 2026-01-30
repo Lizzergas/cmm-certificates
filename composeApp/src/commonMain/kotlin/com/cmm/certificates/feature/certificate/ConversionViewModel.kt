@@ -9,165 +9,171 @@ import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
-import com.cmm.certificates.feature.settings.data.SettingsStore
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val DEFAULT_OUTPUT_PATH = "pdf/"
-private val DEFAULT_ACCREDITED_TYPE_OPTIONS =
-    parseAccreditedTypeOptions(SettingsStore.DEFAULT_ACCREDITED_TYPE_OPTIONS)
 
 class ConversionViewModel(
     private val progressRepository: PdfConversionProgressRepository,
     private val settingsRepository: SettingsRepository,
     private val networkService: NetworkService,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ConversionUiState())
-    val uiState = _uiState.asStateFlow()
+    private val defaultAccreditedTypeOptions = parseAccreditedTypeOptions(
+        settingsRepository.state.value.certificate.accreditedTypeOptions,
+    )
+    private val formState = MutableStateFlow(
+        ConversionFormState(
+            accreditedType = defaultAccreditedTypeOptions.firstOrNull().orEmpty(),
+        )
+    )
+    private val filesState = MutableStateFlow(ConversionFilesState())
+    private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
 
-    init {
-        viewModelScope.launch {
-            networkService.isNetworkAvailable.collect { available ->
-                updateNetworkAvailability(available)
-            }
+    val uiState: StateFlow<ConversionUiState> = combine(
+        formState,
+        filesState,
+        entriesState,
+        settingsRepository.state,
+        networkService.isNetworkAvailable,
+    ) { form, files, entries, settings, networkAvailable ->
+        val options = parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
+            .ifEmpty { defaultAccreditedTypeOptions }
+        val resolvedType = if (form.accreditedType.isNotBlank() && form.accreditedType in options) {
+            form.accreditedType
+        } else {
+            options.firstOrNull().orEmpty()
         }
-        viewModelScope.launch {
-            settingsRepository.state.collect { settings ->
-                val parsedOptions =
-                    parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
-                val options = parsedOptions.ifEmpty {
-                    DEFAULT_ACCREDITED_TYPE_OPTIONS
-                }
-                _uiState.update { current ->
-                    val resolvedType =
-                        if (current.accreditedType.isBlank() || current.accreditedType !in options) {
-                            options.firstOrNull().orEmpty()
-                        } else {
-                            current.accreditedType
-                        }
-                    current.copy(
-                        accreditedTypeOptions = options,
-                        accreditedType = resolvedType,
-                    )
-                }
-            }
+        val resolvedForm = if (resolvedType == form.accreditedType) {
+            form
+        } else {
+            form.copy(accreditedType = resolvedType)
         }
-    }
+        ConversionUiState(
+            files = files,
+            form = resolvedForm,
+            accreditedTypeOptions = options,
+            isNetworkAvailable = networkAvailable,
+            entries = entries,
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        ConversionUiState(
+            files = ConversionFilesState(),
+            form = ConversionFormState(
+                accreditedType = defaultAccreditedTypeOptions.firstOrNull().orEmpty(),
+            ),
+            accreditedTypeOptions = defaultAccreditedTypeOptions,
+        ),
+    )
 
     fun setTemplatePath(path: String) {
-        _uiState.update { it.copy(templatePath = path) }
+        filesState.update { it.copy(templatePath = path) }
     }
 
     fun setAccreditedId(value: String) {
-        _uiState.update { it.copy(accreditedId = value) }
+        formState.update { it.copy(accreditedId = value) }
     }
 
     fun setDocIdStart(value: String) {
         val sanitized = value.filter { it in '0'..'9' }
-        _uiState.update { it.copy(docIdStart = sanitized) }
+        formState.update { it.copy(docIdStart = sanitized) }
     }
 
     fun setAccreditedType(value: String) {
-        _uiState.update { it.copy(accreditedType = value) }
+        formState.update { it.copy(accreditedType = value) }
     }
 
     fun setAccreditedHours(value: String) {
         val sanitized = value.filter { it in '0'..'9' }
-        _uiState.update { it.copy(accreditedHours = sanitized) }
+        formState.update { it.copy(accreditedHours = sanitized) }
     }
 
     fun setCertificateName(value: String) {
-        _uiState.update { it.copy(certificateName = value) }
+        formState.update { it.copy(certificateName = value) }
     }
 
     fun setLector(value: String) {
-        _uiState.update { it.copy(lector = value) }
+        formState.update { it.copy(lector = value) }
     }
 
     fun setLectorGender(value: String) {
-        _uiState.update { it.copy(lectorGender = value) }
+        formState.update { it.copy(lectorGender = value) }
     }
 
     fun selectXlsx(path: String) {
-        _uiState.update { it.copy(xlsxPath = path, parseError = null) }
+        filesState.update { it.copy(xlsxPath = path) }
         if (path.isBlank()) {
-            _uiState.update { it.copy(entries = emptyList()) }
+            entriesState.value = emptyList()
             return
         }
-        try {
-            val entries = XlsxParser.parse(path)
-            _uiState.update { it.copy(entries = entries, parseError = null) }
-        } catch (e: Exception) {
-            println("Failed to parse XLSX: ${e.message}")
-            _uiState.update {
-                it.copy(
-                    entries = emptyList(),
-                    parseError = e.message ?: "Failed to parse XLSX",
-                )
+        viewModelScope.launch {
+            val parsed = runCatching {
+                withContext(Dispatchers.IO) { XlsxParser.parse(path) }
             }
+            entriesState.value = parsed.getOrElse { emptyList() }
         }
     }
 
-    suspend fun generateDocuments() {
+    fun generateDocuments() {
+        viewModelScope.launch {
+            generateDocumentsInternal()
+        }
+    }
+
+    private suspend fun generateDocumentsInternal() {
         networkService.refresh()
         if (!networkService.isNetworkAvailable.value) {
-            updateNetworkAvailability(false)
-            _uiState.update { it.copy(parseError = NETWORK_UNAVAILABLE_MESSAGE) }
             progressRepository.fail(NETWORK_UNAVAILABLE_MESSAGE)
             return
         }
-        val snapshot = _uiState.value
-        if (snapshot.templatePath.isBlank()) {
-            println("Template path is blank; cannot generate documents.")
-            _uiState.update { it.copy(parseError = "Template is required.") }
+        val snapshot = uiState.value
+        if (snapshot.files.templatePath.isBlank()) {
             progressRepository.fail("Template is required.")
             return
         }
         if (snapshot.entries.isEmpty()) {
-            println("No entries to process; nothing to generate.")
-            _uiState.update { it.copy(parseError = "No XLSX entries to generate.") }
             progressRepository.fail("No XLSX entries to generate.")
             return
         }
-        if (snapshot.accreditedId.isBlank() ||
-            snapshot.docIdStart.isBlank() ||
-            snapshot.accreditedHours.isBlank() ||
-            snapshot.certificateName.isBlank() ||
-            snapshot.lector.isBlank()
+        val form = snapshot.form
+        if (form.accreditedId.isBlank() ||
+            form.docIdStart.isBlank() ||
+            form.accreditedHours.isBlank() ||
+            form.certificateName.isBlank() ||
+            form.lector.isBlank()
         ) {
-            _uiState.update { it.copy(parseError = "All certificate fields are required.") }
             progressRepository.fail("All certificate fields are required.")
             return
         }
 
         val templateBytes = try {
-            DocxTemplate.loadTemplate(snapshot.templatePath)
+            DocxTemplate.loadTemplate(snapshot.files.templatePath)
         } catch (e: Exception) {
-            println("Failed to load template: ${e.message}")
-            _uiState.update { it.copy(parseError = e.message ?: "Failed to load template.") }
             progressRepository.fail(e.message ?: "Failed to load template.")
             return
         }
 
-        val docIdStart = snapshot.docIdStart.trim().toLongOrNull()
+        val docIdStart = form.docIdStart.trim().toLongOrNull()
         if (docIdStart == null) {
-            _uiState.update { it.copy(parseError = "Document ID start must be a number.") }
             progressRepository.fail("Document ID start must be a number.")
             return
         }
 
         val baseOutputDir = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
-        val sanitizedFolder = sanitizeFolderName(snapshot.certificateName)
+        val sanitizedFolder = sanitizeFolderName(form.certificateName)
         val outputDir = joinPath(baseOutputDir, sanitizedFolder)
         if (!OutputDirectory.ensureExists(outputDir)) {
-            _uiState.update { it.copy(parseError = "Failed to create output folder: $outputDir") }
             progressRepository.fail("Failed to create output folder: $outputDir")
             return
         }
@@ -181,7 +187,6 @@ class ConversionViewModel(
             )
             for ((index, entry) in snapshot.entries.withIndex()) {
                 if (progressRepository.isCancelRequested()) return@withContext
-                println("Generating document for entry #${index + 1}: $entry")
                 val fullName = listOf(entry.name, entry.surname)
                     .filter { it.isNotBlank() }
                     .joinToString(" ")
@@ -190,17 +195,16 @@ class ConversionViewModel(
                 val replacements = mapOf(
                     "{{vardas_pavarde}}" to fullName,
                     "{{data}}" to entry.formattedDate,
-                    "{{akreditacijos_id}}" to snapshot.accreditedId,
+                    "{{akreditacijos_id}}" to form.accreditedId,
                     "{{dokumento_id}}" to docId.toString(),
-                    "{{akreditacijos_tipas}}" to snapshot.accreditedType,
-                    "{{akreditacijos_valandos}}" to snapshot.accreditedHours,
-                    "{{sertifikato_pavadinimas}}" to snapshot.certificateName,
-                    "{{destytojas}}" to snapshot.lector,
-                    "{{destytojo_tipas}}" to snapshot.lectorGender,
+                    "{{akreditacijos_tipas}}" to form.accreditedType,
+                    "{{akreditacijos_valandos}}" to form.accreditedHours,
+                    "{{sertifikato_pavadinimas}}" to form.certificateName,
+                    "{{destytojas}}" to form.lector,
+                    "{{destytojo_tipas}}" to form.lectorGender,
                 )
                 val outputPath = joinPath(outputDir, "${docId}.pdf")
                 try {
-                    println("Writing output: $outputPath")
                     DocxTemplate.fillTemplateToPdf(
                         templateBytes = templateBytes,
                         outputPath = outputPath,
@@ -209,10 +213,6 @@ class ConversionViewModel(
                     if (progressRepository.isCancelRequested()) return@withContext
                     progressRepository.update(index + 1)
                 } catch (e: Exception) {
-                    println("Failed to generate document for $fullName: ${e.message}")
-                    _uiState.update {
-                        it.copy(parseError = e.message ?: "Failed to write $outputPath")
-                    }
                     progressRepository.fail(e.message ?: "Failed to write $outputPath")
                     return@withContext
                 }
@@ -220,15 +220,6 @@ class ConversionViewModel(
             if (!progressRepository.isCancelRequested()) {
                 progressRepository.finish()
             }
-        }
-    }
-
-    private fun updateNetworkAvailability(available: Boolean) {
-        _uiState.update { current ->
-            current.copy(
-                isNetworkAvailable = available,
-                parseError = if (available && current.parseError == NETWORK_UNAVAILABLE_MESSAGE) null else current.parseError,
-            )
         }
     }
 }
@@ -245,31 +236,44 @@ private fun sanitizeFolderName(rawName: String): String {
 }
 
 data class ConversionUiState(
+    val files: ConversionFilesState = ConversionFilesState(),
+    val form: ConversionFormState = ConversionFormState(),
+    val accreditedTypeOptions: List<String> = emptyList(),
+    val isNetworkAvailable: Boolean = true,
+    val entries: List<RegistrationEntry> = emptyList(),
+) {
+    val isConversionEnabled: Boolean
+        get() = files.xlsxPath.isNotBlank() &&
+                files.templatePath.isNotBlank() &&
+                form.accreditedId.isNotBlank() &&
+                form.docIdStart.isNotBlank() &&
+                form.accreditedHours.isNotBlank() &&
+                form.certificateName.isNotBlank() &&
+                form.lector.isNotBlank() &&
+                isNetworkAvailable &&
+                entries.isNotEmpty()
+}
+
+data class ConversionFilesState(
     val xlsxPath: String = "",
     val templatePath: String = "",
+) {
+    val hasXlsx: Boolean
+        get() = xlsxPath.isNotBlank()
+
+    val hasTemplate: Boolean
+        get() = templatePath.isNotBlank()
+}
+
+data class ConversionFormState(
     val accreditedId: String = "IVP-10",
     val docIdStart: String = "",
-    val accreditedType: String = DEFAULT_ACCREDITED_TYPE_OPTIONS.firstOrNull().orEmpty(),
-    val accreditedTypeOptions: List<String> = DEFAULT_ACCREDITED_TYPE_OPTIONS,
+    val accreditedType: String = "",
     val accreditedHours: String = "",
     val certificateName: String = "",
     val lector: String = "",
     val lectorGender: String = "Lektorius:",
-    val isNetworkAvailable: Boolean = true,
-    val entries: List<RegistrationEntry> = emptyList(),
-    val parseError: String? = null,
-) {
-    val isConversionEnabled: Boolean
-        get() = xlsxPath.isNotBlank() &&
-                templatePath.isNotBlank() &&
-                accreditedId.isNotBlank() &&
-                docIdStart.isNotBlank() &&
-                accreditedHours.isNotBlank() &&
-                certificateName.isNotBlank() &&
-                lector.isNotBlank() &&
-                isNetworkAvailable &&
-                entries.isNotEmpty()
-}
+)
 
 private fun parseAccreditedTypeOptions(raw: String): List<String> {
     return raw.lineSequence()

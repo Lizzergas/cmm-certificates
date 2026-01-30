@@ -31,10 +31,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_progress_cancel
@@ -81,7 +81,7 @@ fun EmailProgressScreen(
             .fillMaxSize()
             .padding(padding)
             .safeContentPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = Grid.x12, vertical = Grid.x8)
         AnimatedContent(
             targetState = uiState.mode,
             modifier = contentModifier,
@@ -137,14 +137,14 @@ private fun EmailProgressBottomBar(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        tonalElevation = Grid.x3,
+        shadowElevation = Grid.x3,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = Grid.x8, vertical = Grid.x6),
             contentAlignment = Alignment.Center,
         ) {
             if (isInProgress) {
@@ -155,8 +155,8 @@ private fun EmailProgressBottomBar(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     border = BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline,
+                        Stroke.thin,
+                        MaterialTheme.colorScheme.outlineVariant,
                     ),
                 ) {
                     Text(text = stringResource(Res.string.email_progress_cancel))
@@ -165,12 +165,6 @@ private fun EmailProgressBottomBar(
                 Button(
                     onClick = onFinish,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = Color(0xFFE2E8F0),
-                        disabledContentColor = Color(0xFF94A3B8),
-                    ),
                 ) {
                     Text(
                         text = stringResource(Res.string.email_progress_finish),
@@ -196,13 +190,13 @@ private fun EmailSuccessContent(
     ) {
         Box(
             modifier = Modifier
-                .size(128.dp)
+                .size(Grid.x64)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(Grid.x48)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -214,7 +208,7 @@ private fun EmailSuccessContent(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Grid.x8))
         Text(
             text = successTitle,
             style = MaterialTheme.typography.titleLarge,

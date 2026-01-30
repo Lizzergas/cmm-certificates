@@ -37,12 +37,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
@@ -64,25 +62,19 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.data.email.SmtpTransport
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-private val BackgroundColor = Color(0xFFF8FAFC)
-private val CardColor = Color.White
-private val BorderColor = Color(0xFFE2E8F0)
-private val PrimaryColor = Color(0xFF2563EB)
-private val SuccessColor = Color(0xFF16A34A)
-private val DisabledBackground = Color(0xFFE2E8F0)
-private val DisabledForeground = Color(0xFF94A3B8)
-
-private val MaxWidth = 480.dp
-private val PaddingHorizontal = 16.dp
-private val PaddingVertical = 12.dp
-private val CardPadding = 16.dp
-private val CardGap = 12.dp
+private val MaxWidth = Grid.x240
+private val PaddingHorizontal = Grid.x8
+private val PaddingVertical = Grid.x6
+private val CardPadding = Grid.x8
+private val CardGap = Grid.x6
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +85,7 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        containerColor = BackgroundColor,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             SettingsTopBar(
                 title = Res.string.settings_title,
@@ -148,7 +140,7 @@ private fun BoxScope.SettingsContent(
             .verticalScroll(scrollState)
             .fillMaxWidth()
             .widthIn(max = MaxWidth),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(Grid.x8),
     ) {
         SettingsCard(title = Res.string.settings_section_title) {
             StatusLines(
@@ -158,7 +150,7 @@ private fun BoxScope.SettingsContent(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SettingsField(
@@ -234,7 +226,7 @@ private fun BoxScope.SettingsContent(
         modifier = Modifier
             .align(Alignment.CenterEnd)
             .fillMaxHeight()
-            .padding(end = 4.dp),
+            .padding(end = Grid.x2),
     )
 }
 
@@ -249,11 +241,11 @@ private fun SettingsTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(bottom = Grid.x4),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Grid.x2)) {
             Text(
                 text = stringResource(title),
                 style = MaterialTheme.typography.titleLarge,
@@ -276,22 +268,22 @@ private fun SettingsBottomBar(
     canAuthenticate: Boolean,
 ) {
     Surface(
-        color = CardColor,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, BorderColor),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = Grid.x3,
+        shadowElevation = Grid.x3,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(CardPadding),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(Grid.x4),
         ) {
             OutlinedButton(
                 onClick = onClearAll,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.error),
             ) {
                 Text(
                     text = stringResource(Res.string.settings_clear_all),
@@ -304,12 +296,6 @@ private fun SettingsBottomBar(
                 onClick = onAuthenticate,
                 enabled = canAuthenticate,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryColor,
-                    contentColor = Color.White,
-                    disabledContainerColor = DisabledBackground,
-                    disabledContentColor = DisabledForeground,
-                ),
             ) {
                 Text(
                     text = stringResource(Res.string.settings_authenticate),
@@ -328,10 +314,10 @@ private fun SettingsCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = CardColor,
+        color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.extraLarge,
-        border = BorderStroke(1.dp, BorderColor),
-        tonalElevation = 2.dp,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
+        tonalElevation = Grid.x1,
     ) {
         Column(
             modifier = Modifier
@@ -365,7 +351,7 @@ private fun StatusLines(
         Text(
             text = stringResource(Res.string.settings_authenticated),
             style = MaterialTheme.typography.labelSmall,
-            color = SuccessColor,
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }

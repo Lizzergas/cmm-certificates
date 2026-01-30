@@ -34,10 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_preview_button
@@ -60,6 +58,8 @@ import certificates.composeapp.generated.resources.progress_success_title
 import certificates.composeapp.generated.resources.progress_time_label
 import certificates.composeapp.generated.resources.progress_title
 import com.cmm.certificates.core.openFolder
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.PreviewEmailDialog
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
@@ -104,6 +104,7 @@ fun PdfConversionProgressScreen(
             onDismiss = {
                 if (!uiState.preview.isSending) {
                     viewModel.clearPreviewStatus()
+                    isPreviewDialogVisible = false
                 }
             },
         )
@@ -134,7 +135,7 @@ fun PdfConversionProgressScreen(
             .fillMaxSize()
             .padding(padding)
             .safeContentPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(horizontal = Grid.x12, vertical = Grid.x8)
         AnimatedContent(
             targetState = mode,
             modifier = contentModifier,
@@ -206,20 +207,20 @@ private fun ProgressBottomBar(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 6.dp,
-        shadowElevation = 6.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        tonalElevation = Grid.x3,
+        shadowElevation = Grid.x3,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = Grid.x8, vertical = Grid.x6),
             contentAlignment = Alignment.Center,
         ) {
             if (isCompleted) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(Grid.x4),
                 ) {
                     OutlinedButton(
                         onClick = onSendPreview,
@@ -229,8 +230,8 @@ private fun ProgressBottomBar(
                             contentColor = MaterialTheme.colorScheme.onSurface,
                         ),
                         border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline,
+                            Stroke.thin,
+                            MaterialTheme.colorScheme.outlineVariant,
                         ),
                     ) {
                         Text(text = stringResource(Res.string.email_preview_button))
@@ -246,7 +247,7 @@ private fun ProgressBottomBar(
                                     MaterialTheme.colorScheme.surfaceVariant,
                                     MaterialTheme.shapes.small,
                                 )
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                                .padding(horizontal = Grid.x6, vertical = Grid.x3),
                             textAlign = TextAlign.Center,
                         )
                     }
@@ -254,12 +255,6 @@ private fun ProgressBottomBar(
                         onClick = onSendEmails,
                         modifier = Modifier.fillMaxWidth(),
                         enabled = isSendEmailsEnabled,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContainerColor = Color(0xFFE2E8F0),
-                            disabledContentColor = Color(0xFF94A3B8),
-                        ),
                     ) {
                         Text(
                             text = stringResource(Res.string.progress_send_emails),
@@ -274,8 +269,8 @@ private fun ProgressBottomBar(
                             contentColor = MaterialTheme.colorScheme.onSurface,
                         ),
                         border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline,
+                            Stroke.thin,
+                            MaterialTheme.colorScheme.outlineVariant,
                         ),
                     ) {
                         Text(text = stringResource(Res.string.progress_open_folder))
@@ -297,8 +292,8 @@ private fun ProgressBottomBar(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
                     border = BorderStroke(
-                        1.dp,
-                        Color(0xFFE2E8F0),
+                        Stroke.thin,
+                        MaterialTheme.colorScheme.outlineVariant,
                     ),
                 ) {
                     Text(text = stringResource(Res.string.progress_cancel))
@@ -324,13 +319,13 @@ private fun SuccessContent(
     ) {
         Box(
             modifier = Modifier
-                .size(128.dp)
+                .size(Grid.x64)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Box(
                 modifier = Modifier
-                    .size(96.dp)
+                    .size(Grid.x48)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -342,7 +337,7 @@ private fun SuccessContent(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(Grid.x8))
         Text(
             text = successTitle,
             style = MaterialTheme.typography.titleLarge,
@@ -351,7 +346,7 @@ private fun SuccessContent(
             textAlign = TextAlign.Center,
         )
         if (!warningMessage.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Grid.x4))
             Text(
                 text = warningMessage,
                 style = MaterialTheme.typography.bodySmall,
@@ -359,21 +354,21 @@ private fun SuccessContent(
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(Grid.x10))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surface,
             shape = MaterialTheme.shapes.large,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            tonalElevation = 2.dp,
+            border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
+            tonalElevation = Grid.x1,
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(Grid.x8),
+                verticalArrangement = Arrangement.spacedBy(Grid.x6),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Grid.x2)) {
                     Text(
                         text = stringResource(Res.string.progress_output_label),
                         style = MaterialTheme.typography.labelSmall,
@@ -389,10 +384,10 @@ private fun SuccessContent(
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(1.dp)
-                        .background(MaterialTheme.colorScheme.outline),
+                        .height(Stroke.thin)
+                        .background(MaterialTheme.colorScheme.outlineVariant),
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Grid.x2)) {
                     Text(
                         text = stringResource(Res.string.progress_time_label),
                         style = MaterialTheme.typography.labelSmall,

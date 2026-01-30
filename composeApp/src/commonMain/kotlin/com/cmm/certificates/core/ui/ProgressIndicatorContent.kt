@@ -16,10 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import com.cmm.certificates.core.theme.Grid
 
 @Composable
 fun ProgressIndicatorContent(
@@ -36,18 +35,19 @@ fun ProgressIndicatorContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        val colors = MaterialTheme.colorScheme
         Box(
             modifier = Modifier
-                .size(220.dp)
-                .background(Color(0x1A2563EB), CircleShape),
+                .size(Grid.x110)
+                .background(colors.primary.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.size(200.dp),
-                color = Color(0xFF2563EB),
-                strokeWidth = 6.dp,
-                trackColor = Color(0xFFF1F5F9),
+                modifier = Modifier.size(Grid.x100),
+                color = colors.primary,
+                strokeWidth = Grid.x3,
+                trackColor = colors.surfaceVariant,
                 strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap,
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -59,14 +59,14 @@ fun ProgressIndicatorContent(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(Grid.x12))
         Text(
             text = title,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(Grid.x5))
         Text(
             text = infoLine,
             style = MaterialTheme.typography.bodySmall,
@@ -95,7 +95,7 @@ fun ProgressErrorContent(
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Grid.x6))
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,

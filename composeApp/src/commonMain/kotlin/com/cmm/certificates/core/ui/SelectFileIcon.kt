@@ -7,16 +7,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 
 @Composable
 fun SelectFileIcon(
@@ -26,23 +25,24 @@ fun SelectFileIcon(
     tooltipText: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val borderColor = if (selected) Color(0xFF22C55E) else Color(0xFFE2E8F0)
-    val background = if (selected) Color(0xFFDCFCE7) else Color.White
-    val iconBackground = if (selected) Color.White else Color(0xFFF1F5F9)
-    val iconColor = if (selected) Color(0xFF15803D) else Color(0xFF94A3B8)
+    val colors = MaterialTheme.colorScheme
+    val borderColor = if (selected) colors.tertiary else colors.outlineVariant
+    val background = if (selected) colors.tertiaryContainer else colors.surface
+    val iconBackground = if (selected) colors.surface else colors.surfaceVariant
+    val iconColor = if (selected) colors.tertiary else colors.onSurfaceVariant
 
     TooltipWrapper(
         tooltipText = tooltipText,
-        modifier = modifier.height(96.dp),
+        modifier = modifier.height(Grid.x48),
     ) {
         Surface(
             onClick = onClick,
             modifier = Modifier.fillMaxSize(),
-            shape = RoundedCornerShape(14.dp),
+            shape = MaterialTheme.shapes.large,
             color = background,
-            border = BorderStroke(1.dp, borderColor),
-            tonalElevation = if (selected) 2.dp else 0.dp,
-            shadowElevation = if (selected) 2.dp else 0.dp,
+            border = BorderStroke(Stroke.thin, borderColor),
+            tonalElevation = if (selected) Grid.x1 else Grid.x0,
+            shadowElevation = if (selected) Grid.x1 else Grid.x0,
         ) {
             Box(
                 modifier = Modifier
@@ -52,7 +52,7 @@ fun SelectFileIcon(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(Grid.x28)
                         .background(iconBackground, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {

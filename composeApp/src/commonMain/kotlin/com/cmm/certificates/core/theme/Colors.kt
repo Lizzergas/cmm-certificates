@@ -15,10 +15,11 @@ private val OnSecondaryLight = Color(0xFFFFFFFF)
 private val SecondaryContainerLight = Color(0xFFCDE5FF)
 private val OnSecondaryContainerLight = Color(0xFF001D32)
 
-private val TertiaryLight = Color(0xFF5B5D72)         // neutral-ish tertiary for chips/accents
+// Green success emphasis
+private val TertiaryLight = Color(0xFF0F8A3B)
 private val OnTertiaryLight = Color(0xFFFFFFFF)
-private val TertiaryContainerLight = Color(0xFFE1E0F9)
-private val OnTertiaryContainerLight = Color(0xFF181A2C)
+private val TertiaryContainerLight = Color(0xFFD1F5D8)
+private val OnTertiaryContainerLight = Color(0xFF00210E)
 
 // Neutral surfaces (M3 prefers neutrals for background/surface; tint comes from containers)
 private val BackgroundLight = Color(0xFFFCFCFF)
@@ -78,10 +79,10 @@ private val OnSecondaryDark = Color(0xFF003351)
 private val SecondaryContainerDark = Color(0xFF004A73)
 private val OnSecondaryContainerDark = Color(0xFFCDE5FF)
 
-private val TertiaryDark = Color(0xFFC3C3DD)
-private val OnTertiaryDark = Color(0xFF2C2E42)
-private val TertiaryContainerDark = Color(0xFF424559)
-private val OnTertiaryContainerDark = Color(0xFFE1E0F9)
+private val TertiaryDark = Color(0xFF6DDC8C)
+private val OnTertiaryDark = Color(0xFF00391B)
+private val TertiaryContainerDark = Color(0xFF005227)
+private val OnTertiaryContainerDark = Color(0xFFD1F5D8)
 
 private val BackgroundDark = Color(0xFF121318)
 private val OnBackgroundDark = Color(0xFFE3E1E9)

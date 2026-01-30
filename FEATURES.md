@@ -1,37 +1,61 @@
 # Features and Technical Notes
 
 ## Current User Flow
-- Choose a source XLSX file, a DOCX template, and an output folder.
-- The app parses the XLSX into registration entries.
-- Clicking "Convert to PDF" (currently) generates DOCX files in the output folder for each entry.
+1. Select an XLSX file and a DOCX template on the Conversion screen.
+2. Fill certificate fields (IDs, hours, name, lecturer, etc.).
+3. Click **Convert to PDF**.
+4. Watch progress on the PDF Conversion Progress screen.
+5. On success, optionally send a preview email or send emails to all recipients.
+
+## Output Behavior
+- PDFs are generated as `${docIdStart + index}.pdf`.
+- Output folder is auto-created under `./pdf/<sanitized certificate name>`.
+- The output folder and `docIdStart` are stored in `PdfConversionProgressStore` for email sending.
 
 ## Template Placeholders
-- Templates are plain DOCX files containing placeholders like `{{vardas_pavarde}}`.
-- Each entry replaces `{{vardas_pavarde}}` with `name + surname`.
-- Output files are written as `entry_{index}.docx`.
+DOCX templates use placeholders like:
+- `{{vardas_pavarde}}`
+- `{{data}}`
+- `{{akreditacijos_id}}`
+- `{{dokumento_id}}`
+- `{{akreditacijos_tipas}}`
+- `{{akreditacijos_valandos}}`
+- `{{sertifikato_pavadinimas}}`
+- `{{destytojas}}`
+- `{{destytojo_tipas}}`
+
+## PDF Generation (JVM)
+- Replaces placeholders using Apache POI.
+- Converts DOCX → PDF with docx4j.
+- Stamps background image behind content using PDFBox.
+- Keeps only the first page (avoids extra pages).
+
+See `PDF_GEN.md` for the detailed pipeline.
 
 ## XLSX Parsing (JVM)
-- Parses the first sheet of an XLSX file (no external XLSX library).
-- Column mapping is positional (A-H) and does not rely on column names.
-- Parsing stops at the first empty date cell or fully empty row.
-- Timestamps support two formats:
+- Parses the first sheet without external XLSX libraries.
+- Column mapping is positional (A–H), not header-based.
+- Stops at first empty date cell or fully empty row.
+- Timestamp formats:
   - String: `MM/dd/yyyy HH:mm:ss`
-  - Excel serial: numeric date/time values (1900 system with leap-year bug adjustment)
+  - Excel serial (1900 system with leap-year bug adjustment)
 
-## DOCX Templating (JVM)
-- Uses Apache POI (XWPF) to replace text across paragraphs, tables, headers, and footers.
-- Handles placeholders that are split across multiple runs while preserving styling.
-- The template is loaded into memory once per batch to avoid re-reading the file.
+## Email Sending
+- SMTP configured in **Settings**.
+- Authentication is required before sending.
+- **Preview email** sends a single email (first PDF attached) and stores the preview email address.
+- **Send emails** sends one PDF per XLSX entry.
 
 ## Platform Support
-- JVM: full XLSX parsing and DOCX templating are enabled.
-- Android/iOS: XLSX parsing and DOCX templating throw `UnsupportedOperationException` for now.
+- JVM: full XLSX parsing + DOCX templating + email sending.
+- Android/iOS: XLSX parsing, DOCX templating, and SMTP are not implemented yet.
 
 ## UI Components
-- `SelectionCard` renders file selection cards with idle/selected states and full-card ripple.
-- `PrimaryActionButton` handles enabled/disabled styles for the main action.
+- `SelectFileIcon`: file selection cards (idle/selected states).
+- `PrimaryActionButton`: main CTA with enabled/disabled styling.
+- `ProgressIndicatorContent` / `ProgressErrorContent`: shared progress UI.
+- `PreviewEmailDialog`: reusable preview email dialog.
 
 ## Known Gaps
-- "Convert to PDF" currently outputs DOCX files only.
-- Placeholder coverage is limited to the supported keys (see README).
-- No error banner or progress UI; logging is used for diagnostics.
+- Android/iOS PDF generation and SMTP sending are not implemented.
+- Limited placeholder set (see above).

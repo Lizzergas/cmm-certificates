@@ -15,7 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+import com.cmm.certificates.core.theme.Grid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 
@@ -45,19 +45,19 @@ fun ClearableOutlinedTextField(
         {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(Grid.x2),
             ) {
                 trailingIcon?.invoke()
                 if (canClear) {
                     IconButton(
                         onClick = { (onClear ?: { onValueChange("") })() },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(Grid.x16),
                     ) {
                         Icon(
                             imageVector = Lucide.X,
                             contentDescription = "Clear text",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(Grid.x8),
                         )
                     }
                 }
