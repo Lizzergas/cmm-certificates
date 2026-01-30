@@ -121,6 +121,7 @@ fun PdfConversionProgressScreen(
                 isPreviewSending = uiState.preview.isSending,
                 onSendPreview = {
                     viewModel.preparePreviewDialog()
+                    isPreviewDialogVisible = true
                 },
                 onSendEmails = onSendEmails,
                 onConvertAnother = onConvertAnother,

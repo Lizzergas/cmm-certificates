@@ -46,6 +46,14 @@ See `PDF_GEN.md` for the detailed pipeline.
 - **Preview email** sends a single email (first PDF attached) and stores the preview email address.
 - **Send emails** sends one PDF per XLSX entry.
 
+## Email Signature Editor
+- The Settings screen provides an **Edit signature** dialog instead of a raw HTML text area.
+- Supports **Builder** mode (font, size, bold/italic, line height, color, and line list).
+- Supports **HTML** mode (paste/edit full HTML) with validation.
+- Supports **Preview** mode (builder-based preview; custom HTML falls back to a message).
+- The editor is **ephemeral**: changes are only saved when the user clicks **Save**.
+- Stored value remains a single string: `email.signatureHtml`.
+
 ## Platform Support
 - JVM: full XLSX parsing + DOCX templating + email sending.
 - Android/iOS: XLSX parsing, DOCX templating, and SMTP are not implemented yet.
@@ -55,6 +63,7 @@ See `PDF_GEN.md` for the detailed pipeline.
 - `PrimaryActionButton`: main CTA with enabled/disabled styling.
 - `ProgressIndicatorContent` / `ProgressErrorContent`: shared progress UI.
 - `PreviewEmailDialog`: reusable preview email dialog.
+- `SignatureEditorDialog`: reusable signature editor dialog.
 
 ## Known Gaps
 - Android/iOS PDF generation and SMTP sending are not implemented.

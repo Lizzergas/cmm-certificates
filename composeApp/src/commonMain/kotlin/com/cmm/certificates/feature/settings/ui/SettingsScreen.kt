@@ -53,7 +53,6 @@ import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
-import certificates.composeapp.generated.resources.settings_signature_html_label
 import certificates.composeapp.generated.resources.settings_subject_label
 import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_title
@@ -65,6 +64,7 @@ import certificates.composeapp.generated.resources.settings_username_label
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
+import com.cmm.certificates.core.ui.SignatureEditorDialog
 import com.cmm.certificates.data.email.SmtpTransport
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -83,6 +83,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val signatureEditorState by viewModel.signatureEditorState.collectAsStateWithLifecycle()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -119,6 +120,28 @@ fun SettingsScreen(
             )
         }
     }
+
+    SignatureEditorDialog(
+        state = signatureEditorState,
+        onDismiss = viewModel::closeSignatureEditor,
+        onSave = viewModel::saveSignatureDraft,
+        onReset = viewModel::resetSignatureToDefault,
+        onModeChange = viewModel::setSignatureEditorMode,
+        onDraftHtmlChange = viewModel::setSignatureDraftHtml,
+        onValidate = viewModel::validateSignatureDraft,
+        onConvertToBuilder = viewModel::convertSignatureToBuilder,
+        onSetFont = viewModel::setSignatureFont,
+        onSetFontSize = viewModel::setSignatureFontSize,
+        onToggleItalic = viewModel::toggleSignatureItalic,
+        onToggleBold = viewModel::toggleSignatureBold,
+        onSetLineHeight = viewModel::setSignatureLineHeight,
+        onSetColorHex = viewModel::setSignatureColorHex,
+        onAddLine = viewModel::addSignatureLine,
+        onRemoveLine = viewModel::removeSignatureLine,
+        onMoveLineUp = viewModel::moveSignatureLineUp,
+        onMoveLineDown = viewModel::moveSignatureLineDown,
+        onLineTextChange = viewModel::setSignatureLineText,
+    )
 }
 
 @Composable
@@ -204,12 +227,9 @@ private fun BoxScope.SettingsContent(
                 minLines = 5,
                 maxLines = 10,
             )
-            SettingsField(
-                label = Res.string.settings_signature_html_label,
-                value = state.email.signatureHtml,
-                onValueChange = viewModel::setSignatureHtml,
-                minLines = 4,
-                maxLines = 8,
+            SignatureSummaryCard(
+                signatureHtml = state.email.signatureHtml,
+                onEdit = viewModel::openSignatureEditor,
             )
             SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
