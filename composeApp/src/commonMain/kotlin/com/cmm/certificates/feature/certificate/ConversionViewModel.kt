@@ -8,10 +8,12 @@ import com.cmm.certificates.data.network.NETWORK_UNAVAILABLE_MESSAGE
 import com.cmm.certificates.data.network.NetworkService
 import com.cmm.certificates.data.xlsx.RegistrationEntry
 import com.cmm.certificates.data.xlsx.XlsxParser
+import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +27,8 @@ private const val DEFAULT_OUTPUT_PATH = "pdf/"
 
 class ConversionViewModel(
     private val progressRepository: PdfConversionProgressRepository,
-    private val settingsRepository: SettingsRepository,
+    emailProgressRepository: EmailProgressRepository,
+    settingsRepository: SettingsRepository,
     private val networkService: NetworkService,
 ) : ViewModel() {
     private val defaultAccreditedTypeOptions = parseAccreditedTypeOptions(
@@ -40,30 +43,38 @@ class ConversionViewModel(
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
 
     val uiState: StateFlow<ConversionUiState> = combine(
-        formState,
-        filesState,
-        entriesState,
-        settingsRepository.state,
-        networkService.isNetworkAvailable,
-    ) { form, files, entries, settings, networkAvailable ->
-        val options = parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
-            .ifEmpty { defaultAccreditedTypeOptions }
-        val resolvedType = if (form.accreditedType.isNotBlank() && form.accreditedType in options) {
-            form.accreditedType
-        } else {
-            options.firstOrNull().orEmpty()
-        }
-        val resolvedForm = if (resolvedType == form.accreditedType) {
-            form
-        } else {
-            form.copy(accreditedType = resolvedType)
-        }
-        ConversionUiState(
-            files = files,
-            form = resolvedForm,
-            accreditedTypeOptions = options,
-            isNetworkAvailable = networkAvailable,
-            entries = entries,
+        combine(
+            formState,
+            filesState,
+            entriesState,
+            settingsRepository.state,
+            networkService.isNetworkAvailable,
+        ) { form, files, entries, settings, networkAvailable ->
+            val options = parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
+                .ifEmpty { defaultAccreditedTypeOptions }
+            val resolvedType =
+                if (form.accreditedType.isNotBlank() && form.accreditedType in options) {
+                    form.accreditedType
+                } else {
+                    options.firstOrNull().orEmpty()
+                }
+            val resolvedForm = if (resolvedType == form.accreditedType) {
+                form
+            } else {
+                form.copy(accreditedType = resolvedType)
+            }
+            ConversionUiState(
+                files = files,
+                form = resolvedForm,
+                accreditedTypeOptions = options,
+                isNetworkAvailable = networkAvailable,
+                entries = entries,
+            )
+        },
+        emailProgressRepository.cachedEmails,
+    ) { baseState, cachedEmails ->
+        baseState.copy(
+            cachedEmailsCount = cachedEmails?.requests?.size ?: 0
         )
     }.stateIn(
         viewModelScope,
@@ -241,6 +252,7 @@ data class ConversionUiState(
     val accreditedTypeOptions: List<String> = emptyList(),
     val isNetworkAvailable: Boolean = true,
     val entries: List<RegistrationEntry> = emptyList(),
+    val cachedEmailsCount: Int = 0,
 ) {
     val isConversionEnabled: Boolean
         get() = files.xlsxPath.isNotBlank() &&

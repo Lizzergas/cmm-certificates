@@ -10,6 +10,6 @@ import org.koin.dsl.module
 
 val emailModule = module {
     singleOf(::EmailProgressStore)
-    single<EmailProgressRepository> { EmailProgressRepositoryImpl(get()) }
+    single<EmailProgressRepository> { EmailProgressRepositoryImpl(get(), get(), get()) }
     viewModelOf(::EmailSenderViewModel)
 }

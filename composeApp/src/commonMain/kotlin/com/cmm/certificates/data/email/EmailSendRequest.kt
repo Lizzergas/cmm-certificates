@@ -1,5 +1,8 @@
 package com.cmm.certificates.data.email
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class EmailSendRequest(
     val toEmail: String,
     val toName: String,

@@ -1,11 +1,5 @@
 package com.cmm.certificates.feature.emailsending.ui
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,29 +25,44 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.cmm.certificates.core.theme.Grid
-import com.cmm.certificates.core.theme.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.email_progress_cached_send_button
 import certificates.composeapp.generated.resources.email_progress_cancel
+import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.email_progress_error_title
 import certificates.composeapp.generated.resources.email_progress_finish
 import certificates.composeapp.generated.resources.email_progress_recipient_label
 import certificates.composeapp.generated.resources.email_progress_success_title
 import certificates.composeapp.generated.resources.email_progress_title
+import certificates.composeapp.generated.resources.email_stop_reason_cached_suffix
+import certificates.composeapp.generated.resources.email_stop_reason_cancelled
+import certificates.composeapp.generated.resources.email_stop_reason_consecutive_errors
+import certificates.composeapp.generated.resources.email_stop_reason_daily_limit
+import certificates.composeapp.generated.resources.email_stop_reason_doc_id_missing
+import certificates.composeapp.generated.resources.email_stop_reason_generic_fail
+import certificates.composeapp.generated.resources.email_stop_reason_gmail_quota
+import certificates.composeapp.generated.resources.email_stop_reason_missing_emails
+import certificates.composeapp.generated.resources.email_stop_reason_no_cached
+import certificates.composeapp.generated.resources.email_stop_reason_no_emails
+import certificates.composeapp.generated.resources.email_stop_reason_no_entries
+import certificates.composeapp.generated.resources.email_stop_reason_output_dir_missing
+import certificates.composeapp.generated.resources.email_stop_reason_smtp_auth
+import certificates.composeapp.generated.resources.email_stop_reason_smtp_settings_missing
+import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.ProgressErrorContent
 import com.cmm.certificates.core.ui.ProgressIndicatorContent
+import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-private const val FADE_IN_DURATION_MS = 420
-private const val FADE_OUT_DURATION_MS = 300
-private const val SIZE_ANIMATION_DURATION_MS = 360
 
 @Composable
 fun EmailProgressScreen(
+    retryCached: Boolean = false,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
     viewModel: EmailSenderViewModel = koinViewModel(),
@@ -61,7 +70,11 @@ fun EmailProgressScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.startSendingIfIdle()
+        if (retryCached) {
+            viewModel.retryCachedEmails()
+        } else {
+            viewModel.startSendingIfIdle()
+        }
     }
 
     Scaffold(
@@ -69,11 +82,15 @@ fun EmailProgressScreen(
         bottomBar = {
             EmailProgressBottomBar(
                 isInProgress = (uiState.mode as? EmailProgress.Running)?.isInProgress == true,
+                cachedCount = uiState.cachedCount,
                 onFinish = onFinish,
                 onCancel = {
                     viewModel.cancelSending()
                     onCancel()
                 },
+                onRetry = {
+                    viewModel.retryCachedEmails()
+                }
             )
         },
     ) { padding ->
@@ -82,25 +99,16 @@ fun EmailProgressScreen(
             .padding(padding)
             .safeContentPadding()
             .padding(horizontal = Grid.x12, vertical = Grid.x8)
-        AnimatedContent(
-            targetState = uiState.mode,
+        Box(
             modifier = contentModifier,
             contentAlignment = Alignment.Center,
-            transitionSpec = {
-                fadeIn(animationSpec = tween(durationMillis = FADE_IN_DURATION_MS)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = FADE_OUT_DURATION_MS)) using
-                        SizeTransform(
-                            clip = false,
-                            sizeAnimationSpec = { _, _ -> tween(durationMillis = SIZE_ANIMATION_DURATION_MS) },
-                        )
-            },
-        ) { mode ->
-            when (mode) {
+        ) {
+            when (val mode = uiState.mode) {
                 is EmailProgress.Error -> {
                     ProgressErrorContent(
                         modifier = Modifier.fillMaxSize(),
                         title = stringResource(Res.string.email_progress_error_title),
-                        message = mode.message,
+                        message = resolveStopReason(mode.reason),
                     )
                 }
 
@@ -115,13 +123,21 @@ fun EmailProgressScreen(
                     val infoText = mode.currentRecipient?.let {
                         stringResource(Res.string.email_progress_recipient_label, it)
                     }.orEmpty()
+                    val limitText = if (uiState.dailyLimit > 0) {
+                        stringResource(
+                            Res.string.email_progress_daily_limit_status,
+                            uiState.sentToday,
+                            uiState.dailyLimit
+                        )
+                    } else ""
+
                     ProgressIndicatorContent(
                         modifier = Modifier.fillMaxSize(),
                         current = mode.current,
                         total = mode.total,
                         progress = mode.progress,
                         title = stringResource(Res.string.email_progress_title),
-                        infoText = infoText,
+                        infoText = infoText + if (limitText.isNotBlank()) "\n$limitText" else "",
                     )
                 }
             }
@@ -132,8 +148,10 @@ fun EmailProgressScreen(
 @Composable
 private fun EmailProgressBottomBar(
     isInProgress: Boolean,
+    cachedCount: Int,
     onFinish: () -> Unit,
     onCancel: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -141,11 +159,12 @@ private fun EmailProgressBottomBar(
         shadowElevation = Grid.x3,
         border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Grid.x8, vertical = Grid.x6),
-            contentAlignment = Alignment.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Grid.x4)
         ) {
             if (isInProgress) {
                 OutlinedButton(
@@ -162,6 +181,26 @@ private fun EmailProgressBottomBar(
                     Text(text = stringResource(Res.string.email_progress_cancel))
                 }
             } else {
+                if (cachedCount > 0) {
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary,
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(
+                                Res.string.email_progress_cached_send_button,
+                                cachedCount
+                            ),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+
                 Button(
                     onClick = onFinish,
                     modifier = Modifier.fillMaxWidth(),
@@ -216,5 +255,43 @@ private fun EmailSuccessContent(
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+@Composable
+private fun resolveStopReason(reason: EmailStopReason): String {
+    return when (reason) {
+        EmailStopReason.SmtpAuthRequired -> stringResource(Res.string.email_stop_reason_smtp_auth)
+        EmailStopReason.DocumentIdMissing -> stringResource(Res.string.email_stop_reason_doc_id_missing)
+        EmailStopReason.OutputDirMissing -> stringResource(Res.string.email_stop_reason_output_dir_missing)
+        EmailStopReason.NoEntries -> stringResource(Res.string.email_stop_reason_no_entries)
+        is EmailStopReason.MissingEmailAddresses -> stringResource(
+            Res.string.email_stop_reason_missing_emails,
+            reason.preview
+        )
+
+        EmailStopReason.NoEmailsToSend -> stringResource(Res.string.email_stop_reason_no_emails)
+        EmailStopReason.SmtpSettingsMissing -> stringResource(Res.string.email_stop_reason_smtp_settings_missing)
+        EmailStopReason.GmailQuotaExceeded -> stringResource(Res.string.email_stop_reason_gmail_quota)
+        is EmailStopReason.ConsecutiveErrors -> stringResource(
+            Res.string.email_stop_reason_consecutive_errors,
+            reason.threshold
+        )
+
+        is EmailStopReason.DailyLimitReached -> stringResource(
+            Res.string.email_stop_reason_daily_limit,
+            reason.limit
+        )
+
+        EmailStopReason.Cancelled -> stringResource(Res.string.email_stop_reason_cancelled)
+        EmailStopReason.GenericFailure -> stringResource(Res.string.email_stop_reason_generic_fail)
+        EmailStopReason.NoCachedEmails -> stringResource(Res.string.email_stop_reason_no_cached)
+        is EmailStopReason.Cached -> {
+            val base = resolveStopReason(reason.reason)
+            val suffix = stringResource(Res.string.email_stop_reason_cached_suffix, reason.count)
+            "$base $suffix"
+        }
+
+        is EmailStopReason.Raw -> reason.message
     }
 }

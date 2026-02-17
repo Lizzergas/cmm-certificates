@@ -16,6 +16,7 @@ interface SettingsRepository {
     fun setSignatureHtml(value: String)
     fun setAccreditedTypeOptions(value: String)
     fun setPreviewEmail(value: String)
+    fun setDailyLimit(value: Int)
     suspend fun save()
     suspend fun authenticate(): Boolean
     suspend fun resetAndClear()

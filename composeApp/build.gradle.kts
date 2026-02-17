@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.filekit.dialogs.compose)
 
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization)
 
             implementation(libs.icons.lucide.cmp)
 

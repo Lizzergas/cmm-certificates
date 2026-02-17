@@ -1,5 +1,6 @@
 package com.cmm.certificates.feature.emailsending.data
 
+import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -10,7 +11,7 @@ data class EmailProgressState(
     val total: Int = 0,
     val inProgress: Boolean = false,
     val completed: Boolean = false,
-    val errorMessage: String? = null,
+    val stopReason: EmailStopReason? = null,
     val currentRecipient: String? = null,
     val cancelRequested: Boolean = false,
     val startedAtMillis: Long? = null,
@@ -52,11 +53,11 @@ class EmailProgressStore {
         }
     }
 
-    fun fail(message: String) {
+    fun fail(reason: EmailStopReason) {
         _state.update {
             it.copy(
                 inProgress = false,
-                errorMessage = message,
+                stopReason = reason,
                 currentRecipient = null,
                 endedAtMillis = nowMillis(),
             )

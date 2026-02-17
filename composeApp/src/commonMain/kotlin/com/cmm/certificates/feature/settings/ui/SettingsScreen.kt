@@ -1,7 +1,6 @@
 package com.cmm.certificates.feature.settings.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -11,14 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -42,15 +40,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
 import certificates.composeapp.generated.resources.settings_body_label
 import certificates.composeapp.generated.resources.settings_clear_all
+import certificates.composeapp.generated.resources.settings_clear_all_cancel
+import certificates.composeapp.generated.resources.settings_clear_all_confirm
+import certificates.composeapp.generated.resources.settings_clear_all_message
+import certificates.composeapp.generated.resources.settings_clear_all_title
+import certificates.composeapp.generated.resources.settings_daily_limit_label
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
@@ -65,6 +68,7 @@ import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
+import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.SignatureEditorDialog
 import com.cmm.certificates.data.email.SmtpTransport
@@ -86,6 +90,33 @@ fun SettingsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val signatureEditorState by viewModel.signatureEditorState.collectAsStateWithLifecycle()
+    var showClearDialog by remember { mutableStateOf(false) }
+
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text(stringResource(Res.string.settings_clear_all_title)) },
+            text = { Text(stringResource(Res.string.settings_clear_all_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearAll()
+                        showClearDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(Res.string.settings_clear_all_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text(stringResource(Res.string.settings_clear_all_cancel))
+                }
+            }
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -102,7 +133,7 @@ fun SettingsScreen(
         },
         bottomBar = {
             SettingsBottomBar(
-                onClearAll = viewModel::clearAll,
+                onClearAll = { showClearDialog = true },
                 onAuthenticate = viewModel::authenticate,
                 canAuthenticate = state.smtp.canAuthenticate && !state.smtp.isAuthenticating,
             )
@@ -231,6 +262,22 @@ private fun BoxScope.SettingsContent(
                 showClearIcon = false,
             )
             SettingsField(
+                label = Res.string.settings_daily_limit_label,
+                value = state.email.dailyLimit.toString(),
+                onValueChange = viewModel::setDailyLimit,
+                singleLine = true,
+                keyboardType = KeyboardType.Number,
+                supportingText = {
+                    Text(
+                        stringResource(
+                            Res.string.email_progress_daily_limit_status,
+                            state.sentToday,
+                            state.email.dailyLimit
+                        )
+                    )
+                }
+            )
+            SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
                 value = state.certificate.accreditedTypeOptions,
                 onValueChange = viewModel::setAccreditedTypeOptions,
@@ -245,8 +292,8 @@ private fun BoxScope.SettingsContent(
         }
     }
 
-    VerticalScrollbar(
-        adapter = rememberScrollbarAdapter(scrollState),
+    AppVerticalScrollbar(
+        scrollState = scrollState,
         modifier = Modifier
             .align(Alignment.CenterEnd)
             .fillMaxHeight()
@@ -392,6 +439,7 @@ private fun SettingsField(
     keyboardType: KeyboardType = KeyboardType.Text,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     showClearIcon: Boolean = true,
+    supportingText: @Composable (() -> Unit)? = null,
 ) {
     ClearableOutlinedTextField(
         value = value,
@@ -404,6 +452,7 @@ private fun SettingsField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         visualTransformation = visualTransformation,
         showClearIcon = showClearIcon,
+        supportingText = supportingText,
     )
 }
 

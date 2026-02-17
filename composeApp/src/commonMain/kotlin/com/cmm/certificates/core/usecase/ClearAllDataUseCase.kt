@@ -13,5 +13,6 @@ class ClearAllDataUseCase(
         settingsRepository.resetAndClear()
         pdfConversionProgressRepository.clear()
         emailProgressRepository.clear()
+        emailProgressRepository.clearCachedEmails()
     }
 }

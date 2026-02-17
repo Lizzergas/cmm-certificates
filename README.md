@@ -25,3 +25,6 @@ Jei norite įterpti naują eilutę lauke:
 - naudokite `w:br`
 
 Abi reikšmės bus paverstos į Word eilutės lūžį (nauja eilutė).
+
+# D.U.K.
+- Jeigu nepavyksta tam tikriems laiškams būti išsiųstiems, jie bus išsaugomi ir bus galima pamėginti pakartotina išsiųsti

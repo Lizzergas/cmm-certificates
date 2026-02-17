@@ -92,6 +92,15 @@ class SettingsRepositoryImpl(
         }
     }
 
+    override fun setDailyLimit(value: Int) {
+        _state.update { current ->
+            current.copy(
+                smtp = current.smtp.copy(errorMessage = null),
+                email = current.email.copy(dailyLimit = value),
+            )
+        }
+    }
+
     override suspend fun resetAndClear() {
         _state.value = SettingsState()
         settingsStore.clear()
@@ -148,6 +157,7 @@ class SettingsRepositoryImpl(
                     body = stored.body,
                     signatureHtml = stored.signatureHtml,
                     previewEmail = stored.previewEmail,
+                    dailyLimit = stored.dailyLimit,
                 ),
                 certificate = current.certificate.copy(
                     accreditedTypeOptions = stored.accreditedTypeOptions,
@@ -198,6 +208,7 @@ data class EmailTemplateSettingsState(
     val body: String = SettingsStore.DEFAULT_EMAIL_BODY,
     val signatureHtml: String = SettingsStore.DEFAULT_SIGNATURE_HTML,
     val previewEmail: String = SettingsStore.DEFAULT_PREVIEW_EMAIL,
+    val dailyLimit: Int = SettingsStore.DEFAULT_DAILY_LIMIT,
 )
 
 data class CertificateSettingsState(
@@ -221,6 +232,7 @@ data class SettingsState(
             accreditedTypeOptions = certificate.accreditedTypeOptions,
             signatureHtml = email.signatureHtml,
             previewEmail = email.previewEmail,
+            dailyLimit = email.dailyLimit,
         )
     }
 

@@ -15,35 +15,40 @@ actual object SmtpClient {
         settings: SmtpSettings,
         requests: List<EmailSendRequest>,
         onSending: (EmailSendRequest) -> Unit,
-        onProgress: (Int) -> Unit,
+        onSuccess: (index: Int) -> Unit,
+        onFailure: (index: Int, Exception) -> Unit,
         isCancelRequested: () -> Boolean,
     ) {
         val mailer = buildMailer(settings)
         requests.forEachIndexed { index, request ->
             if (isCancelRequested()) return
             onSending(request)
-            val emailBuilder = EmailBuilder.startingBlank()
-                .from(settings.username, settings.username)
-                .to(request.toName, request.toEmail)
-                .withSubject(request.subject)
-                .withPlainText(request.body)
-            val htmlBody = request.htmlBody?.trim().orEmpty()
-            if (htmlBody.isNotBlank()) {
-                emailBuilder.withHTMLText(htmlBody)
-            }
-            val attachmentPath = request.attachmentPath
-            val attachmentName = request.attachmentName
-            if (!attachmentPath.isNullOrBlank() && !attachmentName.isNullOrBlank()) {
-                val attachmentFile = File(attachmentPath)
-                require(attachmentFile.exists()) {
-                    "Attachment not found: $attachmentPath"
+            try {
+                val emailBuilder = EmailBuilder.startingBlank()
+                    .from(settings.username, settings.username)
+                    .to(request.toName, request.toEmail)
+                    .withSubject(request.subject)
+                    .withPlainText(request.body)
+                val htmlBody = request.htmlBody?.trim().orEmpty()
+                if (htmlBody.isNotBlank()) {
+                    emailBuilder.withHTMLText(htmlBody)
                 }
-                emailBuilder.withAttachment(attachmentName, FileDataSource(attachmentFile))
+                val attachmentPath = request.attachmentPath
+                val attachmentName = request.attachmentName
+                if (!attachmentPath.isNullOrBlank() && !attachmentName.isNullOrBlank()) {
+                    val attachmentFile = File(attachmentPath)
+                    require(attachmentFile.exists()) {
+                        "Attachment not found: $attachmentPath"
+                    }
+                    emailBuilder.withAttachment(attachmentName, FileDataSource(attachmentFile))
+                }
+                val email = emailBuilder.buildEmail()
+                mailer.sendMail(email)
+                if (isCancelRequested()) return
+                onSuccess(index)
+            } catch (e: Exception) {
+                onFailure(index, e)
             }
-            val email = emailBuilder.buildEmail()
-            mailer.sendMail(email)
-            if (isCancelRequested()) return
-            onProgress(index + 1)
         }
     }
 }

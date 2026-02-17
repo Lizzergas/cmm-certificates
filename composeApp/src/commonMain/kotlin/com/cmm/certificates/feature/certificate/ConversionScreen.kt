@@ -2,7 +2,6 @@ package com.cmm.certificates.feature.certificate
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenuItem
@@ -58,9 +57,12 @@ import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
 import certificates.composeapp.generated.resources.conversion_validation_hint
+import certificates.composeapp.generated.resources.email_progress_cached_status
+import certificates.composeapp.generated.resources.email_progress_retry_cached
 import certificates.composeapp.generated.resources.network_unavailable_message
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
+import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.PrimaryActionButton
 import com.cmm.certificates.core.ui.SelectFileIcon
@@ -81,6 +83,7 @@ private val BottomBarPadding = Grid.x6
 fun ConversionScreen(
     onProfileClick: () -> Unit,
     onStartConversion: () -> Unit,
+    onRetryCachedEmails: () -> Unit,
     viewModel: ConversionViewModel = koinViewModel<ConversionViewModel>(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -126,6 +129,13 @@ fun ConversionScreen(
                     .padding(ContentPadding),
                 verticalArrangement = Arrangement.spacedBy(ContentSpacing),
             ) {
+                if (state.cachedEmailsCount > 0) {
+                    CachedEmailsCard(
+                        count = state.cachedEmailsCount,
+                        onClick = onRetryCachedEmails
+                    )
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -184,8 +194,8 @@ fun ConversionScreen(
 
                 Spacer(modifier = Modifier.height(Grid.x6))
             }
-            VerticalScrollbar(
-                adapter = rememberScrollbarAdapter(scrollState),
+            AppVerticalScrollbar(
+                scrollState = scrollState,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
@@ -396,5 +406,63 @@ private fun buildPathTooltip(
     if (path.isNotBlank()) {
         append("\n")
         append(path)
+    }
+}
+
+@Composable
+private fun CachedEmailsCard(
+    count: Int,
+    onClick: () -> Unit,
+) {
+    val enabled = count > 0
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+        shape = MaterialTheme.shapes.large,
+        color = if (enabled) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
+            alpha = 0.5f
+        ),
+        contentColor = if (enabled) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+            alpha = 0.5f
+        ),
+        border = BorderStroke(
+            Stroke.thin,
+            if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(Grid.x6),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Grid.x4)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(Grid.x10)
+                    .background(
+                        if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "!",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (enabled) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.surface
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(Res.string.email_progress_retry_cached),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(Res.string.email_progress_cached_status, count),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }

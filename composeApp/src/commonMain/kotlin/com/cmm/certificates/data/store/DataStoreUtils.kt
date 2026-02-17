@@ -20,6 +20,11 @@ inline fun <reified T : Enum<T>> Preferences.enumOrDefault(
     return runCatching { enumValueOf<T>(raw) }.getOrDefault(default)
 }
 
+fun Preferences.intOrDefault(
+    key: Preferences.Key<Int>,
+    default: Int,
+): Int= this[key] ?: default
+
 fun DataStore<Preferences>.safeData(): Flow<Preferences> =
     data.catch { e ->
         if (e is IOException) {

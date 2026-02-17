@@ -1,8 +1,8 @@
 package com.cmm.certificates.core.usecase
 
-import com.cmm.certificates.data.email.buildEmailHtmlBody
 import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.email.SmtpClient
+import com.cmm.certificates.data.email.buildEmailHtmlBody
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -70,7 +70,8 @@ class SendPreviewEmailUseCase(
                     settings = smtpSettings,
                     requests = listOf(request),
                     onSending = {},
-                    onProgress = {},
+                    onSuccess = {},
+                    onFailure = { _, _ -> },
                     isCancelRequested = { false },
                 )
             }

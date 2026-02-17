@@ -22,7 +22,7 @@ fun EntryProviderScope<NavKey>.featureProgressEntryProvider(navigator: Navigator
                 navigator.back()
             },
             onSendEmails = {
-                navigator.push(EmailProgressScreenRoute)
+                navigator.push(EmailProgressScreenRoute())
             },
         )
     }

@@ -3,10 +3,12 @@ package com.cmm.certificates.feature.settings.data
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.cmm.certificates.data.email.SmtpTransport
 import com.cmm.certificates.data.store.clearDataStore
 import com.cmm.certificates.data.store.enumOrDefault
+import com.cmm.certificates.data.store.intOrDefault
 import com.cmm.certificates.data.store.safeData
 import com.cmm.certificates.data.store.stringOrDefault
 import kotlinx.coroutines.flow.first
@@ -25,6 +27,7 @@ class SettingsStore(
         val accreditedTypeOptions = stringPreferencesKey("accredited_type_options")
         val signatureHtml = stringPreferencesKey("email_signature_html")
         val previewEmail = stringPreferencesKey("email_preview_address")
+        val dailyLimit = intPreferencesKey("email_daily_limit")
     }
 
     suspend fun loadOrDefault(): StoredSettings {
@@ -46,6 +49,7 @@ class SettingsStore(
             ),
             signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, DEFAULT_SIGNATURE_HTML),
             previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
+            dailyLimit = prefs.intOrDefault(Keys.dailyLimit, DEFAULT_DAILY_LIMIT),
         )
     }
 
@@ -61,6 +65,7 @@ class SettingsStore(
             prefs[Keys.accreditedTypeOptions] = settings.accreditedTypeOptions
             prefs[Keys.signatureHtml] = settings.signatureHtml
             prefs[Keys.previewEmail] = settings.previewEmail
+            prefs[Keys.dailyLimit] = settings.dailyLimit
         }
     }
 
@@ -79,9 +84,11 @@ class SettingsStore(
         val accreditedTypeOptions: String,
         val signatureHtml: String,
         val previewEmail: String,
+        val dailyLimit: Int,
     )
 
     companion object {
+        const val DEFAULT_DAILY_LIMIT = 450
         const val DEFAULT_EMAIL_SUBJECT = "Pa\u017Eyma"
         const val DEFAULT_EMAIL_BODY =
             "Laba diena,\n\n" +

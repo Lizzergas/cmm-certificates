@@ -10,11 +10,12 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 
 @Serializable
-data object EmailProgressScreenRoute : NavKey
+data class EmailProgressScreenRoute(val retryCached: Boolean = false) : NavKey
 
 fun EntryProviderScope<NavKey>.featureEmailEntryProvider(navigator: Navigator) {
-    entry<EmailProgressScreenRoute> {
+    entry<EmailProgressScreenRoute> { route ->
         EmailProgressScreen(
+            retryCached = route.retryCached,
             onFinish = { navigator.clearAndPush(ConversionScreenRoute) },
             onCancel = { navigator.back() },
         )

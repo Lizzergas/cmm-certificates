@@ -9,7 +9,8 @@ actual object SmtpClient {
         settings: SmtpSettings,
         requests: List<EmailSendRequest>,
         onSending: (EmailSendRequest) -> Unit,
-        onProgress: (Int) -> Unit,
+        onSuccess: (Int) -> Unit,
+        onFailure: (Int, Exception) -> Unit,
         isCancelRequested: () -> Boolean,
     ) {
         throw UnsupportedOperationException("SMTP is not supported on iOS yet.")

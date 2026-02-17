@@ -3,6 +3,7 @@ package com.cmm.certificates.feature.certificate
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import com.cmm.certificates.Navigator
+import com.cmm.certificates.feature.emailsending.ui.EmailProgressScreenRoute
 import com.cmm.certificates.feature.pdfconversion.ui.ProgressScreenRoute
 import com.cmm.certificates.feature.settings.ui.SettingsScreenRoute
 import kotlinx.serialization.Serializable
@@ -19,6 +20,7 @@ fun EntryProviderScope<NavKey>.featureConversionEntryProvider(navigator: Navigat
         ConversionScreen(
             onProfileClick = { navigator.push(SettingsScreenRoute) },
             onStartConversion = { navigator.push(ProgressScreenRoute) },
+            onRetryCachedEmails = { navigator.push(EmailProgressScreenRoute(retryCached = true)) },
         )
     }
 }

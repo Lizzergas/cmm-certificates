@@ -7,7 +7,8 @@ expect object SmtpClient {
         settings: SmtpSettings,
         requests: List<EmailSendRequest>,
         onSending: (EmailSendRequest) -> Unit,
-        onProgress: (Int) -> Unit,
+        onSuccess: (index: Int) -> Unit,
+        onFailure: (index: Int, Exception) -> Unit,
         isCancelRequested: () -> Boolean,
     )
 }

@@ -37,6 +37,7 @@ fun ClearableOutlinedTextField(
     trailingIcon: @Composable (() -> Unit)? = {},
     showClearIcon: Boolean = value.isNotBlank(),
     onClear: (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
 ) {
     val canClear = showClearIcon && value.isNotBlank() && enabled && (onClear != null || !readOnly)
     val trailingContent: (@Composable () -> Unit)? = if (trailingIcon == null && !canClear) {
@@ -80,5 +81,6 @@ fun ClearableOutlinedTextField(
         readOnly = readOnly,
         enabled = enabled,
         trailingIcon = trailingContent,
+        supportingText = supportingText,
     )
 }
