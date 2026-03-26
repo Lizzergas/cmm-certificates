@@ -10,7 +10,7 @@ This document summarizes how UI, state, and design tokens work in the app.
 
 ## Architecture (Feature Pattern)
 Each feature follows a simple layering model:
-- **UI**: composables and view models in `feature/**/ui`.
+- **Presentation**: composables, view models, components, and navigation in `feature/**/presentation`.
 - **Domain**: interfaces in `feature/**/domain` (repositories).
 - **Data**: stores / repository implementations in `feature/**/data`.
 
@@ -28,9 +28,13 @@ in view models using `stateIn(...)` with `SharingStarted.WhileSubscribed`.
   screens; UI derives mode from repository state.
 
 ### Use Cases
-- `ClearAllDataUseCase` clears settings and progress stores.
+- `ClearAllDataUseCase` clears settings, cached email retries, progress stores, and persisted 24-hour send history.
 - `SendPreviewEmailUseCase` sends a single preview email (optionally attaches the first PDF)
   and persists the preview email address.
+- Conversion workflow is now split into dedicated use cases for XLSX parsing, certificate replacement building,
+  and PDF generation.
+- Email workflow is now split into dedicated use cases for request building, bulk send execution,
+  generated-email sending, and cached-email retries.
 
 ## Design Tokens
 Design values live in `core/theme/Dimens.kt` and are used throughout UI code.
@@ -63,4 +67,3 @@ Design values live in `core/theme/Dimens.kt` and are used throughout UI code.
 ## Navigation
 - Navigation uses JetBrains Navigation3 with entry providers in each feature.
 - Routes are `NavKey` objects serialized via `SerializersModule`.
-

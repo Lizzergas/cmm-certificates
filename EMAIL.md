@@ -24,7 +24,7 @@ This document explains how SMTP settings, authentication, and email delivery are
 
 Location:
 
-- UI: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/ui/SettingsScreen.kt`
+- UI: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/SettingsScreen.kt`
 - Persistence: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/data/SettingsStore.kt`
 - Repository: `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/data/SettingsRepositoryImpl.kt`
 
@@ -47,9 +47,9 @@ Auth:
 Location:
 
 - Email progress screen:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/ui/EmailProgressScreen.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailProgressScreen.kt`
 - Email sending logic:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/ui/EmailSenderViewModel.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailSenderViewModel.kt`
 - Preview email use case:
   `composeApp/src/commonMain/kotlin/com/cmm/certificates/core/usecase/SendPreviewEmailUseCase.kt`
 - SMTP client interface:
@@ -64,6 +64,16 @@ Behavior:
 - Attachment: `${docIdStart + index}.pdf`.
 - Recipient: `primaryEmail` from XLSX entry.
 - Sender: SMTP `username`.
+- Cached retries now require the same authenticated SMTP state as fresh sends.
+- A daily limit of `0` is treated as unlimited.
+- Cached retries validate that the referenced PDF attachments still exist before attempting delivery.
+
+HTML body generation:
+
+- Plain-text body is HTML-escaped first.
+- Newlines in the body are converted to `<br>`.
+- `signatureHtml` is appended after the body with an empty line separator.
+- If the saved signature is blank, no HTML body is produced and sending falls back to plain text only.
 
 Mapping between entries and files:
 
@@ -96,7 +106,8 @@ generated.
 ## Platform Support
 
 - JVM: supported (Simple Java Mail implementation).
-- Android/iOS: not supported yet (throws `UnsupportedOperationException`).
+- Android/iOS: UI rodo, kad SMTP siuntimas šiose platformose dar nepalaikomas.
+  - Platforminiai stub'ai vis dar meta `UnsupportedOperationException`, jeigu šie keliai būtų apeiti programiškai.
   - See `composeApp/src/androidMain/.../SmtpClient.android.kt` and
     `composeApp/src/iosMain/.../SmtpClient.ios.kt`.
 
@@ -104,15 +115,17 @@ generated.
 
 - SMTP settings and email template fields are persisted with DataStore Preferences.
 - Stored settings are loaded on app start and an authentication attempt is made automatically.
+- Failed email batches and 24-hour send history are also persisted, and **Clear all** now resets both.
+- Automated authentication is skipped on platforms that do not support SMTP sending.
 
 ## UI and Navigation
 
 - Settings screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/ui/SettingsEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/navigation/SettingsEntryProvider.kt`
 - Email progress screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/ui/EmailEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/navigation/EmailEntryProvider.kt`
 - PDF progress screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/ui/ProgressEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/navigation/ProgressEntryProvider.kt`
 - Navigation wiring: `composeApp/src/commonMain/kotlin/com/cmm/certificates/Navigator.kt`
 
 ## Troubleshooting
@@ -120,6 +133,11 @@ generated.
 - UI freezes during send: ensure sending is on `Dispatchers.IO` (already implemented).
 - "Missing email address" error: check `primaryEmail` in the XLSX.
 - "Attachment not found" error: verify output directory and that PDFs exist.
+- Preview email should now fail immediately if SMTP delivery fails, instead of showing a false success state.
+
+## Tests
+- Shared tests: `./gradlew :composeApp:test`
+- JVM-specific tests: `./gradlew :composeApp:jvmTest`
 
 ## Extending
 

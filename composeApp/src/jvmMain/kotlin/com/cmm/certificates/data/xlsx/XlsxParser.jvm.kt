@@ -1,5 +1,6 @@
 package com.cmm.certificates.data.xlsx
 
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import java.io.InputStream
 import java.util.zip.ZipFile
 import javax.xml.stream.XMLInputFactory

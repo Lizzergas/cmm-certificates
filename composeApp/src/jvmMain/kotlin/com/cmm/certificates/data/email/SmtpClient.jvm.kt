@@ -1,6 +1,9 @@
 package com.cmm.certificates.data.email
 
 import jakarta.activation.FileDataSource
+import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
+import com.cmm.certificates.feature.settings.domain.SmtpSettings
+import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import org.simplejavamail.api.mailer.config.TransportStrategy
 import org.simplejavamail.email.EmailBuilder
 import org.simplejavamail.mailer.MailerBuilder

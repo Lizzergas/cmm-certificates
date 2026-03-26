@@ -1,5 +1,17 @@
 <resources>
     <string name="app_name">Cmm Certificates</string>
+    <string name="common_action_ok">OK</string>
+    <string name="common_clear_text">Clear text</string>
+    <string name="common_file_xlsx">XLSX</string>
+    <string name="common_file_docx">DOCX</string>
+    <string name="common_format_pdf">PDF</string>
+    <string name="common_progress_counter">%1$d / %2$d</string>
+    <string name="common_error_generic">Something went wrong.</string>
+    <string name="common_error_email_required">Email address is required.</string>
+    <string name="common_error_smtp_incomplete">SMTP details are incomplete.</string>
+    <string name="common_error_smtp_auth_required">SMTP authentication is required.</string>
+    <string name="common_error_output_dir_missing">Output folder is missing.</string>
+    <string name="common_error_doc_id_missing">Document ID start is missing.</string>
     <string name="conversion_choose_file">Choose file</string>
     <string name="conversion_choose_directory">Choose folder</string>
     <string name="conversion_xlsx_label">XLSX file</string>
@@ -22,12 +34,22 @@
     <string name="conversion_certificate_name_label">Certificate name</string>
     <string name="conversion_lector_label">Lector</string>
     <string name="conversion_lector_gender_label">Lector label</string>
-    <string name="conversion_accredited_type_lecture">paskaitoje</string>
-    <string name="conversion_accredited_type_seminar">seminare</string>
-    <string name="conversion_accredited_type_conference">konferencijoje</string>
-    <string name="conversion_accredited_type_training">mokymuose</string>
+    <string name="conversion_default_lector_label">Lecturer:</string>
+    <string name="conversion_accredited_type_lecture">lecture</string>
+    <string name="conversion_accredited_type_seminar">seminar</string>
+    <string name="conversion_accredited_type_conference">conference</string>
+    <string name="conversion_accredited_type_training">training</string>
     <string name="conversion_tooltip_xlsx">Data extracted from Google Forms</string>
     <string name="conversion_tooltip_docx">Template used for PDF generation</string>
+    <string name="conversion_offline_hint">PDF generation works offline. Network is only needed later for email sending.</string>
+    <string name="conversion_unsupported_hint">This platform does not support XLSX to PDF conversion yet.</string>
+    <string name="conversion_error_template_required">Template is required.</string>
+    <string name="conversion_error_no_entries">No XLSX entries to generate.</string>
+    <string name="conversion_error_fields_required">All certificate fields are required.</string>
+    <string name="conversion_error_invalid_doc_id">Document ID start must be a number.</string>
+    <string name="conversion_error_load_template">Failed to load template.</string>
+    <string name="conversion_error_create_output_dir">Failed to create output folder.</string>
+    <string name="conversion_error_write_pdf">Failed to generate PDF file.</string>
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">SMTP Configuration</string>
     <string name="settings_section_title">SMTP Settings</string>
@@ -41,16 +63,32 @@
     <string name="settings_password_label">Password</string>
     <string name="settings_subject_label">Email subject</string>
     <string name="settings_body_label">Email body</string>
+    <string name="settings_default_email_subject">Certificate</string>
+    <string name="settings_default_email_body">Hello,
+
+Please find the generated participant certificate attached. We would also appreciate your feedback about the event.
+
+Please fill in the form at:
+survey_link
+
+Thank you.</string>
+    <string name="settings_default_accredited_type_options">lecture
+seminar
+conference
+training</string>
+    <string name="settings_default_signature_salutation">Best regards</string>
+    <string name="settings_default_signature_html"><![CDATA[<div style="font-family:'Times New Roman', Times, serif; font-size:8pt; font-style:italic; line-height:1.25; color:#1A1B20;"><div>Best regards</div><div>Raminta Cyplyte</div><div>Methodologist at the Arts Education Teacher Qualification Centre</div><div>National M. K. Ciurlionis School of Art</div><div>Phone: +370 67357212</div><div>Email: raminta.cyplyte@cmm.lt</div><div>T. Kosciuskos g. 11 LT-01100, Vilnius</div></div>]]></string>
     <string name="settings_signature_html_label">Signature HTML</string>
     <string name="settings_accredited_type_options_label">Accredited type options</string>
     <string name="settings_daily_limit_label">Daily email limit</string>
     <string name="settings_clear_all">Clear all data</string>
     <string name="settings_clear_all_title">Clear all data?</string>
-    <string name="settings_clear_all_message">This will reset all SMTP settings, email templates, and clear history. This action cannot be undone.</string>
+    <string name="settings_clear_all_message">This will reset SMTP settings, email templates, cached retries, and 24-hour send history. This action cannot be undone.</string>
     <string name="settings_clear_all_confirm">Clear all</string>
     <string name="settings_clear_all_cancel">Cancel</string>
     <string name="settings_authenticate">Authenticate</string>
     <string name="settings_authenticated">Authenticated</string>
+    <string name="settings_error_auth_failed">SMTP authentication failed.</string>
     <string name="settings_back">Back</string>
     <string name="progress_title">Converting entries...</string>
     <string name="progress_cancel">Cancel</string>
@@ -58,12 +96,15 @@
     <string name="progress_output_label">Output folder</string>
     <string name="progress_time_label">Process time</string>
     <string name="progress_open_folder">Open folder</string>
+    <string name="progress_open_folder_unsupported_hint">This platform cannot open generated folders directly yet.</string>
     <string name="progress_convert_another">Convert another</string>
     <string name="progress_send_emails">Send emails</string>
     <string name="progress_send_emails_hint">Authenticate SMTP in Settings to send emails</string>
     <string name="progress_current_doc_label">Generating PDF: %1$d</string>
     <string name="progress_error_title">Conversion failed</string>
     <string name="network_unavailable_message">No network connection</string>
+    <string name="progress_duration_seconds">%1$ds</string>
+    <string name="progress_duration_minutes_seconds">%1$dm %2$ds</string>
     <string name="email_progress_title">Sending emails...</string>
     <string name="email_progress_recipient_label">Sending to: %1$s</string>
     <string name="email_progress_daily_limit_status">Daily sent: %1$d / %2$d</string>
@@ -84,16 +125,21 @@
     <string name="email_stop_reason_cancelled">Sending cancelled.</string>
     <string name="email_stop_reason_generic_fail">Some emails failed to send.</string>
     <string name="email_stop_reason_no_cached">No cached emails found.</string>
+    <string name="email_stop_reason_missing_attachments">Missing PDF attachments: %1$s</string>
     <string name="email_stop_reason_cached_suffix">%1$d emails cached for later.</string>
     <string name="email_progress_retry_cached">Retry sending cached emails</string>
     <string name="email_progress_cached_status">%1$d emails are waiting to be sent.</string>
     <string name="email_progress_cached_send_button">Send %1$d pending emails</string>
+    <string name="email_progress_cached_retry_requirements_hint">Retry requires network access and authenticated SMTP settings.</string>
+    <string name="email_sending_unsupported_hint">This platform does not support SMTP email sending yet.</string>
+    <string name="email_progress_daily_limit_unlimited_status">Daily sent: %1$d / unlimited</string>
     <string name="email_preview_button">Send preview email</string>
     <string name="email_preview_title">Send preview email</string>
     <string name="email_preview_description">This will send the first generated PDF to the email address below.</string>
     <string name="email_preview_email_label">Preview email address</string>
     <string name="email_preview_send">Send preview</string>
     <string name="email_preview_success">Success!</string>
+    <string name="email_preview_error_send_failed">Failed to send preview email.</string>
     <string name="settings_signature_section_title">Email signature</string>
     <string name="settings_signature_action_edit">Edit signature</string>
     <string name="settings_signature_summary_custom">Custom HTML</string>

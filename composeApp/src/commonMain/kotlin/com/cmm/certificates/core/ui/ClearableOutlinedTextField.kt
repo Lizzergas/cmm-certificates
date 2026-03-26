@@ -15,9 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.common_clear_text
 import com.cmm.certificates.core.theme.Grid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ClearableOutlinedTextField(
@@ -56,7 +59,7 @@ fun ClearableOutlinedTextField(
                     ) {
                         Icon(
                             imageVector = Lucide.X,
-                            contentDescription = "Clear text",
+                            contentDescription = stringResource(Res.string.common_clear_text),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(Grid.x8),
                         )

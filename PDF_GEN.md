@@ -44,6 +44,12 @@ This separates concerns correctly:
 - No extra pages
 - Stable across platforms (Compose Multiplatform JVM)
 
+## Additional Notes
+- This pipeline is currently implemented only for the JVM target.
+- Placeholder replacement traverses paragraphs, tables, headers, and footers.
+- Split Word runs are handled before PDF conversion so placeholders can span multiple DOCX runs.
+- Replacement values also normalize `\n` and `w:br` markers into Word line breaks.
+
 ```kotlin
 actual fun fillTemplateToPdf(
     templateBytes: ByteArray,

@@ -1,25 +1,12 @@
 package com.cmm.certificates.feature.pdfconversion.data
 
+import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
-import com.cmm.certificates.data.xlsx.RegistrationEntry
-
-data class PdfConversionProgressState(
-    val current: Int = 0,
-    val total: Int = 0,
-    val inProgress: Boolean = false,
-    val completed: Boolean = false,
-    val errorMessage: String? = null,
-    val outputDir: String = "",
-    val docIdStart: Long? = null,
-    val entries: List<RegistrationEntry> = emptyList(),
-    val currentDocId: Long? = null,
-    val cancelRequested: Boolean = false,
-    val startedAtMillis: Long? = null,
-    val endedAtMillis: Long? = null,
-)
 
 class PdfConversionProgressStore {
     private val _state = MutableStateFlow(PdfConversionProgressState())
@@ -68,7 +55,7 @@ class PdfConversionProgressStore {
         }
     }
 
-    fun fail(message: String) {
+    fun fail(message: UiMessage) {
         _state.update {
             it.copy(
                 inProgress = false,

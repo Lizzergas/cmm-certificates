@@ -1,7 +1,9 @@
 package com.cmm.certificates.feature.pdfconversion.data
 
-import com.cmm.certificates.data.xlsx.RegistrationEntry
+import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
+import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressState
 import kotlinx.coroutines.flow.StateFlow
 
 class PdfConversionProgressRepositoryImpl(
@@ -35,7 +37,7 @@ class PdfConversionProgressRepositoryImpl(
         store.finish()
     }
 
-    override fun fail(message: String) {
+    override fun fail(message: UiMessage) {
         store.fail(message)
     }
 

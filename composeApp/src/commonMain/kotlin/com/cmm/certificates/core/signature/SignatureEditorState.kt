@@ -1,5 +1,8 @@
 package com.cmm.certificates.core.signature
 
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.settings_default_signature_salutation
+import com.cmm.certificates.core.i18n.localizedString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -241,7 +244,7 @@ enum class SignatureEditorMode {
 
 data class SignatureBuilderState(
     val style: SignatureStyle = SignatureStyle(),
-    val lines: List<String> = listOf("Pagarbiai"),
+    val lines: List<String> = listOf(localizedString(Res.string.settings_default_signature_salutation)),
     val fontSizeInput: String = "8",
     val lineHeightInput: String = "1.25",
     val colorInput: String = "#000000",

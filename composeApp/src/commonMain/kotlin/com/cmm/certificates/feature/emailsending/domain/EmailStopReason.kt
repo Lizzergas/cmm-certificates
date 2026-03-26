@@ -31,6 +31,10 @@ sealed interface EmailStopReason {
     @Serializable
     data object NoCachedEmails : EmailStopReason
     @Serializable
+    data class MissingAttachments(val preview: String) : EmailStopReason
+    @Serializable
+    data object NetworkUnavailable : EmailStopReason
+    @Serializable
     data class Cached(val reason: EmailStopReason, val count: Int) : EmailStopReason
     @Serializable
     data class Raw(val message: String) : EmailStopReason

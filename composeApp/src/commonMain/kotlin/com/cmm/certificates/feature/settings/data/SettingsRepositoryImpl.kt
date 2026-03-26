@@ -1,10 +1,18 @@
 package com.cmm.certificates.feature.settings.data
 
-import com.cmm.certificates.data.email.SmtpClient
-import com.cmm.certificates.data.email.SmtpSettings
-import com.cmm.certificates.data.email.SmtpTransport
+import com.cmm.certificates.core.domain.PlatformCapabilityProvider
+import com.cmm.certificates.core.logging.logError
+import com.cmm.certificates.core.logging.logInfo
+import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.core.presentation.UiMessage
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.common_error_smtp_incomplete
+import certificates.composeapp.generated.resources.settings_error_auth_failed
+import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
+import com.cmm.certificates.feature.settings.domain.SettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
-import com.cmm.certificates.feature.settings.ui.SettingsUiState
+import com.cmm.certificates.feature.settings.domain.SmtpTransport
+import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -17,12 +25,17 @@ import kotlinx.coroutines.withContext
 
 class SettingsRepositoryImpl(
     private val settingsStore: SettingsStore,
+    private val emailGateway: EmailGateway,
+    capabilityProvider: PlatformCapabilityProvider,
 ) : SettingsRepository {
-    private val _state = MutableStateFlow(SettingsState())
+    private val logTag = "SettingsRepo"
+    private val _state = MutableStateFlow(defaultSettingsState())
     override val state: StateFlow<SettingsState> = _state
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
 
     init {
+        logInfo(logTag, "Initializing settings repository")
         scope.launch { loadFromStore() }
     }
 
@@ -102,36 +115,47 @@ class SettingsRepositoryImpl(
     }
 
     override suspend fun resetAndClear() {
-        _state.value = SettingsState()
+        logWarn(logTag, "Resetting settings state and clearing persistent store")
+        _state.value = defaultSettingsState()
         settingsStore.clear()
     }
 
     override suspend fun save() {
+        logInfo(logTag, "Saving settings state")
         settingsStore.save(_state.value.toStoredSettings())
     }
 
     override suspend fun authenticate(): Boolean {
+        if (!supportsEmailSending) {
+            logWarn(logTag, "Skipping SMTP authentication because email sending is unsupported")
+            updateSmtp { it.copy(isAuthenticated = false, isAuthenticating = false) }
+            return false
+        }
         val snapshot = _state.value
         val smtpSnapshot = snapshot.smtp
         val settings = smtpSnapshot.toSmtpSettings()
         if (settings == null || !smtpSnapshot.canAuthenticate) {
-            updateSmtp { it.copy(errorMessage = "SMTP details are incomplete.") }
+            logWarn(logTag, "SMTP authentication aborted because settings are incomplete")
+            updateSmtp { it.copy(errorMessage = UiMessage(Res.string.common_error_smtp_incomplete)) }
             return false
         }
         updateSmtp { it.copy(isAuthenticating = true, errorMessage = null) }
         return try {
+            logInfo(logTag, "Testing SMTP connection for host=${settings.host} port=${settings.port}")
             withContext(Dispatchers.IO) {
-                SmtpClient.testConnection(settings)
+                emailGateway.testConnection(settings)
             }
             settingsStore.save(_state.value.toStoredSettings())
             updateSmtp { it.copy(isAuthenticated = true, isAuthenticating = false) }
+            logInfo(logTag, "SMTP authentication succeeded")
             true
         } catch (e: Exception) {
+            logError(logTag, "SMTP authentication failed", e)
             updateSmtp {
                 it.copy(
                     isAuthenticated = false,
                     isAuthenticating = false,
-                    errorMessage = e.message ?: "SMTP authentication failed.",
+                    errorMessage = UiMessage(Res.string.settings_error_auth_failed),
                 )
             }
             false
@@ -139,6 +163,7 @@ class SettingsRepositoryImpl(
     }
 
     private suspend fun loadFromStore() {
+        logInfo(logTag, "Loading settings from store")
         val stored = settingsStore.loadOrDefault()
         _state.update { current ->
             current.copy(
@@ -164,8 +189,11 @@ class SettingsRepositoryImpl(
                 ),
             )
         }
-        if (_state.value.smtp.canAuthenticate) {
+        if (supportsEmailSending && _state.value.smtp.canAuthenticate) {
+            logInfo(logTag, "Attempting automatic SMTP authentication from persisted settings")
             authenticate()
+        } else {
+            logInfo(logTag, "Loaded settings without automatic SMTP authentication")
         }
     }
 
@@ -174,73 +202,18 @@ class SettingsRepositoryImpl(
     }
 }
 
-
-data class SmtpSettingsState(
-    val host: String = "",
-    val port: String = "",
-    val username: String = "",
-    val password: String = "",
-    val transport: SmtpTransport = SmtpTransport.SMTPS,
-    val isAuthenticated: Boolean = false,
-    val isAuthenticating: Boolean = false,
-    val errorMessage: String? = null,
-) {
-    val canAuthenticate: Boolean
-        get() = host.isNotBlank() &&
-                port.isNotBlank() &&
-                username.isNotBlank() &&
-                password.isNotBlank()
-
-    fun toSmtpSettings(): SmtpSettings? {
-        val portNumber = port.toIntOrNull() ?: return null
-        return SmtpSettings(
-            host = host.trim(),
-            port = portNumber,
-            username = username.trim(),
-            password = password,
-            transport = transport,
-        )
-    }
-}
-
-data class EmailTemplateSettingsState(
-    val subject: String = SettingsStore.DEFAULT_EMAIL_SUBJECT,
-    val body: String = SettingsStore.DEFAULT_EMAIL_BODY,
-    val signatureHtml: String = SettingsStore.DEFAULT_SIGNATURE_HTML,
-    val previewEmail: String = SettingsStore.DEFAULT_PREVIEW_EMAIL,
-    val dailyLimit: Int = SettingsStore.DEFAULT_DAILY_LIMIT,
-)
-
-data class CertificateSettingsState(
-    val accreditedTypeOptions: String = SettingsStore.DEFAULT_ACCREDITED_TYPE_OPTIONS,
-)
-
-data class SettingsState(
-    val smtp: SmtpSettingsState = SmtpSettingsState(),
-    val email: EmailTemplateSettingsState = EmailTemplateSettingsState(),
-    val certificate: CertificateSettingsState = CertificateSettingsState(),
-) {
-    fun toStoredSettings(): SettingsStore.StoredSettings {
-        return SettingsStore.StoredSettings(
-            host = smtp.host.trim(),
-            port = smtp.port.trim(),
-            username = smtp.username.trim(),
-            password = smtp.password,
-            transport = smtp.transport,
-            subject = email.subject,
-            body = email.body,
-            accreditedTypeOptions = certificate.accreditedTypeOptions,
-            signatureHtml = email.signatureHtml,
-            previewEmail = email.previewEmail,
-            dailyLimit = email.dailyLimit,
-        )
-    }
-
-    fun toUiState(): SettingsUiState {
-        return SettingsUiState(
-            smtp = smtp,
-            email = email,
-            certificate = certificate,
-        )
-    }
+private fun SettingsState.toStoredSettings(): SettingsStore.StoredSettings {
+    return SettingsStore.StoredSettings(
+        host = smtp.host.trim(),
+        port = smtp.port.trim(),
+        username = smtp.username.trim(),
+        password = smtp.password,
+        transport = smtp.transport,
+        subject = email.subject,
+        body = email.body,
+        accreditedTypeOptions = certificate.accreditedTypeOptions,
+        signatureHtml = email.signatureHtml,
+        previewEmail = email.previewEmail,
+        dailyLimit = email.dailyLimit,
+    )
 }

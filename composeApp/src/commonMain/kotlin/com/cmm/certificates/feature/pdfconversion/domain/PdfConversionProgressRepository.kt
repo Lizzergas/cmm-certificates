@@ -1,7 +1,7 @@
 package com.cmm.certificates.feature.pdfconversion.domain
 
-import com.cmm.certificates.data.xlsx.RegistrationEntry
-import com.cmm.certificates.feature.pdfconversion.data.PdfConversionProgressState
+import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import kotlinx.coroutines.flow.StateFlow
 
 interface PdfConversionProgressRepository {
@@ -20,7 +20,7 @@ interface PdfConversionProgressRepository {
 
     fun finish()
 
-    fun fail(message: String)
+    fun fail(message: UiMessage)
 
     fun requestCancel()
 

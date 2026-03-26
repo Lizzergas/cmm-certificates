@@ -1,5 +1,8 @@
 package com.cmm.certificates.data.email
 
+import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
+import com.cmm.certificates.feature.settings.domain.SmtpSettings
+
 expect object SmtpClient {
     suspend fun testConnection(settings: SmtpSettings)
 

@@ -1,7 +1,5 @@
 package com.cmm.certificates.feature.emailsending.domain
 
-import com.cmm.certificates.feature.emailsending.data.CachedEmailBatch
-import com.cmm.certificates.feature.emailsending.data.EmailProgressState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -32,4 +30,5 @@ interface EmailProgressRepository {
 
     suspend fun getSentCountInLast24Hours(): Int
     suspend fun recordSuccessfulSend()
+    suspend fun clearSentHistory()
 }
