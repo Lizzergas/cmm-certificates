@@ -18,7 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.common_progress_counter
 import com.cmm.certificates.core.theme.Grid
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ProgressIndicatorContent(
@@ -52,7 +55,7 @@ fun ProgressIndicatorContent(
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "$current / $total",
+                    text = stringResource(Res.string.common_progress_counter, current, total),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

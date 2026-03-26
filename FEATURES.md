@@ -7,6 +7,8 @@
 4. Watch progress on the PDF Conversion Progress screen.
 5. On success, optionally send a preview email or send emails to all recipients.
 
+PDF generation is local on JVM and no longer requires network access. Network access is still relevant for SMTP email delivery.
+
 ## Output Behavior
 - PDFs are generated as `${docIdStart + index}.pdf`.
 - Output folder is auto-created under `./pdf/<sanitized certificate name>`.
@@ -45,6 +47,10 @@ See `PDF_GEN.md` for the detailed pipeline.
 - Authentication is required before sending.
 - **Preview email** sends a single email (first PDF attached) and stores the preview email address.
 - **Send emails** sends one PDF per XLSX entry.
+- Failed sends are cached and can be retried later.
+- Cached retries require authenticated SMTP settings and verify that the original PDF attachments still exist.
+- Daily email limit `0` means unlimited sending.
+- **Clear all** resets SMTP settings, cached retries, and the persisted 24-hour send history.
 
 ## Email Signature Editor
 - The Settings screen provides an **Edit signature** dialog instead of a raw HTML text area.
@@ -55,8 +61,19 @@ See `PDF_GEN.md` for the detailed pipeline.
 - Stored value remains a single string: `email.signatureHtml`.
 
 ## Platform Support
-- JVM: full XLSX parsing + DOCX templating + email sending.
-- Android/iOS: XLSX parsing, DOCX templating, and SMTP are not implemented yet.
+- JVM: full XLSX parsing + DOCX templating + PDF generation + email sending.
+- Android/iOS: UI now exposes unsupported capability states instead of relying on runtime-only failures for JVM-only features.
+
+## Platform Matrix
+
+| Capability | JVM | Android | iOS |
+|-----------|-----|---------|-----|
+| XLSX parsing | Yes | Not yet | Not yet |
+| DOCX -> PDF generation | Yes | Not yet | Not yet |
+| Preview email | Yes | Not yet | Not yet |
+| Bulk email sending | Yes | Not yet | Not yet |
+| Cached retry sending | Yes | Not yet | Not yet |
+| Open output folder | Yes | Not yet | Not yet |
 
 ## UI Components
 - `SelectFileIcon`: file selection cards (idle/selected states).
@@ -68,3 +85,4 @@ See `PDF_GEN.md` for the detailed pipeline.
 ## Known Gaps
 - Android/iOS PDF generation and SMTP sending are not implemented.
 - Limited placeholder set (see above).
+- Some repository defaults still rely on localized default content rather than user-selectable locale persistence.

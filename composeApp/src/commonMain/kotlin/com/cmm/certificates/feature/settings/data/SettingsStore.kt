@@ -5,12 +5,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.cmm.certificates.data.email.SmtpTransport
 import com.cmm.certificates.data.store.clearDataStore
 import com.cmm.certificates.data.store.enumOrDefault
 import com.cmm.certificates.data.store.intOrDefault
 import com.cmm.certificates.data.store.safeData
 import com.cmm.certificates.data.store.stringOrDefault
+import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import kotlinx.coroutines.flow.first
 
 class SettingsStore(
@@ -31,9 +31,7 @@ class SettingsStore(
     }
 
     suspend fun loadOrDefault(): StoredSettings {
-        val prefs = dataStore
-            .safeData()
-            .first()
+        val prefs = dataStore.safeData().first()
 
         return StoredSettings(
             host = prefs[Keys.host].orEmpty(),
@@ -41,13 +39,13 @@ class SettingsStore(
             username = prefs[Keys.username].orEmpty(),
             password = prefs[Keys.password].orEmpty(),
             transport = prefs.enumOrDefault(Keys.transport, SmtpTransport.SMTPS),
-            subject = prefs.stringOrDefault(Keys.subject, DEFAULT_EMAIL_SUBJECT),
-            body = prefs.stringOrDefault(Keys.body, DEFAULT_EMAIL_BODY),
+            subject = prefs.stringOrDefault(Keys.subject, defaultEmailSubject()),
+            body = prefs.stringOrDefault(Keys.body, defaultEmailBody()),
             accreditedTypeOptions = prefs.stringOrDefault(
                 Keys.accreditedTypeOptions,
-                DEFAULT_ACCREDITED_TYPE_OPTIONS
+                defaultAccreditedTypeOptions(),
             ),
-            signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, DEFAULT_SIGNATURE_HTML),
+            signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, defaultSignatureHtml()),
             previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
             dailyLimit = prefs.intOrDefault(Keys.dailyLimit, DEFAULT_DAILY_LIMIT),
         )
@@ -86,32 +84,4 @@ class SettingsStore(
         val previewEmail: String,
         val dailyLimit: Int,
     )
-
-    companion object {
-        const val DEFAULT_DAILY_LIMIT = 450
-        const val DEFAULT_EMAIL_SUBJECT = "Pa\u017Eyma"
-        const val DEFAULT_EMAIL_BODY =
-            "Laba diena,\n\n" +
-                    "Siunčiame parengtą dalyvio pažymėjimą ir maloniai kviečiame įvertinti renginio kokybę ir pakomentuoti, kas Jums buvo naudingiausia.\n\n" +
-                    "Prašome anketą užpildyti šiuo adresu:\n" +
-                    "anketos_nuoroda\n\n" +
-                    "Dėkojame už bendradarbiavimą.\n"
-
-        const val DEFAULT_ACCREDITED_TYPE_OPTIONS =
-            "paskaitoje\nseminare\nkonferencijoje\nmokymuose"
-
-        const val DEFAULT_PREVIEW_EMAIL = ""
-
-        const val DEFAULT_SIGNATURE_HTML = """
-            <div style="font-family:'Times New Roman', Times, serif; font-size:8pt; font-style:italic; line-height:1.25; color:#000;">
-              <div>Pagarbiai</div>
-              <div>Raminta Čyplytė</div>
-              <div>Meninio ugdymo pedagogų kvalifikacijos tobulinimo centro metodininkė</div>
-              <div>Nacionalinė M. K. Čiurlionio menų mokykla</div>
-              <div>Tel. +370 67357212</div>
-              <div>El. p. raminta.cyplyte@cmm.lt</div>
-              <div>T. Kosciuškos g. 11 LT-01100, Vilnius</div>
-            </div>
-        """
-    }
 }

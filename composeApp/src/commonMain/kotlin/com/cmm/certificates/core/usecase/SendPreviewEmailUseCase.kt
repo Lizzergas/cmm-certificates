@@ -1,8 +1,18 @@
 package com.cmm.certificates.core.usecase
 
-import com.cmm.certificates.data.email.EmailSendRequest
-import com.cmm.certificates.data.email.SmtpClient
-import com.cmm.certificates.data.email.buildEmailHtmlBody
+import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.core.logging.logInfo
+import com.cmm.certificates.core.logging.logWarn
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.common_error_doc_id_missing
+import certificates.composeapp.generated.resources.common_error_email_required
+import certificates.composeapp.generated.resources.common_error_output_dir_missing
+import certificates.composeapp.generated.resources.common_error_smtp_auth_required
+import certificates.composeapp.generated.resources.common_error_smtp_incomplete
+import certificates.composeapp.generated.resources.email_preview_error_send_failed
+import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
+import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
+import com.cmm.certificates.feature.emailsending.domain.buildEmailHtmlBody
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -13,22 +23,35 @@ import kotlinx.coroutines.withContext
 class SendPreviewEmailUseCase(
     private val settingsRepository: SettingsRepository,
     private val pdfConversionProgressRepository: PdfConversionProgressRepository,
+    private val emailGateway: EmailGateway,
 ) {
+    private val logTag = "PreviewEmail"
+
+    sealed interface PreviewEmailResult {
+        data object Success : PreviewEmailResult
+        data class Failure(val message: UiMessage) : PreviewEmailResult
+    }
+
     suspend fun sendPreviewEmail(
         toEmail: String,
         attachFirstPdf: Boolean,
-    ): Result<Unit> {
+    ): PreviewEmailResult {
         val trimmedEmail = toEmail.trim()
         if (trimmedEmail.isBlank()) {
-            return Result.failure(IllegalArgumentException("Email address is required."))
+            logWarn(logTag, "Preview email aborted: missing recipient")
+            return PreviewEmailResult.Failure(UiMessage(Res.string.common_error_email_required))
         }
 
         val settingsState = settingsRepository.state.value
         val smtpState = settingsState.smtp
         val smtpSettings = smtpState.toSmtpSettings()
-            ?: return Result.failure(IllegalStateException("SMTP details are incomplete."))
+            ?: run {
+                logWarn(logTag, "Preview email aborted: incomplete SMTP settings")
+                return PreviewEmailResult.Failure(UiMessage(Res.string.common_error_smtp_incomplete))
+            }
         if (!smtpState.isAuthenticated) {
-            return Result.failure(IllegalStateException("SMTP authentication is required."))
+            logWarn(logTag, "Preview email aborted: SMTP not authenticated")
+            return PreviewEmailResult.Failure(UiMessage(Res.string.common_error_smtp_auth_required))
         }
 
         val (attachmentPath, attachmentName) = if (attachFirstPdf) {
@@ -36,10 +59,12 @@ class SendPreviewEmailUseCase(
             val outputDir = conversionState.outputDir
             val docIdStart = conversionState.docIdStart
             if (outputDir.isBlank()) {
-                return Result.failure(IllegalStateException("Output folder is missing."))
+                logWarn(logTag, "Preview email aborted: missing output directory")
+                return PreviewEmailResult.Failure(UiMessage(Res.string.common_error_output_dir_missing))
             }
             if (docIdStart == null) {
-                return Result.failure(IllegalStateException("Document ID start is missing."))
+                logWarn(logTag, "Preview email aborted: missing doc id start")
+                return PreviewEmailResult.Failure(UiMessage(Res.string.common_error_doc_id_missing))
             }
             val filename = "${docIdStart}.pdf"
             joinPath(outputDir, filename) to filename
@@ -49,6 +74,7 @@ class SendPreviewEmailUseCase(
 
         settingsRepository.setPreviewEmail(trimmedEmail)
         settingsRepository.save()
+        logInfo(logTag, "Saved preview email recipient")
 
         val htmlBody = buildEmailHtmlBody(
             body = settingsState.email.body,
@@ -65,16 +91,26 @@ class SendPreviewEmailUseCase(
         )
 
         return runCatching {
+            logInfo(logTag, "Sending preview email to $trimmedEmail attachFirstPdf=$attachFirstPdf")
+            var failure: Exception? = null
+            var successCount = 0
             withContext(Dispatchers.IO) {
-                SmtpClient.sendBatch(
+                emailGateway.sendBatch(
                     settings = smtpSettings,
                     requests = listOf(request),
                     onSending = {},
-                    onSuccess = {},
-                    onFailure = { _, _ -> },
+                    onSuccess = { successCount++ },
+                    onFailure = { _, exception -> failure = exception },
                     isCancelRequested = { false },
                 )
             }
+            failure?.let { throw it }
+            check(successCount == 1)
+            logInfo(logTag, "Preview email sent successfully")
+            PreviewEmailResult.Success
+        }.getOrElse {
+            logWarn(logTag, "Preview email failed")
+            PreviewEmailResult.Failure(UiMessage(Res.string.email_preview_error_send_failed))
         }
     }
 }

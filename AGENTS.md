@@ -2,10 +2,10 @@
 
 ## Project Structure & Module Organization
 - `composeApp/` is the Kotlin Multiplatform module. Shared code lives in `composeApp/src/commonMain/kotlin`, with platform code in `androidMain`, `iosMain`, and `jvmMain`.
-- Feature screens and routes live under `composeApp/src/commonMain/kotlin/com/cmm/certificates/features/` (e.g., `home`, `test`).
+- Feature code lives under `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/`, typically split into `data`, `domain`, `presentation`, and `di` packages (for example `certificate`, `settings`, `pdfconversion`, `emailsending`).
 - `iosApp/` contains the native iOS app entry point and any SwiftUI code.
 - Build scripts and Gradle config live at the repo root (`build.gradle.kts`, `settings.gradle.kts`, `gradle/`).
-- Tests (if added) should go in `composeApp/src/commonTest/kotlin` for shared tests, or the relevant platform source set for platform-specific tests.
+- Shared tests live in `composeApp/src/commonTest/kotlin`; JVM-specific tests live in `composeApp/src/jvmTest/kotlin`.
 
 ## Technical Scope & Key Libraries
 - UI: Compose Multiplatform with Material 3 and shared resources (`org.jetbrains.compose.*`).
@@ -19,7 +19,8 @@
 - `./gradlew :composeApp:assembleDebug` builds the Android debug APK.
 - `./gradlew :composeApp:run` runs the desktop (JVM) app.
 - Open `iosApp/` in Xcode to build and run the iOS app.
-- `./gradlew :composeApp:test` runs JVM/common tests (uses Kotlin test).
+- `./gradlew :composeApp:test` runs shared/common tests packaged into Android unit tests.
+- `./gradlew :composeApp:jvmTest` runs JVM-specific tests.
 
 ## Coding Style & Naming Conventions
 - Kotlin: 4-space indentation, no tabs. Keep functions small and prefer immutable `val`.
@@ -30,7 +31,7 @@
 ## Testing Guidelines
 - Framework: `kotlin.test` in `commonTest`.
 - Naming: test classes `*Test`, test methods should describe behavior (e.g., `returnsDefaultLocaleWhenUnset`).
-- Run tests with `./gradlew :composeApp:test`; add platform-specific tests under the appropriate source set when needed.
+- Run tests with `./gradlew :composeApp:test` and `./gradlew :composeApp:jvmTest`; add platform-specific tests under the appropriate source set when needed.
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits style (e.g., `feat: add locale support`, `fix: handle null back stack`).

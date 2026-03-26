@@ -4,19 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.cmm.certificates.data.email.EmailSendRequest
 import com.cmm.certificates.data.store.safeData
-import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-
-@Serializable
-data class CachedEmailBatch(
-    val requests: List<EmailSendRequest>,
-    val lastReason: EmailStopReason? = null,
-)
 
 class CachedEmailStore(
     private val dataStore: DataStore<Preferences>,

@@ -1,7 +1,5 @@
 package com.cmm.certificates.feature.settings.domain
 
-import com.cmm.certificates.data.email.SmtpTransport
-import com.cmm.certificates.feature.settings.data.SettingsState
 import kotlinx.coroutines.flow.StateFlow
 
 interface SettingsRepository {

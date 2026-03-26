@@ -1,5 +1,17 @@
 <resources>
     <string name="app_name">Cmm Programa</string>
+    <string name="common_action_ok">OK</string>
+    <string name="common_clear_text">Išvalyti tekstą</string>
+    <string name="common_file_xlsx">XLSX</string>
+    <string name="common_file_docx">DOCX</string>
+    <string name="common_format_pdf">PDF</string>
+    <string name="common_progress_counter">%1$d / %2$d</string>
+    <string name="common_error_generic">Įvyko klaida.</string>
+    <string name="common_error_email_required">El. pašto adresas yra privalomas.</string>
+    <string name="common_error_smtp_incomplete">SMTP duomenys nevisi.</string>
+    <string name="common_error_smtp_auth_required">Reikalinga SMTP autentifikacija.</string>
+    <string name="common_error_output_dir_missing">Trūksta išvesties aplanko.</string>
+    <string name="common_error_doc_id_missing">Trūksta dokumento ID pradžios.</string>
     <string name="conversion_choose_file">Pasirinkti failą</string>
     <string name="conversion_choose_directory">Pasirinkti aplanką</string>
     <string name="conversion_xlsx_label">XLSX failas</string>
@@ -22,12 +34,22 @@
     <string name="conversion_certificate_name_label">Sertifikato pavadinimas</string>
     <string name="conversion_lector_label">Lektorius</string>
     <string name="conversion_lector_gender_label">Lektoriaus lytis</string>
+    <string name="conversion_default_lector_label">Lektorius:</string>
     <string name="conversion_accredited_type_lecture">paskaitoje</string>
     <string name="conversion_accredited_type_seminar">seminare</string>
     <string name="conversion_accredited_type_conference">konferencijoje</string>
     <string name="conversion_accredited_type_training">mokymuose</string>
     <string name="conversion_tooltip_xlsx">Duomenys iš Google Forms</string>
     <string name="conversion_tooltip_docx">Šablonas PDF generavimui</string>
+    <string name="conversion_offline_hint">PDF generavimas veikia ir be interneto. Ryšio reikės tik vėliau siunčiant el. laiškus.</string>
+    <string name="conversion_unsupported_hint">Ši platforma dar nepalaiko XLSX konvertavimo į PDF.</string>
+    <string name="conversion_error_template_required">Būtina pasirinkti šabloną.</string>
+    <string name="conversion_error_no_entries">Nėra XLSX įrašų generavimui.</string>
+    <string name="conversion_error_fields_required">Būtina užpildyti visus sertifikato laukus.</string>
+    <string name="conversion_error_invalid_doc_id">Dokumento ID pradžia turi būti skaičius.</string>
+    <string name="conversion_error_load_template">Nepavyko įkelti šablono.</string>
+    <string name="conversion_error_create_output_dir">Nepavyko sukurti išvesties aplanko.</string>
+    <string name="conversion_error_write_pdf">Nepavyko sugeneruoti PDF failo.</string>
     <string name="settings_title">Nustatymai</string>
     <string name="settings_subtitle">SMTP konfigūracija</string>
     <string name="settings_section_title">SMTP nustatymai</string>
@@ -41,16 +63,32 @@
     <string name="settings_password_label">Slaptažodis</string>
     <string name="settings_subject_label">Laiško tema</string>
     <string name="settings_body_label">Laiško tekstas</string>
+    <string name="settings_default_email_subject">Pažyma</string>
+    <string name="settings_default_email_body">Laba diena,
+
+Siunčiame parengtą dalyvio pažymėjimą ir maloniai kviečiame įvertinti renginio kokybę ir pakomentuoti, kas Jums buvo naudingiausia.
+
+Prašome anketą užpildyti šiuo adresu:
+anketos_nuoroda
+
+Dėkojame už bendradarbiavimą.</string>
+    <string name="settings_default_accredited_type_options">paskaitoje
+seminare
+konferencijoje
+mokymuose</string>
+    <string name="settings_default_signature_salutation">Pagarbiai</string>
+    <string name="settings_default_signature_html"><![CDATA[<div style="font-family:'Times New Roman', Times, serif; font-size:8pt; font-style:italic; line-height:1.25; color:#000000;"><div>Pagarbiai</div><div>Raminta Čyplytė</div><div>Meninio ugdymo pedagogų kvalifikacijos tobulinimo centro metodininkė</div><div>Nacionalinė M. K. Čiurlionio menų mokykla</div><div>Tel. +370 67357212</div><div>El. p. raminta.cyplyte@cmm.lt</div><div>T. Kosciuškos g. 11 LT-01100, Vilnius</div></div>]]></string>
     <string name="settings_signature_html_label">El. parašo HTML</string>
     <string name="settings_accredited_type_options_label">Akreditavimo tipų parinktys</string>
     <string name="settings_daily_limit_label">Dienos el. laiškų limitas</string>
     <string name="settings_clear_all">Išvalyti visus duomenis</string>
     <string name="settings_clear_all_title">Išvalyti visus duomenis?</string>
-    <string name="settings_clear_all_message">Tai atstatys visus SMTP nustatymus, el. laiškų šablonus ir išvalys istoriją. Šio veiksmo atšaukti negalima.</string>
+    <string name="settings_clear_all_message">Tai atstatys SMTP nustatymus, el. laiškų šablonus, nepavykusių siuntimų talpyklą ir 24 valandų siuntimų istoriją. Šio veiksmo atšaukti negalima.</string>
     <string name="settings_clear_all_confirm">Išvalyti viską</string>
     <string name="settings_clear_all_cancel">Atšaukti</string>
     <string name="settings_authenticate">Autentifikuoti</string>
     <string name="settings_authenticated">Autentifikuota</string>
+    <string name="settings_error_auth_failed">SMTP autentifikacija nepavyko.</string>
     <string name="settings_back">Grįžti</string>
     <string name="progress_title">Konvertuojami įrašai...</string>
     <string name="progress_cancel">Atšaukti</string>
@@ -58,15 +96,19 @@
     <string name="progress_output_label">Išvesties aplankas</string>
     <string name="progress_time_label">Trukmė</string>
     <string name="progress_open_folder">Atidaryti aplanką</string>
+    <string name="progress_open_folder_unsupported_hint">Ši platforma dar negali tiesiogiai atidaryti sugeneruotų aplankų.</string>
     <string name="progress_convert_another">Konvertuoti kitą</string>
     <string name="progress_send_emails">Siųsti el. laiškus</string>
     <string name="progress_send_emails_hint">Autentifikuokite SMTP nustatymuose, kad galėtumėte siųsti</string>
     <string name="progress_current_doc_label">Generuojamas PDF: %1$d</string>
     <string name="progress_error_title">Konvertuoti nepavyko</string>
     <string name="network_unavailable_message">Nėra interneto ryšio</string>
+    <string name="progress_duration_seconds">%1$ds</string>
+    <string name="progress_duration_minutes_seconds">%1$dm %2$ds</string>
     <string name="email_progress_title">Siunčiami el. laiškai...</string>
     <string name="email_progress_recipient_label">Siunčiama: %1$s</string>
     <string name="email_progress_daily_limit_status">Dienos siuntimai: %1$d / %2$d</string>
+    <string name="email_progress_daily_limit_unlimited_status">Dienos siuntimai: %1$d / neribota</string>
     <string name="email_progress_success_title">Išsiųsta %1$d el. laiškų\nsėkmingai</string>
     <string name="email_progress_cancel">Atšaukti</string>
     <string name="email_progress_finish">Baigti</string>
@@ -84,16 +126,20 @@
     <string name="email_stop_reason_cancelled">Siuntimas atšauktas.</string>
     <string name="email_stop_reason_generic_fail">Kai kurių el. laiškų išsiųsti nepavyko.</string>
     <string name="email_stop_reason_no_cached">Nerasta talpinamų laiškų.</string>
+    <string name="email_stop_reason_missing_attachments">Trūksta PDF priedų: %1$s</string>
     <string name="email_stop_reason_cached_suffix">%1$d laiškų išsaugota vėlesniam siuntimui.</string>
     <string name="email_progress_retry_cached">Bandyti iš naujo siųsti talpinamus laiškus</string>
     <string name="email_progress_cached_status">Yra %1$d laiškų, laukiančių siuntimo.</string>
     <string name="email_progress_cached_send_button">Siųsti %1$d laukiančius laiškus</string>
+    <string name="email_progress_cached_retry_requirements_hint">Pakartotiniam siuntimui reikia interneto ryšio ir autentifikuotų SMTP nustatymų.</string>
+    <string name="email_sending_unsupported_hint">Ši platforma dar nepalaiko SMTP el. laiškų siuntimo.</string>
     <string name="email_preview_button">Siųsti peržiūros laišką</string>
     <string name="email_preview_title">Siųsti peržiūros laišką</string>
     <string name="email_preview_description">Bus išsiųstas pirmasis sugeneruotas PDF į nurodytą el. paštą.</string>
     <string name="email_preview_email_label">Peržiūros el. paštas</string>
     <string name="email_preview_send">Siųsti peržiūrą</string>
     <string name="email_preview_success">Sėkmingai!</string>
+    <string name="email_preview_error_send_failed">Nepavyko išsiųsti peržiūros laiško.</string>
     <string name="settings_signature_section_title">El. parašas</string>
     <string name="settings_signature_action_edit">Redaguoti parašą</string>
     <string name="settings_signature_summary_custom">Tinkintas HTML</string>

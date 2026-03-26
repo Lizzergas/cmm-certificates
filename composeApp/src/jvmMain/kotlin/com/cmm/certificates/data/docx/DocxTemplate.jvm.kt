@@ -1,6 +1,9 @@
 package com.cmm.certificates.data.docx
 
-import org.apache.pdfbox.pdmodel.PDDocument
+import com.cmm.certificates.core.logging.logError
+import com.cmm.certificates.core.logging.logInfo
+import com.cmm.certificates.core.logging.logWarn
+import org.apache.pdfbox.Loader
 import org.apache.pdfbox.pdmodel.PDPageContentStream
 import org.apache.pdfbox.pdmodel.PDPageContentStream.AppendMode
 import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory
@@ -16,11 +19,18 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import javax.imageio.ImageIO
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.zip.ZipInputStream
+import javax.imageio.ImageIO
 
 actual object DocxTemplate {
+    private const val LOG_TAG = "DocxTemplate"
+    private const val PDF_CONVERSION_TIMEOUT_SECONDS = 90L
+
     actual fun loadTemplate(path: String): ByteArray {
+        logInfo(LOG_TAG, "Reading template file: $path")
         return File(path).readBytes()
     }
 
@@ -29,39 +39,76 @@ actual object DocxTemplate {
         outputPath: String,
         replacements: Map<String, String>,
     ) {
-        // 1) Fill DOCX template (Apache POI)
-        val docxBytes = buildDocxBytes(templateBytes, replacements)
+        try {
+            logInfo(LOG_TAG, "Filling DOCX placeholders for output: $outputPath")
+            val docxBytes = buildDocxBytes(templateBytes, replacements)
+            logInfo(LOG_TAG, "Built filled DOCX bytes: ${docxBytes.size} bytes")
 
-        // 2) Extract background image from DOCX (image1.* preferred)
-        val bg = extractFirstImageFromDocx(docxBytes)
+            val bg = extractFirstImageFromDocx(docxBytes)
+            if (bg == null) {
+                logWarn(LOG_TAG, "No embedded background image found in DOCX")
+            } else {
+                logInfo(
+                    LOG_TAG,
+                    "Extracted background image: .${bg.extLower}, ${bg.bytes.size} bytes"
+                )
+            }
 
-        // 3) Convert DOCX -> PDF (docx4j)
-        val wordPackage = WordprocessingMLPackage.load(ByteArrayInputStream(docxBytes))
-        val pdfBytes = ByteArrayOutputStream().use { baos ->
-            Docx4J.toPDF(wordPackage, baos)
-            baos.toByteArray()
+            logInfo(LOG_TAG, "Loading WordprocessingMLPackage")
+            val wordPackage = WordprocessingMLPackage.load(ByteArrayInputStream(docxBytes))
+
+            logInfo(LOG_TAG, "Calling Docx4J.toPDF")
+            val pdfBytes = convertToPdfBytesWithTimeout(wordPackage)
+            logInfo(LOG_TAG, "Docx4J produced PDF bytes: ${pdfBytes.size} bytes")
+
+            val stampedPdfBytes = if (bg != null) {
+                logInfo(LOG_TAG, "Stamping background image into PDF")
+                addBackgroundToPdfBytes(
+                    pdfBytes = pdfBytes,
+                    backgroundImageBytes = bg.bytes,
+                    imageExtLower = bg.extLower,
+                    mode = BackgroundMode.COVER,
+                    bleedPx = 2f
+                )
+            } else {
+                pdfBytes
+            }
+
+            logInfo(LOG_TAG, "Reducing PDF to first page")
+            val singlePagePdfBytes = keepOnlyFirstPage(stampedPdfBytes)
+
+            logInfo(LOG_TAG, "Writing PDF file: $outputPath")
+            FileOutputStream(outputPath).use { it.write(singlePagePdfBytes) }
+            logInfo(LOG_TAG, "Finished PDF generation: $outputPath")
+        } catch (t: Throwable) {
+            logError(LOG_TAG, "DOCX to PDF generation failed for $outputPath", t)
+            throw t
         }
-
-        // 4) Stamp background image behind content (PDFBox)
-        val stampedPdfBytes = if (bg != null) {
-            addBackgroundToPdfBytes(
-                pdfBytes = pdfBytes,
-                backgroundImageBytes = bg.bytes,
-                imageExtLower = bg.extLower,
-                mode = BackgroundMode.COVER,
-                bleedPx = 2f
-            )
-        } else {
-            pdfBytes
-        }
-
-        // 5) Keep only the first page, since libraries generate TWO for no apparent reason......
-        val singlePagePdfBytes = keepOnlyFirstPage(stampedPdfBytes)
-
-        // 6) Write result
-        FileOutputStream(outputPath).use { it.write(singlePagePdfBytes) }
     }
 
+    private fun convertToPdfBytesWithTimeout(wordPackage: WordprocessingMLPackage): ByteArray {
+        val executor = Executors.newSingleThreadExecutor()
+        val future = executor.submit<ByteArray> {
+            ByteArrayOutputStream().use { baos ->
+                Docx4J.toPDF(wordPackage, baos)
+                baos.toByteArray()
+            }
+        }
+
+        return try {
+            future.get(PDF_CONVERSION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            future.cancel(true)
+            logError(
+                LOG_TAG,
+                "Docx4J.toPDF timed out after $PDF_CONVERSION_TIMEOUT_SECONDS seconds",
+                e,
+            )
+            throw IllegalStateException("DOCX to PDF conversion timed out.", e)
+        } finally {
+            executor.shutdownNow()
+        }
+    }
 
 
     private fun buildDocxBytes(
@@ -244,7 +291,7 @@ private fun addBackgroundToPdfBytes(
     mode: BackgroundMode = BackgroundMode.COVER,
     bleedPx: Float = 2f, // avoids white edges due to rounding
 ): ByteArray {
-    PDDocument.load(ByteArrayInputStream(pdfBytes)).use { doc ->
+    Loader.loadPDF(pdfBytes).use { doc ->
 
         val buffered: BufferedImage = ImageIO.read(ByteArrayInputStream(backgroundImageBytes))
             ?: error("Failed to decode background image ($imageExtLower)")
@@ -266,6 +313,7 @@ private fun addBackgroundToPdfBytes(
                 BackgroundMode.STRETCH -> {
                     Quad(pageW + 2 * bleedPx, pageH + 2 * bleedPx, -bleedPx, -bleedPx)
                 }
+
                 BackgroundMode.CONTAIN -> {
                     val scale = minOf(pageW / imgW, pageH / imgH)
                     val drawW = imgW * scale
@@ -277,6 +325,7 @@ private fun addBackgroundToPdfBytes(
                         y = (pageH - drawH) / 2f - bleedPx
                     )
                 }
+
                 BackgroundMode.COVER -> {
                     val scale = maxOf(pageW / imgW, pageH / imgH)
                     val drawW = imgW * scale
@@ -328,7 +377,9 @@ private fun extractFirstImageFromDocx(docxBytes: ByteArray): DocxImage? {
     val preferred = entries
         .sortedWith(
             compareBy<Pair<String, ByteArray>>(
-                { !it.first.substringAfterLast('/').startsWith("image1.", ignoreCase = true) }, // false first
+                {
+                    !it.first.substringAfterLast('/').startsWith("image1.", ignoreCase = true)
+                }, // false first
                 { it.first } // lexicographic (image1, image2...)
             )
         )
@@ -339,7 +390,7 @@ private fun extractFirstImageFromDocx(docxBytes: ByteArray): DocxImage? {
 }
 
 private fun keepOnlyFirstPage(pdfBytes: ByteArray): ByteArray {
-    PDDocument.load(ByteArrayInputStream(pdfBytes)).use { doc ->
+    Loader.loadPDF(pdfBytes).use { doc ->
         // remove pages from the end down to index 1
         for (i in doc.numberOfPages - 1 downTo 1) {
             doc.removePage(i)

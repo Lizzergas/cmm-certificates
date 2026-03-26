@@ -1,5 +1,6 @@
 package com.cmm.certificates.data.xlsx
 
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
