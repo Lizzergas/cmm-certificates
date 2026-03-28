@@ -98,7 +98,7 @@ generated.
 
 - Simple Java Mail (JVM only): `org.simplejavamail:simple-java-mail`.
   - Version set in `gradle/libs.versions.toml`.
-  - Added in `composeApp/build.gradle.kts` under `jvmMain.dependencies`.
+  - Added in `feature/emailsending/build.gradle.kts` under `jvmMain.dependencies`.
 - Simple Java Mail uses Jakarta Mail for transport.
 - DataStore Preferences (KMP): `androidx.datastore:datastore` and
   `androidx.datastore:datastore-preferences`.
@@ -108,8 +108,8 @@ generated.
 - JVM: supported (Simple Java Mail implementation).
 - Android/iOS: UI rodo, kad SMTP siuntimas šiose platformose dar nepalaikomas.
   - Platforminiai stub'ai vis dar meta `UnsupportedOperationException`, jeigu šie keliai būtų apeiti programiškai.
-  - See `composeApp/src/androidMain/.../SmtpClient.android.kt` and
-    `composeApp/src/iosMain/.../SmtpClient.ios.kt`.
+  - See `feature/emailsending/src/androidMain/.../SmtpClient.android.kt` and
+    `feature/emailsending/src/iosMain/.../SmtpClient.ios.kt`.
 
 ## Persistence
 
@@ -121,11 +121,11 @@ generated.
 ## UI and Navigation
 
 - Settings screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/navigation/SettingsEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/SettingsEntryProvider.kt`
 - Email progress screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/navigation/EmailEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailEntryProvider.kt`
 - PDF progress screen entry:
-  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/navigation/ProgressEntryProvider.kt`
+  `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/ProgressEntryProvider.kt`
 - Navigation wiring: `composeApp/src/commonMain/kotlin/com/cmm/certificates/Navigator.kt`
 
 ## Troubleshooting

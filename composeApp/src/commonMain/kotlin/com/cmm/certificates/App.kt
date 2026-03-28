@@ -25,25 +25,27 @@ fun App(
 ) {
     val navigator = rememberNavigator()
 
-    KoinApplication(koinConfiguration { modules(appModule) }) {
-        // Providing navigation to composable hierarchy might be redundant
-        AppEnvironment {
-            AppTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
-                ) {
-                    CompositionLocalProvider(
-                        LocalNavigator provides navigator,
+    KoinApplication(
+        configuration = koinConfiguration(declaration = { modules(appModule) }),
+        content = {
+            // Providing navigation to composable hierarchy might be redundant
+            AppEnvironment {
+                AppTheme {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
                     ) {
-                        NavDisplay(
-                            backStack = navigator.backStack,
-                            entryProvider = navigator.entries,
-                            onBack = navigator::back,
-                        )
+                        CompositionLocalProvider(
+                            LocalNavigator provides navigator,
+                        ) {
+                            NavDisplay(
+                                backStack = navigator.backStack,
+                                entryProvider = navigator.entries,
+                                onBack = navigator::back,
+                            )
+                        }
                     }
                 }
             }
-        }
-    }
+        })
 }

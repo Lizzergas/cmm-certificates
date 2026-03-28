@@ -24,6 +24,7 @@ import com.cmm.certificates.feature.settings.domain.SettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpSettings
 import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
+import com.cmm.certificates.presentation.EmailSenderViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

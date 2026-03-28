@@ -8,15 +8,15 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.savedstate.serialization.SavedStateConfiguration
-import com.cmm.certificates.feature.emailsending.presentation.navigation.emailNavSerializerModule
-import com.cmm.certificates.feature.emailsending.presentation.navigation.featureEmailEntryProvider
-import com.cmm.certificates.feature.certificate.presentation.navigation.ConversionScreenRoute
-import com.cmm.certificates.feature.certificate.presentation.navigation.conversionNavSerializerModule
-import com.cmm.certificates.feature.certificate.presentation.navigation.featureConversionEntryProvider
-import com.cmm.certificates.feature.pdfconversion.presentation.navigation.featureProgressEntryProvider
-import com.cmm.certificates.feature.pdfconversion.presentation.navigation.progressNavSerializerModule
-import com.cmm.certificates.feature.settings.presentation.navigation.featureSettingsEntryProvider
-import com.cmm.certificates.feature.settings.presentation.navigation.settingsNavSerializerModule
+import com.cmm.certificates.feature.certificate.presentation.ConversionScreenRoute
+import com.cmm.certificates.feature.certificate.presentation.conversionNavSerializerModule
+import com.cmm.certificates.feature.certificate.presentation.featureConversionEntryProvider
+import com.cmm.certificates.feature.emailsending.presentation.emailNavSerializerModule
+import com.cmm.certificates.feature.emailsending.presentation.featureEmailEntryProvider
+import com.cmm.certificates.feature.pdfconversion.presentation.featureProgressEntryProvider
+import com.cmm.certificates.feature.pdfconversion.presentation.progressNavSerializerModule
+import com.cmm.certificates.feature.settings.presentation.featureSettingsEntryProvider
+import com.cmm.certificates.feature.settings.presentation.settingsNavSerializerModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 

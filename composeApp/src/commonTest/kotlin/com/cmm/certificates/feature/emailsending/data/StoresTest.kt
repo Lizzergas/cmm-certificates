@@ -2,6 +2,8 @@ package com.cmm.certificates.feature.emailsending.data
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.core.DataStore
+import com.cmm.certificates.data.CachedEmailStore
+import com.cmm.certificates.data.SentEmailHistoryStore
 import com.cmm.certificates.data.store.createDataStore
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest

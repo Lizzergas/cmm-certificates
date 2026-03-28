@@ -1,0 +1,74 @@
+package com.cmm.certificates.data
+
+import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
+import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlin.time.Clock
+
+class EmailProgressStore {
+    private val _state = MutableStateFlow(EmailProgressState())
+    val state: StateFlow<EmailProgressState> = _state
+
+    fun start(total: Int) {
+        _state.value = EmailProgressState(
+            current = 0,
+            total = total,
+            inProgress = true,
+            currentRecipient = null,
+            cancelRequested = false,
+            startedAtMillis = nowMillis(),
+        )
+    }
+
+    fun update(current: Int) {
+        _state.update { it.copy(current = current, inProgress = true) }
+    }
+
+    fun setCurrentRecipient(recipient: String?) {
+        _state.update { it.copy(currentRecipient = recipient) }
+    }
+
+    fun finish() {
+        _state.update {
+            it.copy(
+                current = it.total,
+                inProgress = false,
+                completed = true,
+                currentRecipient = null,
+                endedAtMillis = nowMillis(),
+            )
+        }
+    }
+
+    fun fail(reason: EmailStopReason) {
+        _state.update {
+            it.copy(
+                inProgress = false,
+                stopReason = reason,
+                currentRecipient = null,
+                endedAtMillis = nowMillis(),
+            )
+        }
+    }
+
+    fun requestCancel() {
+        _state.update {
+            it.copy(
+                inProgress = false,
+                currentRecipient = null,
+                cancelRequested = true,
+                endedAtMillis = nowMillis(),
+            )
+        }
+    }
+
+    fun isCancelRequested(): Boolean = _state.value.cancelRequested
+
+    fun clear() {
+        _state.value = EmailProgressState()
+    }
+
+    private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+}

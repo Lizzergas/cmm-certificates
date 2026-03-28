@@ -1,11 +1,13 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `composeApp/` is the Kotlin Multiplatform module. Shared code lives in `composeApp/src/commonMain/kotlin`, with platform code in `androidMain`, `iosMain`, and `jvmMain`.
-- Feature code lives under `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/`, typically split into `data`, `domain`, `presentation`, and `di` packages (for example `certificate`, `settings`, `pdfconversion`, `emailsending`).
+- `androidApp/` is the Android application module with `src/main` entry point code, manifest, and Android resources.
+- `composeApp/` is the thin Kotlin Multiplatform app shell. It owns `App.kt`, `Navigator.kt`, Koin aggregation, the desktop entry point, and the iOS `MainViewController`.
+- `core/` is the shared KMP library for resources, theme, UI primitives, platform abstractions, logging, i18n, and shared `expect/actual` implementations.
+- Feature code lives in dedicated modules under `feature/` (`settings`, `certificate`, `pdfconversion`, `emailsending`), typically split into `data`, `domain`, `presentation`, and `di` packages.
 - `iosApp/` contains the native iOS app entry point and any SwiftUI code.
 - Build scripts and Gradle config live at the repo root (`build.gradle.kts`, `settings.gradle.kts`, `gradle/`).
-- Shared tests live in `composeApp/src/commonTest/kotlin`; JVM-specific tests live in `composeApp/src/jvmTest/kotlin`.
+- App-shell shared tests live in `composeApp/src/commonTest/kotlin`; JVM-specific tests live in `composeApp/src/jvmTest/kotlin`.
 
 ## Technical Scope & Key Libraries
 - UI: Compose Multiplatform with Material 3 and shared resources (`org.jetbrains.compose.*`).
@@ -16,10 +18,10 @@
 - Read `FEATURES.md` for current product scope, placeholder support, and platform limitations.
 
 ## Build, Test, and Development Commands
-- `./gradlew :composeApp:assembleDebug` builds the Android debug APK.
+- `./gradlew :androidApp:assembleDebug` builds the Android debug APK.
 - `./gradlew :composeApp:run` runs the desktop (JVM) app.
 - Open `iosApp/` in Xcode to build and run the iOS app.
-- `./gradlew :composeApp:test` runs shared/common tests packaged into Android unit tests.
+- `./gradlew :composeApp:test` runs the composeApp Android host tests.
 - `./gradlew :composeApp:jvmTest` runs JVM-specific tests.
 
 ## Coding Style & Naming Conventions
@@ -31,7 +33,7 @@
 ## Testing Guidelines
 - Framework: `kotlin.test` in `commonTest`.
 - Naming: test classes `*Test`, test methods should describe behavior (e.g., `returnsDefaultLocaleWhenUnset`).
-- Run tests with `./gradlew :composeApp:test` and `./gradlew :composeApp:jvmTest`; add platform-specific tests under the appropriate source set when needed.
+- Run tests with `./gradlew :composeApp:test` and `./gradlew :composeApp:jvmTest`; add platform-specific tests under the appropriate module/source set when needed.
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits style (e.g., `feat: add locale support`, `fix: handle null back stack`).

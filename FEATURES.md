@@ -64,6 +64,15 @@ See `PDF_GEN.md` for the detailed pipeline.
 - JVM: full XLSX parsing + DOCX templating + PDF generation + email sending.
 - Android/iOS: UI now exposes unsupported capability states instead of relying on runtime-only failures for JVM-only features.
 
+## Module Layout
+- `androidApp`: Android app shell only.
+- `composeApp`: shared app shell, DI aggregation, navigation root, desktop/iOS entry points.
+- `core`: shared resources, theme, UI primitives, platform abstractions, expect/actual code.
+- `feature/settings`: settings state, persistence, SMTP auth, signature editor.
+- `feature/certificate`: conversion form, XLSX parser integration, DOCX/PDF generation pipeline.
+- `feature/pdfconversion`: conversion progress and preview-email flow.
+- `feature/emailsending`: send, retry, caches, and email progress flow.
+
 ## Platform Matrix
 
 | Capability | JVM | Android | iOS |

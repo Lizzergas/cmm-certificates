@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository is a single-module Kotlin Multiplatform app centered around one JVM-first workflow:
+This repository is a multi-module Kotlin Multiplatform app centered around one JVM-first workflow:
 
 1. Parse participant rows from XLSX.
 2. Fill a DOCX certificate template.
@@ -10,11 +10,19 @@ This repository is a single-module Kotlin Multiplatform app centered around one 
 4. Send generated PDFs by email.
 5. Cache failed sends and retry them later.
 
-The shared code lives in `composeApp/src/commonMain/kotlin/com/cmm/certificates`, with platform-specific implementations in `androidMain`, `iosMain`, and `jvmMain`.
+The current module graph is:
 
-## Current Feature Structure
+- `androidApp` - Android application shell
+- `composeApp` - thin KMP app shell (`App.kt`, `Navigator.kt`, DI aggregation, desktop/iOS entry points)
+- `core` - shared resources, theme, UI primitives, logging, i18n, platform abstractions, and most `expect/actual`
+- `feature/settings` - settings, SMTP auth, templates, signature editor
+- `feature/certificate` - conversion form, XLSX parsing, DOCX/PDF generation pipeline
+- `feature/pdfconversion` - conversion progress and preview email flow
+- `feature/emailsending` - bulk email sending, retry, progress, and caches
 
-Each feature is organized under `feature/<name>/` with these subpackages:
+## Feature Structure
+
+Each feature module is organized under `feature/<name>/src/commonMain/kotlin/...` with these subpackages:
 
 - `data/` - adapters, stores, repository implementations
 - `domain/` - models, repository contracts, ports, and use cases
@@ -36,19 +44,19 @@ Presentation code lives in `feature/**/presentation`.
 
 - Screens collect state with Compose and delegate actions to view models.
 - View models coordinate user actions through use cases and repositories.
-- Navigation entry providers live in `feature/**/presentation/navigation`.
+- Navigation entry providers live in `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/*/presentation`.
 - Feature-local components live in `feature/**/presentation/components` when they are not shared.
 
 Examples:
 
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/certificate/presentation/ConversionScreen.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/PdfConversionProgressScreen.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailProgressScreen.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/SettingsScreen.kt`
+- `feature/certificate/src/commonMain/kotlin/com/cmm/certificates/feature/certificate/presentation/ConversionScreen.kt`
+- `feature/pdfconversion/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/PdfConversionProgressScreen.kt`
+- `feature/emailsending/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailProgressScreen.kt`
+- `feature/settings/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/SettingsScreen.kt`
 
 ### Domain
 
-Domain code lives in `feature/**/domain` and `core/domain`.
+Domain code lives in `feature/**/domain` and `core/src/commonMain/kotlin/com/cmm/certificates/core/domain`.
 
 - Repository interfaces and feature ports are defined here.
 - Workflow use cases live here.
@@ -57,14 +65,14 @@ Domain code lives in `feature/**/domain` and `core/domain`.
 
 Examples:
 
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/certificate/domain/usecase/GenerateCertificatesUseCase.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/domain/usecase/SendEmailRequestsUseCase.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/core/domain/AppCapabilities.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/core/domain/ConnectivityMonitor.kt`
+- `feature/certificate/src/commonMain/kotlin/com/cmm/certificates/feature/certificate/domain/usecase/GenerateCertificatesUseCase.kt`
+- `feature/emailsending/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/domain/usecase/SendEmailRequestsUseCase.kt`
+- `core/src/commonMain/kotlin/com/cmm/certificates/core/domain/AppCapabilities.kt`
+- `core/src/commonMain/kotlin/com/cmm/certificates/core/domain/ConnectivityMonitor.kt`
 
 ### Data
 
-Data code lives in `feature/**/data`, `data/**`, and platform source sets.
+Data code lives in feature modules, `core`, and platform source sets owned by those modules.
 
 - Repository implementations and stores live here.
 - Platform adapters for DOCX, XLSX, SMTP, file system, and connectivity live here.
@@ -72,10 +80,10 @@ Data code lives in `feature/**/data`, `data/**`, and platform source sets.
 
 Examples:
 
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/data/SettingsRepositoryImpl.kt`
-- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/data/EmailProgressRepositoryImpl.kt`
-- `composeApp/src/jvmMain/kotlin/com/cmm/certificates/data/email/SmtpClient.jvm.kt`
-- `composeApp/src/jvmMain/kotlin/com/cmm/certificates/data/xlsx/XlsxParser.jvm.kt`
+- `feature/settings/src/commonMain/kotlin/com/cmm/certificates/feature/settings/data/SettingsRepositoryImpl.kt`
+- `feature/emailsending/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/data/EmailProgressRepositoryImpl.kt`
+- `feature/emailsending/src/jvmMain/kotlin/com/cmm/certificates/data/email/SmtpClient.jvm.kt`
+- `feature/certificate/src/jvmMain/kotlin/com/cmm/certificates/data/xlsx/XlsxParser.jvm.kt`
 
 ## Workflow Design
 
@@ -105,10 +113,10 @@ Navigation is centralized in `composeApp/src/commonMain/kotlin/com/cmm/certifica
 
 Routes are declared per feature in presentation navigation packages:
 
-- `feature/certificate/presentation/navigation/ConversionEntryProvider.kt`
-- `feature/pdfconversion/presentation/navigation/ProgressEntryProvider.kt`
-- `feature/emailsending/presentation/navigation/EmailEntryProvider.kt`
-- `feature/settings/presentation/navigation/SettingsEntryProvider.kt`
+- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/certificate/presentation/ConversionEntryProvider.kt`
+- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/pdfconversion/presentation/ProgressEntryProvider.kt`
+- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/emailsending/presentation/EmailEntryProvider.kt`
+- `composeApp/src/commonMain/kotlin/com/cmm/certificates/feature/settings/presentation/SettingsEntryProvider.kt`
 
 ## Capabilities and Platform Support
 
@@ -121,18 +129,18 @@ The UI uses these capabilities to disable unsupported actions and explain why th
 
 ## DI
 
-Koin is configured in `core/di`.
+Koin aggregation is configured in `composeApp/src/commonMain/kotlin/com/cmm/certificates/core/di`.
 
-- `appModule` includes core, use-case, and feature modules.
-- Feature modules wire their own presentation, domain, and data dependencies.
-- Core modules provide connectivity and capability abstractions shared across features.
+- `appModule` includes shared infrastructure plus feature modules.
+- Each feature module wires its own presentation, domain, and data dependencies.
+- `core` provides connectivity and capability abstractions shared across features.
 
 ## Testing
 
-The repository now has both shared and JVM-specific tests:
+The repository now has both Android-host/JVM-shell tests and module-local JVM tests:
 
-- `composeApp/src/commonTest/kotlin` covers shared business rules such as XLSX mapping, email request building, send-stop logic, preview-email validation, and feature-level use cases.
-- `composeApp/src/jvmTest/kotlin` covers JVM-only behavior such as DOCX replacement helpers and repository/view-model cases that depend on JVM runtime behavior.
+- `composeApp/src/commonTest/kotlin` and `composeApp/src/jvmTest/kotlin` still cover app-shell and integration-oriented cases.
+- Module-local JVM/platform tests live beside their owning modules as the split continues.
 
 Preferred testing style:
 
