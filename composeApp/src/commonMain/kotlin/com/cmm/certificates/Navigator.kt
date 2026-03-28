@@ -23,6 +23,7 @@ import kotlinx.serialization.modules.polymorphic
 @Stable
 class Navigator internal constructor(
     val backStack: NavBackStack<NavKey>,
+    private val startDestination: NavKey,
 ) {
     val entries = entryProvider {
         featureConversionEntryProvider(this@Navigator)
@@ -36,12 +37,26 @@ class Navigator internal constructor(
     }
 
     fun back() {
-        backStack.removeLastOrNull()
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
     }
 
     fun clearAndPush(key: NavKey) {
-        backStack.clear()
-        backStack.add(key)
+        if (backStack.isEmpty()) {
+            backStack.add(key)
+            return
+        }
+
+        while (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
+
+        backStack[0] = key
+    }
+
+    fun resetToStart() {
+        clearAndPush(startDestination)
     }
 }
 
@@ -69,5 +84,5 @@ fun rememberNavigator(
         startDestination
     )
 
-    return remember { Navigator(backStack) }
+    return remember(backStack, startDestination) { Navigator(backStack, startDestination) }
 }
