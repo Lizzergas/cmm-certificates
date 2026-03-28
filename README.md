@@ -59,5 +59,19 @@ Abi reikšmės bus paverstos į Word eilutės lūžį (nauja eilutė).
 - `PDF_GEN.md` - DOCX -> PDF pipeline JVM platformoje
 - `docs/architecture.md` - dabartinė repo architektūra
 
+## Windows release
+Windows `.msi` diegiklis surenkamas per GitHub Actions workflow `.github/workflows/windows-msi-on-tag.yml`.
+
+Trumpa procedūra:
+1. Įsitikinkite, kad pakeitimai yra commit'inti ir išpushinti į GitHub.
+2. Sukurkite tag'ą formatu `vMAJOR.MINOR.BUILD`, pvz. `v1.0.1`.
+3. Išpushinkite tag'ą:
+   `git push origin v1.0.1`
+4. GitHub automatiškai paleis Windows build'ą ir sugeneruos `.msi` artefaktą.
+5. Atsidarykite repo `Actions` skiltį ir atsisiųskite artefaktą iš paskutinio `Build Windows MSI` paleidimo.
+
+Pavyzdys:
+`git tag v1.0.1 && git push origin v1.0.1`
+
 # D.U.K.
 - Jeigu nepavyksta tam tikriems laiškams būti išsiųstiems, jie bus išsaugomi ir bus galima pamėginti pakartotina išsiųsti
