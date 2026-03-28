@@ -70,10 +70,15 @@ compose.desktop {
     application {
         mainClass = "com.cmm.certificates.MainKt"
 
+        buildTypes.release.proguard {
+            isEnabled.set(false)
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.cmm.certificates"
             packageVersion = project.version.toString()
+            includeAllModules = true
 
             windows {
                 upgradeUuid = "a2b5eaa2-a40f-4507-886e-fb9db5815121"

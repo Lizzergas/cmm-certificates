@@ -1,3 +1,7 @@
+val androidVersionCode = providers.gradleProperty("appVersionCode")
+    .map(String::toInt)
+    .orElse(1)
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
@@ -12,7 +16,7 @@ android {
         applicationId = "com.cmm.certificates"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
+        versionCode = androidVersionCode.get()
         versionName = project.version.toString()
     }
 

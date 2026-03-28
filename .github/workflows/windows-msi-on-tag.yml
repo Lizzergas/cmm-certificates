@@ -5,13 +5,19 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: read
+
 jobs:
   build-windows-msi:
     runs-on: windows-latest
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -55,20 +61,62 @@ jobs:
           $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Derive app version from tag
-        shell: bash
+        shell: pwsh
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag must match vMAJOR.MINOR.BUILD" >&2
-            exit 1
-          fi
-          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          $tagName = $env:GITHUB_REF_NAME
+          if ($tagName -notmatch '^v(\d+)\.(\d+)\.(\d+)$') {
+            throw 'Tag must match vMAJOR.MINOR.BUILD'
+          }
+
+          $version = $tagName.Substring(1)
+          $releaseTags = @(git tag --list 'v*.*.*')
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Failed to read git tags'
+          }
+
+          if ($releaseTags.Count -eq 0) {
+            throw 'No release tags were found after checkout'
+          }
+
+          $versionCode = $releaseTags.Count
+
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "APP_VERSION_CODE=$versionCode" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Using app version $version and versionCode $versionCode"
+
+      - name: Print build tool versions
+        shell: pwsh
+        run: |
+          java -version
+          .\gradlew.bat --version
+          $wixCommand = Get-Command candle.exe -ErrorAction Stop
+          Write-Host "WiX binary: $($wixCommand.Source)"
+
+      - name: Run release verification tests
+        shell: pwsh
+        env:
+          ORG_GRADLE_PROJECT_appVersion: ${{ env.APP_VERSION }}
+          ORG_GRADLE_PROJECT_appVersionCode: ${{ env.APP_VERSION_CODE }}
+        run: .\gradlew.bat :composeApp:jvmTest :composeApp:test --stacktrace --no-daemon
 
       - name: Build release MSI
         shell: pwsh
         env:
           ORG_GRADLE_PROJECT_appVersion: ${{ env.APP_VERSION }}
-        run: .\gradlew.bat :composeApp:packageReleaseMsi
+          ORG_GRADLE_PROJECT_appVersionCode: ${{ env.APP_VERSION_CODE }}
+        run: .\gradlew.bat :composeApp:packageReleaseMsi --stacktrace --no-daemon
+
+      - name: Upload Gradle reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-reports-${{ env.APP_VERSION || github.run_id }}
+          path: |
+            build/reports/**
+            composeApp/build/reports/**
+            composeApp/build/compose/logs/**
+            androidApp/build/reports/**
+          if-no-files-found: ignore
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
