@@ -1,14 +1,18 @@
 package com.cmm.certificates.data
 
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlin.math.absoluteValue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
@@ -18,12 +22,14 @@ class EmailProgressRepositoryImpl(
     private val historyStore: SentEmailHistoryStore,
 ) : EmailProgressRepository {
     override val state: StateFlow<EmailProgressState> = store.state
-    override val cachedEmails: Flow<CachedEmailBatch?> = cachedEmailStore.cachedEmails
+    override val cachedEmails: Flow<CachedEmailBatch> = cachedEmailStore.cachedEmails
+    override val sentHistory: Flow<List<SentEmailRecord>> = historyStore.history
+        .map { it.records }
     override val sentCountInLast24Hours: Flow<Int> = combine(
-        historyStore.history,
+        sentHistory,
         refreshTickerFlow(),
     ) { history, _ ->
-        history.timestamps.countInLast24Hours()
+        history.countInLast24Hours()
     }
 
     override fun start(total: Int) {
@@ -60,6 +66,10 @@ class EmailProgressRepositoryImpl(
         cachedEmailStore.save(batch)
     }
 
+    override suspend fun removeCachedEmail(id: String) {
+        cachedEmailStore.removeEntry(id)
+    }
+
     override suspend fun clearCachedEmails() {
         cachedEmailStore.clear()
     }
@@ -68,8 +78,20 @@ class EmailProgressRepositoryImpl(
         return historyStore.getCountInLast24Hours()
     }
 
-    override suspend fun recordSuccessfulSend() {
-        historyStore.addSend(Clock.System.now().toEpochMilliseconds())
+    override suspend fun recordSuccessfulSend(request: EmailSendRequest) {
+        val timestamp = Clock.System.now().toEpochMilliseconds()
+        historyStore.addSend(
+            SentEmailRecord(
+                id = buildRecordId(request, timestamp),
+                sentAt = timestamp,
+                toEmail = request.toEmail,
+                toName = request.toName,
+                certificateName = request.certificateName,
+                subject = request.subject,
+                attachmentName = request.attachmentName,
+                attachmentPath = request.attachmentPath,
+            )
+        )
     }
 
     override suspend fun clearSentHistory() {
@@ -84,8 +106,18 @@ class EmailProgressRepositoryImpl(
         }
     }
 
-    private fun List<Long>.countInLast24Hours(nowMillis: Long = Clock.System.now().toEpochMilliseconds()): Int {
+    private fun List<SentEmailRecord>.countInLast24Hours(
+        nowMillis: Long = Clock.System.now().toEpochMilliseconds(),
+    ): Int {
         val cutoff = nowMillis - 24.hours.inWholeMilliseconds
-        return count { it > cutoff }
+        return count { it.sentAt > cutoff }
+    }
+
+    private fun buildRecordId(request: EmailSendRequest, timestamp: Long): String {
+        val seed = listOf(request.toEmail, request.attachmentName, request.subject)
+            .joinToString("|")
+            .hashCode()
+            .absoluteValue
+        return "$timestamp-$seed"
     }
 }

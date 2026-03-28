@@ -9,6 +9,7 @@ class BuildEmailRequestsUseCase {
         entries: List<RegistrationEntry>,
         docIdStart: Long,
         outputDir: String,
+        certificateName: String,
         subject: String,
         body: String,
         htmlBody: String?,
@@ -24,6 +25,7 @@ class BuildEmailRequestsUseCase {
             EmailSendRequest(
                 toEmail = email,
                 toName = fullName,
+                certificateName = certificateName,
                 subject = subject,
                 body = body,
                 htmlBody = htmlBody,

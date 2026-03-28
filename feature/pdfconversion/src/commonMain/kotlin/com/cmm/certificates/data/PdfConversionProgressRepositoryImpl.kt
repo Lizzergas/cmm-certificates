@@ -14,12 +14,14 @@ class PdfConversionProgressRepositoryImpl(
     override fun start(
         total: Int,
         outputDir: String,
+        certificateName: String,
         docIdStart: Long,
         entries: List<RegistrationEntry>,
     ) {
         store.start(
             total = total,
             outputDir = outputDir,
+            certificateName = certificateName,
             docIdStart = docIdStart,
             entries = entries,
         )

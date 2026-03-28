@@ -5,6 +5,7 @@ import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
@@ -21,6 +22,8 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.SYSTEM
+import kotlin.math.absoluteValue
+import kotlin.time.Clock
 
 class SendEmailRequestsUseCase(
     private val emailProgressRepository: EmailProgressRepository,
@@ -55,7 +58,6 @@ class SendEmailRequestsUseCase(
         var shouldStopDueToErrors = false
         var stopReason: EmailStopReason? = null
         val sentIndices = mutableSetOf<Int>()
-        var successfulSendCount = 0
 
         logInfo(logTag, "Starting send for ${requests.size} email requests")
         emailProgressRepository.start(requests.size)
@@ -75,7 +77,6 @@ class SendEmailRequestsUseCase(
                         consecutiveErrors = 0
                         sentIndices.add(index)
                         emailProgressRepository.update(sentIndices.size)
-                        successfulSendCount++
                         sentInWindow++
                         logInfo(
                             logTag,
@@ -114,7 +115,7 @@ class SendEmailRequestsUseCase(
                     },
                 )
             }
-            persistSuccessfulSends(successfulSendCount)
+            persistSuccessfulSends(requests, sentIndices)
             currentCoroutineContext().ensureActive()
 
             val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
@@ -129,7 +130,7 @@ class SendEmailRequestsUseCase(
                 logWarn(logTag, "Caching ${unsentRequests.size} unsent emails because of $reason")
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        requests = unsentRequests,
+                        entries = unsentRequests.toCachedEntries(),
                         lastReason = reason,
                     )
                 )
@@ -150,13 +151,13 @@ class SendEmailRequestsUseCase(
                 }
             }
         } catch (e: CancellationException) {
-            persistSuccessfulSends(successfulSendCount)
+            persistSuccessfulSends(requests, sentIndices)
             val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
             if (unsentRequests.isNotEmpty()) {
                 logWarn(logTag, "Send job cancelled; caching ${unsentRequests.size} unsent emails")
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        requests = unsentRequests,
+                        entries = unsentRequests.toCachedEntries(),
                         lastReason = EmailStopReason.Cancelled,
                     )
                 )
@@ -164,7 +165,7 @@ class SendEmailRequestsUseCase(
             emailProgressRepository.requestCancel()
         } catch (e: Exception) {
             logError(logTag, "Unexpected email send failure", e)
-            persistSuccessfulSends(successfulSendCount)
+            persistSuccessfulSends(requests, sentIndices)
             val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
             val reason = EmailStopReason.Raw(e.message ?: "Unknown error")
             if (unsentRequests.isNotEmpty()) {
@@ -174,7 +175,7 @@ class SendEmailRequestsUseCase(
                 )
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        requests = unsentRequests,
+                        entries = unsentRequests.toCachedEntries(),
                         lastReason = reason,
                     )
                 )
@@ -216,10 +217,31 @@ class SendEmailRequestsUseCase(
         return quotaKeywords.any { it in message }
     }
 
-    private suspend fun persistSuccessfulSends(count: Int) {
-        repeat(count) {
-            emailProgressRepository.recordSuccessfulSend()
+    private suspend fun persistSuccessfulSends(requests: List<EmailSendRequest>, sentIndices: Set<Int>) {
+        requests.forEachIndexed { index, request ->
+            if (index in sentIndices) {
+                emailProgressRepository.recordSuccessfulSend(request)
+            }
         }
+    }
+
+    private fun List<EmailSendRequest>.toCachedEntries(): List<CachedEmailEntry> {
+        val cachedAt = Clock.System.now().toEpochMilliseconds()
+        return mapIndexed { index, request ->
+            CachedEmailEntry(
+                id = buildCachedEntryId(request, cachedAt, index),
+                request = request,
+                cachedAt = cachedAt,
+            )
+        }
+    }
+
+    private fun buildCachedEntryId(request: EmailSendRequest, cachedAt: Long, index: Int): String {
+        val seed = listOf(request.toEmail, request.attachmentName, request.subject, index.toString())
+            .joinToString("|")
+            .hashCode()
+            .absoluteValue
+        return "$cachedAt-$seed"
     }
 
     private fun List<EmailSendRequest>.findMissingAttachments(): List<String> {

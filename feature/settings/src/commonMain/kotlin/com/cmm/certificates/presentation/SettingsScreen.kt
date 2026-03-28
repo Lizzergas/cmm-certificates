@@ -61,6 +61,7 @@ import certificates.composeapp.generated.resources.settings_clear_all_confirm
 import certificates.composeapp.generated.resources.settings_clear_all_message
 import certificates.composeapp.generated.resources.settings_clear_all_title
 import certificates.composeapp.generated.resources.settings_daily_limit_label
+import certificates.composeapp.generated.resources.settings_history_cache_button
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
@@ -90,6 +91,7 @@ import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
+import com.cmm.certificates.presentation.components.HistoryCacheDialog
 import com.cmm.certificates.presentation.components.SignatureEditorDialog
 import com.cmm.certificates.presentation.components.SignatureSummaryCard
 import org.jetbrains.compose.resources.StringResource
@@ -112,6 +114,7 @@ fun SettingsScreen(
     val signatureEditorState by viewModel.signatureEditorState.collectAsStateWithLifecycle()
     val launchDirectoryPicker = rememberDirectoryPickerLauncher()
     var showClearDialog by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
 
     if (showClearDialog) {
         AlertDialog(
@@ -138,6 +141,15 @@ fun SettingsScreen(
             }
         )
     }
+
+    HistoryCacheDialog(
+        isOpen = showHistoryDialog,
+        sentHistory = state.sentHistory,
+        cachedEmails = state.cachedEmails,
+        cachedLastReason = state.cachedLastReason,
+        onRemoveCachedEmail = viewModel::removeCachedEmail,
+        onDismiss = { showHistoryDialog = false },
+    )
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -186,6 +198,7 @@ fun SettingsScreen(
                     onChooseOutputDirectory = {
                         launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
                     },
+                    onOpenHistoryCache = { showHistoryDialog = true },
                     onEditSignature = viewModel::openSignatureEditor,
                 ),
             )
@@ -338,6 +351,12 @@ private fun BoxScope.SettingsContent(
                 onReset = actions.onOutputDirectoryReset,
                 onChoose = actions.onChooseOutputDirectory,
             )
+            OutlinedButton(
+                onClick = actions.onOpenHistoryCache,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(Res.string.settings_history_cache_button))
+            }
             SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
                 value = state.certificate.accreditedTypeOptions,
@@ -654,6 +673,7 @@ private data class SettingsActions(
     val onAccreditedTypeOptionsChange: (String) -> Unit,
     val onOutputDirectoryReset: () -> Unit,
     val onChooseOutputDirectory: () -> Unit,
+    val onOpenHistoryCache: () -> Unit,
     val onEditSignature: () -> Unit,
 )
 
@@ -706,6 +726,7 @@ private fun SettingsContentPreview() {
                     onAccreditedTypeOptionsChange = {},
                     onOutputDirectoryReset = {},
                     onChooseOutputDirectory = {},
+                    onOpenHistoryCache = {},
                     onEditSignature = {},
                 ),
             )

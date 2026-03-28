@@ -81,7 +81,7 @@ class ConversionViewModel(
         emailProgressRepository.cachedEmails,
     ) { baseState, cachedEmails ->
         baseState.copy(
-            cachedEmailsCount = cachedEmails?.requests?.size ?: 0
+            cachedEmailsCount = cachedEmails.entries.size
         )
     }.stateIn(
         viewModelScope,

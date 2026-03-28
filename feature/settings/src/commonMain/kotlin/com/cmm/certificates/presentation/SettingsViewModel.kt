@@ -9,7 +9,11 @@ import com.cmm.certificates.core.signature.SignatureEditorMode
 import com.cmm.certificates.core.signature.SignatureEditorUiState
 import com.cmm.certificates.core.signature.SignatureFont
 import com.cmm.certificates.core.usecase.ClearAllDataUseCase
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
+import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
 import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
 import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
@@ -36,9 +40,17 @@ class SettingsViewModel(
 
     val uiState: StateFlow<SettingsUiState> = combine(
         settingsRepository.state,
-        emailProgressRepository.sentCountInLast24Hours
-    ) { settings, sentCount ->
-        settings.toUiState(sentCount, supportsEmailSending, defaultOutputDirectory)
+        emailProgressRepository.sentCountInLast24Hours,
+        emailProgressRepository.sentHistory,
+        emailProgressRepository.cachedEmails,
+    ) { settings, sentCount, sentHistory, cachedEmails ->
+        settings.toUiState(
+            sentToday = sentCount,
+            supportsEmailSending = supportsEmailSending,
+            defaultOutputDirectory = defaultOutputDirectory,
+            sentHistory = sentHistory,
+            cachedEmails = cachedEmails,
+        )
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -74,6 +86,12 @@ class SettingsViewModel(
     fun setOutputDirectory(value: String) = settingsRepository.setOutputDirectory(value.trim())
 
     fun resetOutputDirectory() = settingsRepository.setOutputDirectory("")
+
+    fun removeCachedEmail(id: String) {
+        viewModelScope.launch {
+            emailProgressRepository.removeCachedEmail(id)
+        }
+    }
 
     fun save() {
         viewModelScope.launch { settingsRepository.save() }
@@ -176,6 +194,9 @@ data class SettingsUiState(
     val appearance: AppearanceSettingsState = AppearanceSettingsState(),
     val defaultOutputDirectory: String = "",
     val sentToday: Int = 0,
+    val sentHistory: List<SentEmailRecord> = emptyList(),
+    val cachedEmails: List<CachedEmailEntry> = emptyList(),
+    val cachedLastReason: EmailStopReason? = null,
     val supportsEmailSending: Boolean = true,
 ) {
     val resolvedOutputDirectory: String
@@ -189,6 +210,8 @@ private fun SettingsState.toUiState(
     sentToday: Int,
     supportsEmailSending: Boolean,
     defaultOutputDirectory: String,
+    sentHistory: List<SentEmailRecord>,
+    cachedEmails: CachedEmailBatch,
 ): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
@@ -197,6 +220,9 @@ private fun SettingsState.toUiState(
         appearance = appearance,
         defaultOutputDirectory = defaultOutputDirectory,
         sentToday = sentToday,
+        sentHistory = sentHistory,
+        cachedEmails = cachedEmails.entries,
+        cachedLastReason = cachedEmails.lastReason,
         supportsEmailSending = supportsEmailSending,
     )
 }

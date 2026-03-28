@@ -42,7 +42,7 @@ class EmailSenderViewModel(
         val total = progressState.total.coerceAtLeast(0)
         val current = progressState.current.coerceAtLeast(0)
         val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
-        val cachedCount = cachedEmails?.requests?.size ?: 0
+        val cachedCount = cachedEmails.entries.size
         val isSmtpAuthenticated = settings.smtp.isAuthenticated
         val stopReason = progressState.stopReason
 

@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface EmailProgressRepository {
     val state: StateFlow<EmailProgressState>
-    val cachedEmails: Flow<CachedEmailBatch?>
+    val cachedEmails: Flow<CachedEmailBatch>
+    val sentHistory: Flow<List<SentEmailRecord>>
     val sentCountInLast24Hours: Flow<Int>
 
     fun start(total: Int)
@@ -26,9 +27,11 @@ interface EmailProgressRepository {
 
     suspend fun cacheEmails(batch: CachedEmailBatch)
 
+    suspend fun removeCachedEmail(id: String)
+
     suspend fun clearCachedEmails()
 
     suspend fun getSentCountInLast24Hours(): Int
-    suspend fun recordSuccessfulSend()
+    suspend fun recordSuccessfulSend(request: EmailSendRequest)
     suspend fun clearSentHistory()
 }

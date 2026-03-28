@@ -18,12 +18,14 @@ class BuildEmailRequestsUseCaseTest {
             ),
             docIdStart = 120,
             outputDir = "/tmp/output",
+            certificateName = "Masterclass",
             subject = "Subject",
             body = "Body",
             htmlBody = "<p>Body</p>",
         )
 
         assertEquals("Ada Lovelace", requests[0].toName)
+        assertEquals("Masterclass", requests[0].certificateName)
         assertEquals("/tmp/output/120.pdf", requests[0].attachmentPath)
         assertEquals("120.pdf", requests[0].attachmentName)
         assertEquals("Grace Hopper", requests[1].toName)
@@ -36,6 +38,7 @@ class BuildEmailRequestsUseCaseTest {
             entries = listOf(registrationEntry("anon@example.com", "", "")),
             docIdStart = 9,
             outputDir = "/tmp/output",
+            certificateName = "Masterclass",
             subject = "Subject",
             body = "Body",
             htmlBody = null,
@@ -50,6 +53,7 @@ class BuildEmailRequestsUseCaseTest {
             entries = listOf(registrationEntry("  trim@example.com  ", "Trim", "User")),
             docIdStart = 42,
             outputDir = "/tmp/output",
+            certificateName = "Masterclass",
             subject = "Subject line",
             body = "Body line",
             htmlBody = "<p>Body line</p>",
@@ -57,6 +61,7 @@ class BuildEmailRequestsUseCaseTest {
 
         val request = requests.single()
         assertEquals("trim@example.com", request.toEmail)
+        assertEquals("Masterclass", request.certificateName)
         assertEquals("Subject line", request.subject)
         assertEquals("Body line", request.body)
         assertEquals("<p>Body line</p>", request.htmlBody)

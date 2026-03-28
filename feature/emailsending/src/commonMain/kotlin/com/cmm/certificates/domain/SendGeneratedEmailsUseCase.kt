@@ -56,6 +56,7 @@ class SendGeneratedEmailsUseCase(
             entries = conversionState.entries,
             docIdStart = docIdStart,
             outputDir = conversionState.outputDir,
+            certificateName = conversionState.certificateName,
             subject = settingsState.email.subject,
             body = settingsState.email.body,
             htmlBody = htmlBody,

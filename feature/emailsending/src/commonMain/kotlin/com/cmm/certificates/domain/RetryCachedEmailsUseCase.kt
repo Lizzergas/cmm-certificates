@@ -13,14 +13,14 @@ class RetryCachedEmailsUseCase(
     private val logTag = "RetryCachedEmails"
 
     suspend operator fun invoke() {
-        val cached = emailProgressRepository.cachedEmails.firstOrNull()
-        if (cached == null || cached.requests.isEmpty()) {
+        val cached = emailProgressRepository.cachedEmails.firstOrNull() ?: return
+        if (cached.entries.isEmpty()) {
             logWarn(logTag, "Retry aborted: no cached email batch found")
             emailProgressRepository.fail(EmailStopReason.NoCachedEmails)
             return
         }
 
-        logInfo(logTag, "Retrying cached batch with ${cached.requests.size} emails")
+        logInfo(logTag, "Retrying cached batch with ${cached.entries.size} emails")
         sendEmailRequests(cached.requests)
     }
 }

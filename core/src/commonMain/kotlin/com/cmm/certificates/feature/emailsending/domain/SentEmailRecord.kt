@@ -3,13 +3,13 @@ package com.cmm.certificates.feature.emailsending.domain
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class EmailSendRequest(
+data class SentEmailRecord(
+    val id: String,
+    val sentAt: Long,
     val toEmail: String,
     val toName: String,
     val certificateName: String,
     val subject: String,
-    val body: String,
-    val htmlBody: String? = null,
-    val attachmentPath: String? = null,
     val attachmentName: String? = null,
+    val attachmentPath: String? = null,
 )

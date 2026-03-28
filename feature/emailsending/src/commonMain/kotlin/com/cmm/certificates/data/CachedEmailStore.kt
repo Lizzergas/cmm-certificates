@@ -17,12 +17,12 @@ class CachedEmailStore(
         val cachedEmails = stringPreferencesKey("cached_emails")
     }
 
-    val cachedEmails: Flow<CachedEmailBatch?> = dataStore
+    val cachedEmails: Flow<CachedEmailBatch> = dataStore
         .safeData()
         .map { prefs ->
             prefs[Keys.cachedEmails]?.let { json ->
                 runCatching { Json.decodeFromString<CachedEmailBatch>(json) }.getOrNull()
-            }
+            } ?: CachedEmailBatch()
         }
 
     suspend fun save(batch: CachedEmailBatch) {
@@ -34,6 +34,20 @@ class CachedEmailStore(
     suspend fun clear() {
         dataStore.edit { prefs ->
             prefs.remove(Keys.cachedEmails)
+        }
+    }
+
+    suspend fun removeEntry(id: String) {
+        dataStore.edit { prefs ->
+            val current = prefs[Keys.cachedEmails]?.let { json ->
+                runCatching { Json.decodeFromString<CachedEmailBatch>(json) }.getOrNull()
+            } ?: CachedEmailBatch()
+            val updated = current.copy(entries = current.entries.filterNot { it.id == id })
+            if (updated.entries.isEmpty()) {
+                prefs.remove(Keys.cachedEmails)
+            } else {
+                prefs[Keys.cachedEmails] = Json.encodeToString(updated)
+            }
         }
     }
 }

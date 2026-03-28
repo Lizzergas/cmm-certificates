@@ -15,6 +15,7 @@ class PdfConversionProgressStore {
     fun start(
         total: Int,
         outputDir: String,
+        certificateName: String,
         docIdStart: Long,
         entries: List<RegistrationEntry>,
     ) {
@@ -23,6 +24,7 @@ class PdfConversionProgressStore {
             total = total,
             inProgress = true,
             outputDir = outputDir,
+            certificateName = certificateName,
             docIdStart = docIdStart,
             entries = entries,
             cancelRequested = false,

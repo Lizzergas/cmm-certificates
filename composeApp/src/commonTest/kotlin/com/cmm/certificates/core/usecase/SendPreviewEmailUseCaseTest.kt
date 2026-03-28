@@ -228,7 +228,7 @@ private class FakePdfProgressRepository(
     private val _state = MutableStateFlow(initialState)
     override val state: StateFlow<PdfConversionProgressState> = _state
 
-    override fun start(total: Int, outputDir: String, docIdStart: Long, entries: List<RegistrationEntry>) {}
+    override fun start(total: Int, outputDir: String, certificateName: String, docIdStart: Long, entries: List<RegistrationEntry>) {}
     override fun update(current: Int) {}
     override fun setCurrentDocId(docId: Long?) {}
     override fun finish() {}

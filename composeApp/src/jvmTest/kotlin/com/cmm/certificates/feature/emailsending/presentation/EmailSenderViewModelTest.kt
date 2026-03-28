@@ -6,10 +6,12 @@ import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
 import com.cmm.certificates.feature.emailsending.domain.usecase.BuildEmailRequestsUseCase
 import com.cmm.certificates.feature.emailsending.domain.usecase.RetryCachedEmailsUseCase
@@ -134,11 +136,18 @@ class EmailSenderViewModelTest {
 
 private class PreviewEmailProgressRepository(cachedCount: Int) : EmailProgressRepository {
     override val state: StateFlow<EmailProgressState> = MutableStateFlow(EmailProgressState())
-    override val cachedEmails: Flow<CachedEmailBatch?> = MutableStateFlow(
-        CachedEmailBatch(List(cachedCount) { index ->
-            EmailSendRequest("user$index@example.com", "User $index", "Subject", "Body")
-        })
+    override val cachedEmails: Flow<CachedEmailBatch> = MutableStateFlow(
+        CachedEmailBatch(
+            entries = List(cachedCount) { index ->
+                CachedEmailEntry(
+                    id = index.toString(),
+                    request = EmailSendRequest("user$index@example.com", "User $index", "Certificate $index", "Subject", "Body"),
+                    cachedAt = index.toLong(),
+                )
+            }
+        )
     )
+    override val sentHistory: Flow<List<SentEmailRecord>> = MutableStateFlow(emptyList())
     override val sentCountInLast24Hours: Flow<Int> = MutableStateFlow(0)
     var cancelRequested: Boolean = false
     var clearCalls: Int = 0
@@ -157,9 +166,10 @@ private class PreviewEmailProgressRepository(cachedCount: Int) : EmailProgressRe
     }
 
     override suspend fun cacheEmails(batch: CachedEmailBatch) = Unit
+    override suspend fun removeCachedEmail(id: String) = Unit
     override suspend fun clearCachedEmails() = Unit
     override suspend fun getSentCountInLast24Hours(): Int = 0
-    override suspend fun recordSuccessfulSend() = Unit
+    override suspend fun recordSuccessfulSend(request: EmailSendRequest) = Unit
     override suspend fun clearSentHistory() = Unit
 }
 
@@ -217,6 +227,7 @@ private class PreviewPdfProgressRepository : PdfConversionProgressRepository {
     override fun start(
         total: Int,
         outputDir: String,
+        certificateName: String,
         docIdStart: Long,
         entries: List<RegistrationEntry>,
     ) = Unit

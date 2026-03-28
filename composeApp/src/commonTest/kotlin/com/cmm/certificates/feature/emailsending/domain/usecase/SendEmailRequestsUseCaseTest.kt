@@ -2,10 +2,12 @@ package com.cmm.certificates.feature.emailsending.domain.usecase
 
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
 import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
@@ -186,6 +188,7 @@ class SendEmailRequestsUseCaseTest {
         return EmailSendRequest(
             toEmail = "user$id@example.com",
             toName = "User $id",
+            certificateName = "Certificate $id",
             subject = "Subject",
             body = "Body",
         )
@@ -229,7 +232,8 @@ private class FakeEmailProgressRepository(
     initialSentCountInLast24Hours: Int = 0,
 ) : EmailProgressRepository {
     override val state: StateFlow<EmailProgressState> = MutableStateFlow(EmailProgressState())
-    override val cachedEmails: Flow<CachedEmailBatch?> = flowOf(null)
+    override val cachedEmails: Flow<CachedEmailBatch> = flowOf(CachedEmailBatch())
+    override val sentHistory: Flow<List<SentEmailRecord>> = flowOf(emptyList())
     override val sentCountInLast24Hours: Flow<Int> = flowOf(initialSentCountInLast24Hours)
     var failedReason: EmailStopReason? = null
     var cachedBatch: CachedEmailBatch? = null
@@ -255,9 +259,11 @@ private class FakeEmailProgressRepository(
     }
 
     override suspend fun getSentCountInLast24Hours(): Int = this.sentCountInLast24Hours.first()
-    override suspend fun recordSuccessfulSend() {
+    override suspend fun recordSuccessfulSend(request: EmailSendRequest) {
         recordedSends++
     }
+
+    override suspend fun removeCachedEmail(id: String) = Unit
 
     override suspend fun clearSentHistory() = Unit
 }

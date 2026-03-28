@@ -10,6 +10,7 @@ interface PdfConversionProgressRepository {
     fun start(
         total: Int,
         outputDir: String,
+        certificateName: String,
         docIdStart: Long,
         entries: List<RegistrationEntry>,
     )

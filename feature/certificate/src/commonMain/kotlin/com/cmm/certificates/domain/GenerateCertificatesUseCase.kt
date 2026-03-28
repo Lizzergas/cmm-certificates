@@ -100,6 +100,7 @@ class GenerateCertificatesUseCase(
             progressRepository.start(
                 total = request.entries.size,
                 outputDir = outputDir,
+                certificateName = request.certificateName,
                 docIdStart = docIdStart,
                 entries = request.entries,
             )

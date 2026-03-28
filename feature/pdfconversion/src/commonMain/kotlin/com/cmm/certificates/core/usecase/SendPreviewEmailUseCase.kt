@@ -80,9 +80,11 @@ class SendPreviewEmailUseCase(
             body = settingsState.email.body,
             signatureHtml = settingsState.email.signatureHtml,
         )
+        val certificateName = pdfConversionProgressRepository.state.value.certificateName
         val request = EmailSendRequest(
             toEmail = trimmedEmail,
             toName = trimmedEmail,
+            certificateName = certificateName,
             subject = settingsState.email.subject,
             body = settingsState.email.body,
             htmlBody = htmlBody,
