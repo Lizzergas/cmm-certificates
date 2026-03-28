@@ -53,11 +53,40 @@ Abi reikšmės bus paverstos į Word eilutės lūžį (nauja eilutė).
 - JVM / Desktop: pilnas srautas - XLSX, DOCX -> PDF, peržiūros laiškas, masinis siuntimas, nepavykusių siuntimų talpykla.
 - Android / iOS: rodoma, kurios funkcijos dar nepalaikomos; XLSX skaitymas, DOCX -> PDF generavimas, SMTP siuntimas ir sugeneruotų aplankų atidarymas ten dar neišbaigti.
 
+## Projekto struktūra
+- `androidApp/` - Android programos entry point, manifestas ir Android resursai.
+- `composeApp/` - plonas KMP app shell: `App.kt`, `Navigator.kt`, DI agregavimas, desktop entry point ir iOS `MainViewController`.
+- `core/` - bendri resursai, tema, UI primityvai, `expect/actual`, logging, i18n, platform capability abstractions.
+- `feature/settings/` - SMTP, el. laisko sablonai, signature editor, nustatymu saugojimas.
+- `feature/certificate/` - XLSX nuskaitymas, DOCX sablono uzpildymas, PDF generavimo workflow ir conversion ekranas.
+- `feature/pdfconversion/` - konvertavimo progreso ir preview email ekranas.
+- `feature/emailsending/` - masinis siuntimas, retry ir siuntimo progresas.
+
+## Build / test komandos
+- `./gradlew :composeApp:run` - paleidzia desktop/JVM programa.
+- `./gradlew :composeApp:jvmTest` - JVM testai.
+- `./gradlew :composeApp:test` - Android host testai KMP app shell moduliui.
+- `./gradlew :androidApp:assembleDebug` - Android debug APK.
+
 ## Naudingi dokumentai
 - `FEATURES.md` - produkto srautas ir techninės pastabos
 - `EMAIL.md` - SMTP ir siuntimo elgsena
 - `PDF_GEN.md` - DOCX -> PDF pipeline JVM platformoje
 - `docs/architecture.md` - dabartinė repo architektūra
+
+## Windows release
+Windows `.msi` diegiklis surenkamas per GitHub Actions workflow `.github/workflows/windows-msi-on-tag.yml`.
+
+Trumpa procedūra:
+1. Įsitikinkite, kad pakeitimai yra commit'inti ir išpushinti į GitHub.
+2. Sukurkite tag'ą formatu `vMAJOR.MINOR.BUILD`, pvz. `v1.0.1`.
+3. Išpushinkite tag'ą:
+   `git push origin v1.0.1`
+4. GitHub automatiškai paleis Windows build'ą ir sugeneruos `.msi` artefaktą.
+5. Atsidarykite repo `Actions` skiltį ir atsisiųskite artefaktą iš paskutinio `Build Windows MSI` paleidimo.
+
+Pavyzdys:
+`git tag v1.0.1 && git push origin v1.0.1`
 
 # D.U.K.
 - Jeigu nepavyksta tam tikriems laiškams būti išsiųstiems, jie bus išsaugomi ir bus galima pamėginti pakartotina išsiųsti

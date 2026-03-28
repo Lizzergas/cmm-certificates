@@ -7,15 +7,15 @@ import certificates.composeapp.generated.resources.common_error_smtp_incomplete
 import certificates.composeapp.generated.resources.settings_error_auth_failed
 import com.cmm.certificates.core.domain.AppCapabilities
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
+import com.cmm.certificates.data.SettingsRepositoryImpl
+import com.cmm.certificates.data.SettingsStore
 import com.cmm.certificates.data.store.createDataStore
-import com.cmm.certificates.feature.settings.data.defaultEmailSubject
+import com.cmm.certificates.data.defaultEmailSubject
+import com.cmm.certificates.test.createTestPreferencesFilePath
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
 import com.cmm.certificates.feature.settings.domain.SmtpSettings
-import com.cmm.certificates.feature.settings.data.defaultEmailSubject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -110,8 +110,7 @@ class SettingsRepositoryImplTest {
     }
 
     private fun testDataStore(name: String): DataStore<Preferences> {
-        val randomId = Random.nextLong().toString().replace('-', '0')
-        return createDataStore { "/tmp/$name-$randomId.preferences_pb" }
+        return createDataStore { createTestPreferencesFilePath(name) }
     }
 }
 

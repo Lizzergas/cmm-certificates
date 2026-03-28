@@ -17,8 +17,8 @@ import kotlin.io.path.inputStream
 fun main() {
     initializeSentry()
     FileKit.init(appId = "com.cmm.certificates")
-    val version = System.getProperty("app.version") ?: "Development"
     application {
+        @Suppress("DEPRECATION")
         val appIcon = remember {
             System.getProperty("app.dir")
                 ?.let { Paths.get(it, "icon-512.png") }
@@ -36,6 +36,7 @@ fun main() {
             onCloseRequest = ::exitApplication,
             title = "Pažymos konverteris",
             state = state,
+            icon = appIcon
         ) {
             App()
         }

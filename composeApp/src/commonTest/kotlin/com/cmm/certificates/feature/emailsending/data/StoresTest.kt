@@ -2,13 +2,15 @@ package com.cmm.certificates.feature.emailsending.data
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.core.DataStore
+import com.cmm.certificates.data.CachedEmailStore
+import com.cmm.certificates.data.SentEmailHistoryStore
 import com.cmm.certificates.data.store.createDataStore
+import com.cmm.certificates.test.createTestPreferencesFilePath
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -48,7 +50,6 @@ class StoresTest {
     }
 
     private fun testDataStore(name: String): DataStore<Preferences> {
-        val randomId = Random.nextLong().toString().replace('-', '0')
-        return createDataStore { "/tmp/$name-$randomId.preferences_pb" }
+        return createDataStore { createTestPreferencesFilePath(name) }
     }
 }
