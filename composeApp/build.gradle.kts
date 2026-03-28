@@ -1,6 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val desktopPackageVersion = project.version.toString()
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -98,7 +100,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = desktopPackageVersion
     }
     packaging {
         resources {
@@ -131,7 +133,10 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.cmm.certificates"
-            packageVersion = "1.0.0"
+            packageVersion = desktopPackageVersion
+            windows {
+                upgradeUuid = "a2b5eaa2-a40f-4507-886e-fb9db5815121"
+            }
         }
     }
 }

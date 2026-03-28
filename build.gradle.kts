@@ -12,6 +12,8 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
+val appVersion = providers.gradleProperty("appVersion").orElse("1.0.0")
+
 allprojects {
-    version = "1.0.0"
+    version = appVersion.get()
 }
