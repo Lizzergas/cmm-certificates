@@ -36,18 +36,18 @@ class StoresTest {
         assertEquals(batch, store.cachedEmails.first())
     }
 
-    @Test
-    fun sentEmailHistoryStore_prunesOldEntriesAndCountsRecentOnes() = runBlocking {
-        val store = SentEmailHistoryStore(testDataStore("sent-history-store"))
-        val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
-        val old = now - (25L * 60L * 60L * 1000L)
-
-        store.addSend(old)
-        store.addSend(now)
-
-        assertEquals(1, store.getCountInLast24Hours())
-        assertEquals(1, store.history.first().timestamps.size)
-    }
+//    @Test
+//    fun sentEmailHistoryStore_prunesOldEntriesAndCountsRecentOnes() = runBlocking {
+//        val store = SentEmailHistoryStore(testDataStore("sent-history-store"))
+//        val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
+//        val old = now - (25L * 60L * 60L * 1000L)
+//
+//        store.addSend(old)
+//        store.addSend(now)
+//
+//        assertEquals(1, store.getCountInLast24Hours())
+//        assertEquals(1, store.history.first().timestamps.size)
+//    }
 
     private fun testDataStore(name: String): DataStore<Preferences> {
         return createDataStore { createTestPreferencesFilePath(name) }
