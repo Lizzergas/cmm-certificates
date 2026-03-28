@@ -2,6 +2,7 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.signature.SignatureEditorController
 import com.cmm.certificates.core.signature.SignatureEditorMode
@@ -9,6 +10,8 @@ import com.cmm.certificates.core.signature.SignatureEditorUiState
 import com.cmm.certificates.core.signature.SignatureFont
 import com.cmm.certificates.core.usecase.ClearAllDataUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
+import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsState
@@ -29,12 +32,13 @@ class SettingsViewModel(
     capabilityProvider: PlatformCapabilityProvider,
 ) : ViewModel() {
     private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
+    private val defaultOutputDirectory = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
 
     val uiState: StateFlow<SettingsUiState> = combine(
         settingsRepository.state,
         emailProgressRepository.sentCountInLast24Hours
     ) { settings, sentCount ->
-        settings.toUiState(sentCount, supportsEmailSending)
+        settings.toUiState(sentCount, supportsEmailSending, defaultOutputDirectory)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -64,6 +68,12 @@ class SettingsViewModel(
         val limit = value.filter { it in '0'..'9' }.toIntOrNull() ?: 0
         settingsRepository.setDailyLimit(limit)
     }
+
+    fun setThemeMode(value: AppThemeMode) = settingsRepository.setThemeMode(value)
+
+    fun setOutputDirectory(value: String) = settingsRepository.setOutputDirectory(value.trim())
+
+    fun resetOutputDirectory() = settingsRepository.setOutputDirectory("")
 
     fun save() {
         viewModelScope.launch { settingsRepository.save() }
@@ -163,16 +173,32 @@ data class SettingsUiState(
     val smtp: SmtpSettingsState = SmtpSettingsState(),
     val email: EmailTemplateSettingsState = EmailTemplateSettingsState(),
     val certificate: CertificateSettingsState = CertificateSettingsState(),
+    val appearance: AppearanceSettingsState = AppearanceSettingsState(),
+    val defaultOutputDirectory: String = "",
     val sentToday: Int = 0,
     val supportsEmailSending: Boolean = true,
-)
+) {
+    val resolvedOutputDirectory: String
+        get() = certificate.outputDirectory.ifBlank { defaultOutputDirectory }
 
-private fun SettingsState.toUiState(sentToday: Int, supportsEmailSending: Boolean): SettingsUiState {
+    val hasCustomOutputDirectory: Boolean
+        get() = certificate.outputDirectory.isNotBlank()
+}
+
+private fun SettingsState.toUiState(
+    sentToday: Int,
+    supportsEmailSending: Boolean,
+    defaultOutputDirectory: String,
+): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
         email = email,
         certificate = certificate,
+        appearance = appearance,
+        defaultOutputDirectory = defaultOutputDirectory,
         sentToday = sentToday,
         supportsEmailSending = supportsEmailSending,
     )
 }
+
+private const val DEFAULT_OUTPUT_PATH = "pdf/"

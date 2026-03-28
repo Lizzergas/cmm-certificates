@@ -10,7 +10,7 @@ actual object OutputDirectory {
         val resolved = if (candidate.isAbsolute) {
             candidate
         } else {
-            Paths.get(System.getProperty("user.dir")).resolve(candidate)
+            Paths.get(System.getProperty("user.home")).resolve(candidate)
         }
         return resolved.normalize().toAbsolutePath().toString()
     }

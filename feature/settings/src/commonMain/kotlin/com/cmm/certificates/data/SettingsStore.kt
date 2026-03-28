@@ -10,6 +10,7 @@ import com.cmm.certificates.data.store.enumOrDefault
 import com.cmm.certificates.data.store.intOrDefault
 import com.cmm.certificates.data.store.safeData
 import com.cmm.certificates.data.store.stringOrDefault
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import kotlinx.coroutines.flow.first
 
@@ -25,9 +26,11 @@ class SettingsStore(
         val subject = stringPreferencesKey("smtp_subject")
         val body = stringPreferencesKey("smtp_body")
         val accreditedTypeOptions = stringPreferencesKey("accredited_type_options")
+        val outputDirectory = stringPreferencesKey("output_directory")
         val signatureHtml = stringPreferencesKey("email_signature_html")
         val previewEmail = stringPreferencesKey("email_preview_address")
         val dailyLimit = intPreferencesKey("email_daily_limit")
+        val themeMode = stringPreferencesKey("app_theme_mode")
     }
 
     suspend fun loadOrDefault(): StoredSettings {
@@ -45,9 +48,11 @@ class SettingsStore(
                 Keys.accreditedTypeOptions,
                 defaultAccreditedTypeOptions(),
             ),
+            outputDirectory = prefs[Keys.outputDirectory].orEmpty(),
             signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, defaultSignatureHtml()),
             previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
             dailyLimit = prefs.intOrDefault(Keys.dailyLimit, DEFAULT_DAILY_LIMIT),
+            themeMode = prefs.enumOrDefault(Keys.themeMode, AppThemeMode.LIGHT),
         )
     }
 
@@ -61,9 +66,11 @@ class SettingsStore(
             prefs[Keys.subject] = settings.subject
             prefs[Keys.body] = settings.body
             prefs[Keys.accreditedTypeOptions] = settings.accreditedTypeOptions
+            prefs[Keys.outputDirectory] = settings.outputDirectory
             prefs[Keys.signatureHtml] = settings.signatureHtml
             prefs[Keys.previewEmail] = settings.previewEmail
             prefs[Keys.dailyLimit] = settings.dailyLimit
+            prefs[Keys.themeMode] = settings.themeMode.name
         }
     }
 
@@ -80,8 +87,10 @@ class SettingsStore(
         val subject: String,
         val body: String,
         val accreditedTypeOptions: String,
+        val outputDirectory: String,
         val signatureHtml: String,
         val previewEmail: String,
         val dailyLimit: Int,
+        val themeMode: AppThemeMode,
     )
 }

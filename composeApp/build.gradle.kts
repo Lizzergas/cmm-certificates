@@ -1,6 +1,8 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val desktopAppName = "CMM Sertifikatai"
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
@@ -76,12 +78,26 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.cmm.certificates"
+            packageName = desktopAppName
             packageVersion = project.version.toString()
             includeAllModules = true
+            description = "CMM certificate generation and email delivery desktop app"
+            vendor = "CMM"
+
+            linux {
+                packageName = "cmm-sertifikatai"
+            }
+
+            macOS {
+                packageName = desktopAppName
+            }
 
             windows {
                 upgradeUuid = "a2b5eaa2-a40f-4507-886e-fb9db5815121"
+                menu = true
+                shortcut = true
+                menuGroup = desktopAppName
+                iconFile.set(project.file("packaging/icons/cmm_logo.ico"))
             }
         }
     }

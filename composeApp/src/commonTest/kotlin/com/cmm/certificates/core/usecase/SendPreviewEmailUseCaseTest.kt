@@ -13,6 +13,7 @@ import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressState
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
@@ -183,11 +184,13 @@ private class FakeSettingsRepository(
     override fun setBody(value: String) {}
     override fun setSignatureHtml(value: String) {}
     override fun setAccreditedTypeOptions(value: String) {}
+    override fun setOutputDirectory(value: String) {}
     override fun setPreviewEmail(value: String) {
         _state.value = _state.value.copy(email = _state.value.email.copy(previewEmail = value))
     }
 
     override fun setDailyLimit(value: Int) {}
+    override fun setThemeMode(value: AppThemeMode) {}
 
     override suspend fun save() {
         saved = true

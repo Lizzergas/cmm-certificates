@@ -1,9 +1,5 @@
 package com.cmm.certificates.feature.certificate.domain.usecase
 
-import com.cmm.certificates.core.presentation.UiMessage
-import com.cmm.certificates.core.logging.logError
-import com.cmm.certificates.core.logging.logInfo
-import com.cmm.certificates.core.logging.logWarn
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_create_output_dir
 import certificates.composeapp.generated.resources.conversion_error_fields_required
@@ -12,9 +8,13 @@ import certificates.composeapp.generated.resources.conversion_error_load_templat
 import certificates.composeapp.generated.resources.conversion_error_no_entries
 import certificates.composeapp.generated.resources.conversion_error_template_required
 import certificates.composeapp.generated.resources.conversion_error_write_pdf
-import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
+import com.cmm.certificates.core.logging.logError
+import com.cmm.certificates.core.logging.logInfo
+import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.OutputDirectoryResolver
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.joinPath
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +33,7 @@ data class GenerateCertificatesRequest(
     val certificateName: String,
     val lector: String,
     val lectorGender: String,
+    val outputDirectory: String,
 )
 
 class GenerateCertificatesUseCase(
@@ -81,11 +82,15 @@ class GenerateCertificatesUseCase(
             return
         }
 
-        val baseOutputDir = outputDirectoryResolver.resolve(DEFAULT_OUTPUT_PATH)
+        val requestedOutputDir = request.outputDirectory.ifBlank { DEFAULT_OUTPUT_PATH }
+        val baseOutputDir = outputDirectoryResolver.resolve(requestedOutputDir)
         val sanitizedFolder = sanitizeFolderName(request.certificateName)
         val outputDir = joinPath(baseOutputDir, sanitizedFolder)
         if (!outputDirectoryResolver.ensureExists(outputDir)) {
-            logError(logTag, "Failed to create output directory: $outputDir")
+            val failure = IllegalStateException(
+                "Failed to create output directory: $outputDir (base=$baseOutputDir, requested=$requestedOutputDir)",
+            )
+            logError(logTag, failure.message.orEmpty(), failure)
             progressRepository.fail(UiMessage(Res.string.conversion_error_create_output_dir))
             return
         }

@@ -7,6 +7,7 @@ import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
@@ -276,8 +277,10 @@ private class FakeSettingsRepository(
     override fun setBody(value: String) = Unit
     override fun setSignatureHtml(value: String) = Unit
     override fun setAccreditedTypeOptions(value: String) = Unit
+    override fun setOutputDirectory(value: String) = Unit
     override fun setPreviewEmail(value: String) = Unit
     override fun setDailyLimit(value: Int) = Unit
+    override fun setThemeMode(value: AppThemeMode) = Unit
     override suspend fun save() = Unit
     override suspend fun authenticate(): Boolean = true
     override suspend fun resetAndClear() = Unit

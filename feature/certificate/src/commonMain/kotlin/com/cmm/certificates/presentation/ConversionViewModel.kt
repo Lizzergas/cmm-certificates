@@ -7,12 +7,12 @@ import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.data.defaultLectorLabel
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.certificate.domain.usecase.GenerateCertificatesRequest
 import com.cmm.certificates.feature.certificate.domain.usecase.GenerateCertificatesUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
-import com.cmm.certificates.data.defaultLectorLabel
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 
 class ConversionViewModel(
     emailProgressRepository: EmailProgressRepository,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
     connectivityMonitor: ConnectivityMonitor,
     capabilityProvider: PlatformCapabilityProvider,
     private val parseRegistrations: ParseRegistrationsUseCase,
@@ -180,6 +180,7 @@ class ConversionViewModel(
                 certificateName = snapshot.form.certificateName,
                 lector = snapshot.form.lector,
                 lectorGender = snapshot.form.lectorGender,
+                outputDirectory = settingsRepository.state.value.certificate.outputDirectory,
             )
         )
     }

@@ -21,6 +21,7 @@ class BuildCertificateReplacementsUseCaseTest {
             certificateName = "Music Workshop",
             lector = "Jane Doe",
             lectorGender = "Lecturer:",
+            outputDirectory = "",
         )
         val entry = RegistrationEntry(
             date = LocalDateTime(2026, 3, 26, 10, 0),

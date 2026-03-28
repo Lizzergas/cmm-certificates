@@ -2,6 +2,11 @@ package com.cmm.certificates.feature.settings.domain
 
 import com.cmm.certificates.core.presentation.UiMessage
 
+enum class AppThemeMode {
+    LIGHT,
+    DARK,
+}
+
 data class SmtpSettingsState(
     val host: String = "",
     val port: String = "",
@@ -40,10 +45,16 @@ data class EmailTemplateSettingsState(
 
 data class CertificateSettingsState(
     val accreditedTypeOptions: String = "",
+    val outputDirectory: String = "",
+)
+
+data class AppearanceSettingsState(
+    val themeMode: AppThemeMode = AppThemeMode.LIGHT,
 )
 
 data class SettingsState(
     val smtp: SmtpSettingsState = SmtpSettingsState(),
     val email: EmailTemplateSettingsState = EmailTemplateSettingsState(),
     val certificate: CertificateSettingsState = CertificateSettingsState(),
+    val appearance: AppearanceSettingsState = AppearanceSettingsState(),
 )

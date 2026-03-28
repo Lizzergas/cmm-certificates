@@ -1,52 +1,32 @@
 package com.cmm.certificates
 
-import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.res.loadImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.app_name
+import certificates.composeapp.generated.resources.cmm_logo
 import com.cmm.certificates.core.initializeSentry
 import io.github.vinceglb.filekit.FileKit
-import io.sentry.Sentry
-import java.nio.file.Paths
-import kotlin.io.path.exists
-import kotlin.io.path.inputStream
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 fun main() {
     initializeSentry()
     FileKit.init(appId = "com.cmm.certificates")
     application {
-        @Suppress("DEPRECATION")
-        val appIcon = remember {
-            System.getProperty("app.dir")
-                ?.let { Paths.get(it, "icon-512.png") }
-                ?.takeIf { it.exists() }
-                ?.inputStream()
-                ?.buffered()
-                ?.use { BitmapPainter(loadImageBitmap(it)) }
-        }
-
         val state = rememberWindowState(
             width = 600.dp,
             height = 900.dp,
         )
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Pažymos konverteris",
+            title = stringResource(Res.string.app_name),
             state = state,
-            icon = appIcon
+            icon = painterResource(Res.drawable.cmm_logo)
         ) {
             App()
         }
-    }
-}
-
-fun captureError() {
-    try {
-        throw Exception("This is a test.")
-    } catch (e: Exception) {
-        Sentry.captureException(e)
     }
 }

@@ -47,6 +47,9 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.email_progress_daily_limit_unlimited_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
+import certificates.composeapp.generated.resources.conversion_choose_directory
+import certificates.composeapp.generated.resources.conversion_output_dir_label
+import certificates.composeapp.generated.resources.conversion_output_directory_hint
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
@@ -63,6 +66,9 @@ import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
 import certificates.composeapp.generated.resources.settings_subject_label
+import certificates.composeapp.generated.resources.settings_theme_dark
+import certificates.composeapp.generated.resources.settings_theme_label
+import certificates.composeapp.generated.resources.settings_theme_light
 import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_title
 import certificates.composeapp.generated.resources.settings_transport_label
@@ -77,12 +83,15 @@ import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
+import com.cmm.certificates.core.ui.rememberDirectoryPickerLauncher
+import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
+import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import com.cmm.certificates.presentation.components.SignatureEditorDialog
 import com.cmm.certificates.presentation.components.SignatureSummaryCard
-import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -101,6 +110,7 @@ fun SettingsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val signatureEditorState by viewModel.signatureEditorState.collectAsStateWithLifecycle()
+    val launchDirectoryPicker = rememberDirectoryPickerLauncher()
     var showClearDialog by remember { mutableStateOf(false) }
 
     if (showClearDialog) {
@@ -170,7 +180,12 @@ fun SettingsScreen(
                     onSubjectChange = viewModel::setSubject,
                     onBodyChange = viewModel::setBody,
                     onDailyLimitChange = viewModel::setDailyLimit,
+                    onThemeModeChange = viewModel::setThemeMode,
                     onAccreditedTypeOptionsChange = viewModel::setAccreditedTypeOptions,
+                    onOutputDirectoryReset = viewModel::resetOutputDirectory,
+                    onChooseOutputDirectory = {
+                        launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
+                    },
                     onEditSignature = viewModel::openSignatureEditor,
                 ),
             )
@@ -211,6 +226,12 @@ private fun BoxScope.SettingsContent(
             SmtpTransport.SMTP to Res.string.settings_transport_smtp,
             SmtpTransport.SMTPS to Res.string.settings_transport_smtps,
             SmtpTransport.SMTP_TLS to Res.string.settings_transport_tls,
+        )
+    }
+    val themeOptions = remember {
+        linkedMapOf(
+            AppThemeMode.LIGHT to Res.string.settings_theme_light,
+            AppThemeMode.DARK to Res.string.settings_theme_dark,
         )
     }
 
@@ -306,6 +327,17 @@ private fun BoxScope.SettingsContent(
                     Text(statusText)
                 }
             )
+            ThemeModePicker(
+                selected = state.appearance.themeMode,
+                options = themeOptions,
+                onSelect = actions.onThemeModeChange,
+            )
+            OutputDirectorySettingsField(
+                outputDirectory = state.resolvedOutputDirectory,
+                hasCustomOutputDirectory = state.hasCustomOutputDirectory,
+                onReset = actions.onOutputDirectoryReset,
+                onChoose = actions.onChooseOutputDirectory,
+            )
             SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
                 value = state.certificate.accreditedTypeOptions,
@@ -328,6 +360,33 @@ private fun BoxScope.SettingsContent(
             .fillMaxHeight()
             .padding(end = Grid.x2),
     )
+}
+
+@Composable
+private fun OutputDirectorySettingsField(
+    outputDirectory: String,
+    hasCustomOutputDirectory: Boolean,
+    onReset: () -> Unit,
+    onChoose: () -> Unit,
+) {
+    ClearableOutlinedTextField(
+        value = outputDirectory,
+        onValueChange = {},
+        label = { Text(stringResource(Res.string.conversion_output_dir_label)) },
+        modifier = Modifier.fillMaxWidth(),
+        readOnly = true,
+        showClearIcon = hasCustomOutputDirectory,
+        onClear = onReset,
+        supportingText = {
+            Text(stringResource(Res.string.conversion_output_directory_hint))
+        },
+    )
+    OutlinedButton(
+        onClick = onChoose,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(stringResource(Res.string.conversion_choose_directory))
+    }
 }
 
 
@@ -541,6 +600,47 @@ private fun SmtpTransportPicker(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeModePicker(
+    selected: AppThemeMode,
+    options: Map<AppThemeMode, StringResource>,
+    onSelect: (AppThemeMode) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val labelRes = options[selected]
+    val label = if (labelRes != null) stringResource(labelRes) else selected.name
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+    ) {
+        SettingsField(
+            label = Res.string.settings_theme_label,
+            value = label,
+            onValueChange = {},
+            singleLine = true,
+            showClearIcon = false,
+            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { (mode, res) ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(res)) },
+                    onClick = {
+                        onSelect(mode)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
 private data class SettingsActions(
     val onHostChange: (String) -> Unit,
     val onPortChange: (String) -> Unit,
@@ -550,7 +650,10 @@ private data class SettingsActions(
     val onSubjectChange: (String) -> Unit,
     val onBodyChange: (String) -> Unit,
     val onDailyLimitChange: (String) -> Unit,
+    val onThemeModeChange: (AppThemeMode) -> Unit,
     val onAccreditedTypeOptionsChange: (String) -> Unit,
+    val onOutputDirectoryReset: () -> Unit,
+    val onChooseOutputDirectory: () -> Unit,
     val onEditSignature: () -> Unit,
 )
 
@@ -581,7 +684,12 @@ private fun SettingsContentPreview() {
                     ),
                     certificate = CertificateSettingsState(
                         accreditedTypeOptions = "lecture\nseminar\nconference",
+                        outputDirectory = "/Users/tester/pdf",
                     ),
+                    appearance = AppearanceSettingsState(
+                        themeMode = AppThemeMode.LIGHT,
+                    ),
+                    defaultOutputDirectory = "/Users/tester/pdf",
                     sentToday = 32,
                     supportsEmailSending = true,
                 ),
@@ -594,7 +702,10 @@ private fun SettingsContentPreview() {
                     onSubjectChange = {},
                     onBodyChange = {},
                     onDailyLimitChange = {},
+                    onThemeModeChange = {},
                     onAccreditedTypeOptionsChange = {},
+                    onOutputDirectoryReset = {},
+                    onChooseOutputDirectory = {},
                     onEditSignature = {},
                 ),
             )

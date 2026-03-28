@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cmm Certificates</string>
+    <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
     <string name="common_clear_text">Clear text</string>
     <string name="common_file_xlsx">XLSX</string>
@@ -81,6 +81,9 @@ training</string>
     <string name="settings_signature_html_label">Signature HTML</string>
     <string name="settings_accredited_type_options_label">Accredited type options</string>
     <string name="settings_daily_limit_label">Daily email limit</string>
+    <string name="settings_theme_label">Theme</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
     <string name="settings_clear_all">Clear all data</string>
     <string name="settings_clear_all_title">Clear all data?</string>
     <string name="settings_clear_all_message">This will reset SMTP settings, email templates, cached retries, and 24-hour send history. This action cannot be undone.</string>

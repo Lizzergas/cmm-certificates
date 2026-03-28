@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.openDirectoryPicker
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import kotlinx.coroutines.launch
 
@@ -20,6 +22,24 @@ fun rememberFilePickerLauncher(): (String, (String) -> Unit) -> Unit {
                     type = FileKitType.File(listOf(extension)),
                 )
                 onSelect(file?.toString().orEmpty())
+            }
+        }
+    }
+}
+
+@Composable
+fun rememberDirectoryPickerLauncher(): (String?, (String) -> Unit) -> Unit {
+    val scope = rememberCoroutineScope()
+    return remember(scope) {
+        { directory: String?, onSelect: (String) -> Unit ->
+            scope.launch {
+                val initialDirectory = directory
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let(::PlatformFile)
+                val selectedDirectory = FileKit.openDirectoryPicker(
+                    directory = initialDirectory,
+                )
+                onSelect(selectedDirectory?.toString().orEmpty())
             }
         }
     }

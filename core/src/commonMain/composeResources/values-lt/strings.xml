@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cmm Programa</string>
+    <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
     <string name="common_clear_text">Išvalyti tekstą</string>
     <string name="common_file_xlsx">XLSX</string>
@@ -81,6 +81,9 @@ mokymuose</string>
     <string name="settings_signature_html_label">El. parašo HTML</string>
     <string name="settings_accredited_type_options_label">Akreditavimo tipų parinktys</string>
     <string name="settings_daily_limit_label">Dienos el. laiškų limitas</string>
+    <string name="settings_theme_label">Tema</string>
+    <string name="settings_theme_light">Šviesi</string>
+    <string name="settings_theme_dark">Tamsi</string>
     <string name="settings_clear_all">Išvalyti visus duomenis</string>
     <string name="settings_clear_all_title">Išvalyti visus duomenis?</string>
     <string name="settings_clear_all_message">Tai atstatys SMTP nustatymus, el. laiškų šablonus, nepavykusių siuntimų talpyklą ir 24 valandų siuntimų istoriją. Šio veiksmo atšaukti negalima.</string>

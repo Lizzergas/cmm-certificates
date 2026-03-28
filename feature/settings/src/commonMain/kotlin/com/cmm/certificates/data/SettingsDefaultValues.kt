@@ -7,6 +7,7 @@ import certificates.composeapp.generated.resources.settings_default_email_body
 import certificates.composeapp.generated.resources.settings_default_email_subject
 import certificates.composeapp.generated.resources.settings_default_signature_html
 import com.cmm.certificates.core.i18n.localizedString
+import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsState
@@ -38,5 +39,6 @@ fun defaultSettingsState(): SettingsState {
         certificate = CertificateSettingsState(
             accreditedTypeOptions = defaultAccreditedTypeOptions(),
         ),
+        appearance = AppearanceSettingsState(),
     )
 }

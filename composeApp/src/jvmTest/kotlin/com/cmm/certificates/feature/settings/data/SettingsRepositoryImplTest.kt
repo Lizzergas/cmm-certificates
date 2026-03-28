@@ -14,6 +14,7 @@ import com.cmm.certificates.data.defaultEmailSubject
 import com.cmm.certificates.test.createTestPreferencesFilePath
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.SmtpSettings
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -66,13 +67,17 @@ class SettingsRepositoryImplTest {
         repository.setSubject("Saved Subject")
         repository.setBody("Saved Body")
         repository.setAccreditedTypeOptions("lecture\nseminar")
+        repository.setOutputDirectory("C:/Users/tester/Documents/Certificates")
         repository.setSignatureHtml("<div>Saved signature</div>")
+        repository.setThemeMode(AppThemeMode.DARK)
         repository.save()
 
         val stored = SettingsStore(dataStore).loadOrDefault()
 
         assertEquals("smtp.saved.example.com", stored.host)
         assertEquals("Saved Subject", stored.subject)
+        assertEquals("C:/Users/tester/Documents/Certificates", stored.outputDirectory)
+        assertEquals(AppThemeMode.DARK, stored.themeMode)
     }
 
     @Test

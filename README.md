@@ -7,7 +7,7 @@ Programa skirta pažymėjimų generavimui iš XLSX registracijos duomenų ir DOC
 2. Pasirinkite DOCX šabloną.
 3. Užpildykite sertifikato laukus (ID, valandos, pavadinimas, lektorius ir kt.).
 4. Spauskite „Konvertuoti į PDF“.
-5. Failai bus sugeneruoti į `./pdf/<sertifikato_pavadinimas>`, o netinkami failo pavadinimo simboliai bus automatiškai pakeisti saugiais simboliais.
+5. Desktop/JVM programoje failai pagal nutylėjimą bus sugeneruoti į `~/pdf/<sertifikato_pavadinimas>`, bet išsaugojimo aplanką galima pasirinkti per programos aplanko parinkiklį.
 
 ## Pastabos
 - PDF generavimas vyksta lokaliai JVM programoje ir konvertavimui interneto ryšys nebėra privalomas.
@@ -86,7 +86,7 @@ Trumpa procedūra:
 5. Atsidarykite repo `Actions` skiltį ir atsisiųskite artefaktą iš paskutinio `Build Windows MSI` paleidimo.
 
 Pavyzdys:
-`git tag v1.0.1 && git push origin v1.0.1`
+`./scripts/bump-release-tag.sh`
 
 # D.U.K.
 - Jeigu nepavyksta tam tikriems laiškams būti išsiųstiems, jie bus išsaugomi ir bus galima pamėginti pakartotina išsiųsti

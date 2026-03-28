@@ -9,6 +9,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.common_error_smtp_incomplete
 import certificates.composeapp.generated.resources.settings_error_auth_failed
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
+import com.cmm.certificates.feature.settings.domain.AppThemeMode
 import com.cmm.certificates.feature.settings.domain.SettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
@@ -105,11 +106,29 @@ class SettingsRepositoryImpl(
         }
     }
 
+    override fun setOutputDirectory(value: String) {
+        _state.update { current ->
+            current.copy(
+                smtp = current.smtp.copy(errorMessage = null),
+                certificate = current.certificate.copy(outputDirectory = value),
+            )
+        }
+    }
+
     override fun setDailyLimit(value: Int) {
         _state.update { current ->
             current.copy(
                 smtp = current.smtp.copy(errorMessage = null),
                 email = current.email.copy(dailyLimit = value),
+            )
+        }
+    }
+
+    override fun setThemeMode(value: AppThemeMode) {
+        _state.update { current ->
+            current.copy(
+                smtp = current.smtp.copy(errorMessage = null),
+                appearance = current.appearance.copy(themeMode = value),
             )
         }
     }
@@ -186,6 +205,10 @@ class SettingsRepositoryImpl(
                 ),
                 certificate = current.certificate.copy(
                     accreditedTypeOptions = stored.accreditedTypeOptions,
+                    outputDirectory = stored.outputDirectory,
+                ),
+                appearance = current.appearance.copy(
+                    themeMode = stored.themeMode,
                 ),
             )
         }
@@ -212,8 +235,10 @@ private fun SettingsState.toStoredSettings(): SettingsStore.StoredSettings {
         subject = email.subject,
         body = email.body,
         accreditedTypeOptions = certificate.accreditedTypeOptions,
+        outputDirectory = certificate.outputDirectory,
         signatureHtml = email.signatureHtml,
         previewEmail = email.previewEmail,
         dailyLimit = email.dailyLimit,
+        themeMode = appearance.themeMode,
     )
 }
