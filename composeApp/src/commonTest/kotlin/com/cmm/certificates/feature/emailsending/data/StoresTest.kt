@@ -51,6 +51,6 @@ class StoresTest {
 
     private fun testDataStore(name: String): DataStore<Preferences> {
         val randomId = Random.nextLong().toString().replace('-', '0')
-        return createDataStore { "/tmp/$name-$randomId.preferences_pb" }
+        return createDataStore { "build/test-datastore/$name-$randomId.preferences_pb" }
     }
 }
