@@ -2,7 +2,9 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.OutputDirectory
+import com.cmm.certificates.core.openFolder
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.signature.SignatureEditorController
 import com.cmm.certificates.core.signature.SignatureEditorMode
@@ -37,6 +39,7 @@ class SettingsViewModel(
 ) : ViewModel() {
     private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
     private val defaultOutputDirectory = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
+    private val installationDirectoryPath = AppInstallation.installationDirectoryPath()
 
     val uiState: StateFlow<SettingsUiState> = combine(
         settingsRepository.state,
@@ -50,6 +53,7 @@ class SettingsViewModel(
             defaultOutputDirectory = defaultOutputDirectory,
             sentHistory = sentHistory,
             cachedEmails = cachedEmails,
+            installationDirectoryPath = installationDirectoryPath,
         )
     }.stateIn(
         viewModelScope,
@@ -91,6 +95,10 @@ class SettingsViewModel(
         viewModelScope.launch {
             emailProgressRepository.removeCachedEmail(id)
         }
+    }
+
+    fun openInstallationDirectory() {
+        installationDirectoryPath?.let(::openFolder)
     }
 
     fun save() {
@@ -197,6 +205,7 @@ data class SettingsUiState(
     val sentHistory: List<SentEmailRecord> = emptyList(),
     val cachedEmails: List<CachedEmailEntry> = emptyList(),
     val cachedLastReason: EmailStopReason? = null,
+    val installationDirectoryPath: String? = null,
     val supportsEmailSending: Boolean = true,
 ) {
     val resolvedOutputDirectory: String
@@ -204,6 +213,9 @@ data class SettingsUiState(
 
     val hasCustomOutputDirectory: Boolean
         get() = certificate.outputDirectory.isNotBlank()
+
+    val canOpenInstallationDirectory: Boolean
+        get() = !installationDirectoryPath.isNullOrBlank()
 }
 
 private fun SettingsState.toUiState(
@@ -212,6 +224,7 @@ private fun SettingsState.toUiState(
     defaultOutputDirectory: String,
     sentHistory: List<SentEmailRecord>,
     cachedEmails: CachedEmailBatch,
+    installationDirectoryPath: String?,
 ): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
@@ -223,6 +236,7 @@ private fun SettingsState.toUiState(
         sentHistory = sentHistory,
         cachedEmails = cachedEmails.entries,
         cachedLastReason = cachedEmails.lastReason,
+        installationDirectoryPath = installationDirectoryPath,
         supportsEmailSending = supportsEmailSending,
     )
 }

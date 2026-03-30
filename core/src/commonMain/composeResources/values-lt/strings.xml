@@ -85,6 +85,8 @@ mokymuose</string>
     <string name="settings_theme_light">Šviesi</string>
     <string name="settings_theme_dark">Tamsi</string>
     <string name="settings_history_cache_button">Istorija / talpykla</string>
+    <string name="settings_open_installation_directory">Atidaryti programos aplanką</string>
+    <string name="settings_installation_directory_hint">Programos diegimo aplankas</string>
     <string name="settings_history_cache_title">Istorija / talpykla</string>
     <string name="settings_history_cache_close">Uždaryti</string>
     <string name="settings_history_cache_sent_tab">Siuntimų istorija</string>

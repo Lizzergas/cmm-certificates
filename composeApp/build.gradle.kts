@@ -78,6 +78,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("packaging/resources"))
             packageName = desktopAppName
             packageVersion = project.version.toString()
             includeAllModules = true

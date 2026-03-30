@@ -62,6 +62,8 @@ import certificates.composeapp.generated.resources.settings_clear_all_message
 import certificates.composeapp.generated.resources.settings_clear_all_title
 import certificates.composeapp.generated.resources.settings_daily_limit_label
 import certificates.composeapp.generated.resources.settings_history_cache_button
+import certificates.composeapp.generated.resources.settings_open_installation_directory
+import certificates.composeapp.generated.resources.settings_installation_directory_hint
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
@@ -199,6 +201,7 @@ fun SettingsScreen(
                         launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
                     },
                     onOpenHistoryCache = { showHistoryDialog = true },
+                    onOpenInstallationDirectory = viewModel::openInstallationDirectory,
                     onEditSignature = viewModel::openSignatureEditor,
                 ),
             )
@@ -356,6 +359,21 @@ private fun BoxScope.SettingsContent(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(Res.string.settings_history_cache_button))
+            }
+            if (state.canOpenInstallationDirectory) {
+                OutlinedButton(
+                    onClick = actions.onOpenInstallationDirectory,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(Res.string.settings_open_installation_directory))
+                }
+                state.installationDirectoryPath?.let { installationDirectoryPath ->
+                    Text(
+                        text = stringResource(Res.string.settings_installation_directory_hint) + "\n" + installationDirectoryPath,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             SettingsField(
                 label = Res.string.settings_accredited_type_options_label,
@@ -674,6 +692,7 @@ private data class SettingsActions(
     val onOutputDirectoryReset: () -> Unit,
     val onChooseOutputDirectory: () -> Unit,
     val onOpenHistoryCache: () -> Unit,
+    val onOpenInstallationDirectory: () -> Unit,
     val onEditSignature: () -> Unit,
 )
 
@@ -709,6 +728,7 @@ private fun SettingsContentPreview() {
                     appearance = AppearanceSettingsState(
                         themeMode = AppThemeMode.LIGHT,
                     ),
+                    installationDirectoryPath = "/Applications/CMM Sertifikatai",
                     defaultOutputDirectory = "/Users/tester/pdf",
                     sentToday = 32,
                     supportsEmailSending = true,
@@ -727,6 +747,7 @@ private fun SettingsContentPreview() {
                     onOutputDirectoryReset = {},
                     onChooseOutputDirectory = {},
                     onOpenHistoryCache = {},
+                    onOpenInstallationDirectory = {},
                     onEditSignature = {},
                 ),
             )

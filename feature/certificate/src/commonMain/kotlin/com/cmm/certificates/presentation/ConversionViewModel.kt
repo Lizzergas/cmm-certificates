@@ -2,6 +2,7 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logError
@@ -34,6 +35,7 @@ class ConversionViewModel(
     private val generateCertificates: GenerateCertificatesUseCase,
 ) : ViewModel() {
     private val logTag = "ConversionVM"
+    private val installedTemplateFileName = "sablonas.docx"
     private val capabilities = capabilityProvider.capabilities
     private val defaultAccreditedTypeOptions = parseAccreditedTypeOptions(
         settingsRepository.state.value.certificate.accreditedTypeOptions,
@@ -45,6 +47,10 @@ class ConversionViewModel(
     )
     private val filesState = MutableStateFlow(ConversionFilesState())
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
+
+    init {
+        selectInstalledTemplateIfAvailable()
+    }
 
     val uiState: StateFlow<ConversionUiState> = combine(
         combine(
@@ -183,6 +189,26 @@ class ConversionViewModel(
                 outputDirectory = settingsRepository.state.value.certificate.outputDirectory,
             )
         )
+    }
+
+    private fun selectInstalledTemplateIfAvailable() {
+        if (!capabilities.canRunConversion) return
+        if (filesState.value.templatePath.isNotBlank()) return
+
+        val installedTemplatePath = AppInstallation.installedResourcePath(installedTemplateFileName)
+        if (installedTemplatePath.isNullOrBlank()) {
+            logInfo(logTag, "No installed template found: $installedTemplateFileName")
+            return
+        }
+
+        logInfo(logTag, "Auto-selected installed template: $installedTemplatePath")
+        filesState.update { current ->
+            if (current.templatePath.isBlank()) {
+                current.copy(templatePath = installedTemplatePath)
+            } else {
+                current
+            }
+        }
     }
 }
 

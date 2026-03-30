@@ -85,6 +85,8 @@ training</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_history_cache_button">History / Cache</string>
+    <string name="settings_open_installation_directory">Open installation folder</string>
+    <string name="settings_installation_directory_hint">Installed app folder</string>
     <string name="settings_history_cache_title">History / Cache</string>
     <string name="settings_history_cache_close">Close</string>
     <string name="settings_history_cache_sent_tab">Sent history</string>
