@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.certificate.domain.usecase
+package com.cmm.certificates.domain
 
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_create_output_dir
@@ -86,6 +86,14 @@ class GenerateCertificatesUseCase(
         val baseOutputDir = outputDirectoryResolver.resolve(requestedOutputDir)
         val sanitizedFolder = sanitizeFolderName(request.certificateName)
         val outputDir = joinPath(baseOutputDir, sanitizedFolder)
+        if (!outputDirectoryResolver.canWrite(baseOutputDir)) {
+            val failure = IllegalStateException(
+                "Output directory is not writable: $baseOutputDir (requested=$requestedOutputDir)",
+            )
+            logError(logTag, failure.message.orEmpty(), failure)
+            progressRepository.fail(UiMessage(Res.string.conversion_error_create_output_dir))
+            return
+        }
         if (!outputDirectoryResolver.ensureExists(outputDir)) {
             val failure = IllegalStateException(
                 "Failed to create output directory: $outputDir (base=$baseOutputDir, requested=$requestedOutputDir)",

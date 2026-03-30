@@ -18,13 +18,26 @@ actual object AppInstallation {
         return installationDirectory()?.absolutePath
     }
 
+    actual fun preferredOutputBaseDirectoryPath(): String? {
+        return packagedInstallationDirectory()?.takeIf(OutputDirectory::canWrite)
+    }
+
     private fun installationDirectory(): File? {
-        return resourcesDirectory()?.parentFile?.takeIf(File::isDirectory)
+        return packagedInstallationDirectory()?.let(::File)
             ?: System.getProperty("app.dir")
                 ?.takeIf(String::isNotBlank)
                 ?.let(::File)
                 ?.takeIf(File::isDirectory)
             ?: File(System.getProperty("user.dir")).takeIf(File::isDirectory)
+    }
+
+    private fun packagedInstallationDirectory(): String? {
+        return resourcesDirectory()?.parentFile?.takeIf(File::isDirectory)?.absolutePath
+            ?: System.getProperty("app.dir")
+                ?.takeIf(String::isNotBlank)
+                ?.let(::File)
+                ?.takeIf(File::isDirectory)
+                ?.absolutePath
     }
 
     private fun resourcesDirectory(): File? {

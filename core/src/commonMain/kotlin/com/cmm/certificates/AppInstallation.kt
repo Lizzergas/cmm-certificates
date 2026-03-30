@@ -4,4 +4,6 @@ expect object AppInstallation {
     fun installedResourcePath(fileName: String): String?
 
     fun installationDirectoryPath(): String?
+
+    fun preferredOutputBaseDirectoryPath(): String?
 }

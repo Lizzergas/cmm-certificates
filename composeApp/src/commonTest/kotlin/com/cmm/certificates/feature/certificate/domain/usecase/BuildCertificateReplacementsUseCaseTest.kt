@@ -1,5 +1,7 @@
 package com.cmm.certificates.feature.certificate.domain.usecase
 
+import com.cmm.certificates.domain.BuildCertificateReplacementsUseCase
+import com.cmm.certificates.domain.GenerateCertificatesRequest
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test

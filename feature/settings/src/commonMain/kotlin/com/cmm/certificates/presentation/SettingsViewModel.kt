@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.OutputDirectory
+import com.cmm.certificates.preferredDefaultOutputDirectory
+import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import com.cmm.certificates.core.openFolder
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.signature.SignatureEditorController
@@ -37,9 +39,22 @@ class SettingsViewModel(
     private val signatureEditor: SignatureEditorController,
     capabilityProvider: PlatformCapabilityProvider,
 ) : ViewModel() {
+    private val supportsOutputDirectories = capabilityProvider.capabilities.canResolveOutputDirectory
     private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
-    private val defaultOutputDirectory = OutputDirectory.resolve(DEFAULT_OUTPUT_PATH)
-    private val installationDirectoryPath = AppInstallation.installationDirectoryPath()
+    private val installationDirectoryPath = if (supportsOutputDirectories) {
+        AppInstallation.installationDirectoryPath()
+    } else {
+        null
+    }
+    private val defaultOutputDirectory = if (supportsOutputDirectories) {
+        preferredDefaultOutputDirectory(AppInstallation.preferredOutputBaseDirectoryPath())
+    } else {
+        ""
+    }
+
+    init {
+        migrateLegacyInstallOutputDirectoryIfNeeded()
+    }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         settingsRepository.state,
@@ -99,6 +114,18 @@ class SettingsViewModel(
 
     fun openInstallationDirectory() {
         installationDirectoryPath?.let(::openFolder)
+    }
+
+    private fun migrateLegacyInstallOutputDirectoryIfNeeded() {
+        val configuredOutputDirectory = settingsRepository.state.value.certificate.outputDirectory
+        if (!shouldResetLegacyInstallOutputDirectory(configuredOutputDirectory, installationDirectoryPath)) {
+            return
+        }
+
+        settingsRepository.setOutputDirectory("")
+        viewModelScope.launch {
+            settingsRepository.save()
+        }
     }
 
     fun save() {
@@ -206,6 +233,8 @@ data class SettingsUiState(
     val cachedEmails: List<CachedEmailEntry> = emptyList(),
     val cachedLastReason: EmailStopReason? = null,
     val installationDirectoryPath: String? = null,
+    val isOutputDirectoryWritable: Boolean = true,
+    val outputDirectoryUsesInstallationDefault: Boolean = false,
     val supportsEmailSending: Boolean = true,
 ) {
     val resolvedOutputDirectory: String
@@ -216,6 +245,9 @@ data class SettingsUiState(
 
     val canOpenInstallationDirectory: Boolean
         get() = !installationDirectoryPath.isNullOrBlank()
+
+    val shouldShowOutputDirectoryWarning: Boolean
+        get() = hasCustomOutputDirectory && !isOutputDirectoryWritable
 }
 
 private fun SettingsState.toUiState(
@@ -237,8 +269,13 @@ private fun SettingsState.toUiState(
         cachedEmails = cachedEmails.entries,
         cachedLastReason = cachedEmails.lastReason,
         installationDirectoryPath = installationDirectoryPath,
+        isOutputDirectoryWritable = if (defaultOutputDirectory.isBlank() && certificate.outputDirectory.isBlank()) {
+            true
+        } else {
+            OutputDirectory.canWrite(certificate.outputDirectory.ifBlank { defaultOutputDirectory })
+        },
+        outputDirectoryUsesInstallationDefault = certificate.outputDirectory.isBlank() &&
+            installationDirectoryPath == defaultOutputDirectory,
         supportsEmailSending = supportsEmailSending,
     )
 }
-
-private const val DEFAULT_OUTPUT_PATH = "pdf/"

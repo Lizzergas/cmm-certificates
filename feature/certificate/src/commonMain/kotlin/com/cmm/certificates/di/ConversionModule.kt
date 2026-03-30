@@ -3,8 +3,8 @@ package com.cmm.certificates.di
 import com.cmm.certificates.data.DefaultOutputDirectoryResolver
 import com.cmm.certificates.data.DocxCertificateDocumentGenerator
 import com.cmm.certificates.data.XlsxRegistrationParser
-import com.cmm.certificates.feature.certificate.domain.usecase.BuildCertificateReplacementsUseCase
-import com.cmm.certificates.feature.certificate.domain.usecase.GenerateCertificatesUseCase
+import com.cmm.certificates.domain.BuildCertificateReplacementsUseCase
+import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.OutputDirectoryResolver

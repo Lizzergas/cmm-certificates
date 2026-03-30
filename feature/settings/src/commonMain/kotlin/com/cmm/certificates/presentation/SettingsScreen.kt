@@ -64,6 +64,9 @@ import certificates.composeapp.generated.resources.settings_daily_limit_label
 import certificates.composeapp.generated.resources.settings_history_cache_button
 import certificates.composeapp.generated.resources.settings_open_installation_directory
 import certificates.composeapp.generated.resources.settings_installation_directory_hint
+import certificates.composeapp.generated.resources.settings_output_directory_default_fallback_hint
+import certificates.composeapp.generated.resources.settings_output_directory_default_install_hint
+import certificates.composeapp.generated.resources.settings_output_directory_invalid_hint
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
@@ -351,6 +354,8 @@ private fun BoxScope.SettingsContent(
             OutputDirectorySettingsField(
                 outputDirectory = state.resolvedOutputDirectory,
                 hasCustomOutputDirectory = state.hasCustomOutputDirectory,
+                isWritable = state.isOutputDirectoryWritable,
+                usesInstallationDefault = state.outputDirectoryUsesInstallationDefault,
                 onReset = actions.onOutputDirectoryReset,
                 onChoose = actions.onChooseOutputDirectory,
             )
@@ -403,6 +408,8 @@ private fun BoxScope.SettingsContent(
 private fun OutputDirectorySettingsField(
     outputDirectory: String,
     hasCustomOutputDirectory: Boolean,
+    isWritable: Boolean,
+    usesInstallationDefault: Boolean,
     onReset: () -> Unit,
     onChoose: () -> Unit,
 ) {
@@ -415,7 +422,21 @@ private fun OutputDirectorySettingsField(
         showClearIcon = hasCustomOutputDirectory,
         onClear = onReset,
         supportingText = {
-            Text(stringResource(Res.string.conversion_output_directory_hint))
+            Column(verticalArrangement = Arrangement.spacedBy(Grid.x1)) {
+                Text(stringResource(Res.string.conversion_output_directory_hint))
+                if (!isWritable) {
+                    Text(
+                        text = stringResource(Res.string.settings_output_directory_invalid_hint),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                } else if (hasCustomOutputDirectory) {
+                    Unit
+                } else if (usesInstallationDefault) {
+                    Text(stringResource(Res.string.settings_output_directory_default_install_hint))
+                } else {
+                    Text(stringResource(Res.string.settings_output_directory_default_fallback_hint))
+                }
+            }
         },
     )
     OutlinedButton(

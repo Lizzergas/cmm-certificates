@@ -3,6 +3,9 @@ package com.cmm.certificates.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.AppInstallation
+import com.cmm.certificates.OutputDirectory
+import com.cmm.certificates.preferredDefaultOutputDirectory
+import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logError
@@ -10,8 +13,8 @@ import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.data.defaultLectorLabel
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
-import com.cmm.certificates.feature.certificate.domain.usecase.GenerateCertificatesRequest
-import com.cmm.certificates.feature.certificate.domain.usecase.GenerateCertificatesUseCase
+import com.cmm.certificates.domain.GenerateCertificatesRequest
+import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
@@ -37,6 +40,16 @@ class ConversionViewModel(
     private val logTag = "ConversionVM"
     private val installedTemplateFileName = "sablonas.docx"
     private val capabilities = capabilityProvider.capabilities
+    private val installationDirectoryPath = if (capabilities.canResolveOutputDirectory) {
+        AppInstallation.installationDirectoryPath()
+    } else {
+        null
+    }
+    private val defaultOutputDirectory = if (capabilities.canResolveOutputDirectory) {
+        preferredDefaultOutputDirectory(AppInstallation.preferredOutputBaseDirectoryPath())
+    } else {
+        ""
+    }
     private val defaultAccreditedTypeOptions = parseAccreditedTypeOptions(
         settingsRepository.state.value.certificate.accreditedTypeOptions,
     )
@@ -186,7 +199,7 @@ class ConversionViewModel(
                 certificateName = snapshot.form.certificateName,
                 lector = snapshot.form.lector,
                 lectorGender = snapshot.form.lectorGender,
-                outputDirectory = settingsRepository.state.value.certificate.outputDirectory,
+                outputDirectory = effectiveOutputDirectory(),
             )
         )
     }
@@ -208,6 +221,20 @@ class ConversionViewModel(
             } else {
                 current
             }
+        }
+    }
+
+    private fun effectiveOutputDirectory(): String {
+        val configuredOutputDirectory = settingsRepository.state.value.certificate.outputDirectory.trim()
+        return when {
+            configuredOutputDirectory.isBlank() -> defaultOutputDirectory
+            shouldResetLegacyInstallOutputDirectory(configuredOutputDirectory, installationDirectoryPath) -> {
+                logWarn(logTag, "Legacy installation output directory is not writable, falling back to default output directory")
+                defaultOutputDirectory
+            }
+
+            OutputDirectory.canWrite(configuredOutputDirectory) -> configuredOutputDirectory
+            else -> configuredOutputDirectory
         }
     }
 }

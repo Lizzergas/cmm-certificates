@@ -87,6 +87,9 @@ training</string>
     <string name="settings_history_cache_button">History / Cache</string>
     <string name="settings_open_installation_directory">Open installation folder</string>
     <string name="settings_installation_directory_hint">Installed app folder</string>
+    <string name="settings_output_directory_default_install_hint">Default output uses the installation folder when it is writable.</string>
+    <string name="settings_output_directory_default_fallback_hint">If the installation folder is not writable, the app falls back to ~/pdf.</string>
+    <string name="settings_output_directory_invalid_hint">Selected output folder is not writable. Choose another folder or clear it to use the default.</string>
     <string name="settings_history_cache_title">History / Cache</string>
     <string name="settings_history_cache_close">Close</string>
     <string name="settings_history_cache_sent_tab">Sent history</string>

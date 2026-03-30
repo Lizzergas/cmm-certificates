@@ -1,4 +1,4 @@
-package com.cmm.certificates.feature.certificate.domain.usecase
+package com.cmm.certificates.domain
 
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 

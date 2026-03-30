@@ -7,4 +7,6 @@ class DefaultOutputDirectoryResolver : OutputDirectoryResolver {
     override fun resolve(path: String): String = OutputDirectory.resolve(path)
 
     override fun ensureExists(path: String): Boolean = OutputDirectory.ensureExists(path)
+
+    override fun canWrite(path: String): Boolean = OutputDirectory.canWrite(path)
 }

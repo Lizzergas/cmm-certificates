@@ -8,4 +8,8 @@ actual object OutputDirectory {
     actual fun ensureExists(path: String): Boolean {
         throw UnsupportedOperationException("Output directory resolution is not supported on Android yet.")
     }
+
+    actual fun canWrite(path: String): Boolean {
+        throw UnsupportedOperationException("Output directory resolution is not supported on Android yet.")
+    }
 }
