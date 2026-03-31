@@ -47,6 +47,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.common_file_docx
 import certificates.composeapp.generated.resources.common_file_xlsx
 import certificates.composeapp.generated.resources.cmm_logo
+import certificates.composeapp.generated.resources.docx
 import certificates.composeapp.generated.resources.conversion_accredited_hours_label
 import certificates.composeapp.generated.resources.conversion_accredited_id_label
 import certificates.composeapp.generated.resources.conversion_accredited_type_label
@@ -67,12 +68,14 @@ import certificates.composeapp.generated.resources.email_progress_cached_retry_r
 import certificates.composeapp.generated.resources.email_progress_cached_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
 import certificates.composeapp.generated.resources.email_progress_retry_cached
+import certificates.composeapp.generated.resources.xlsx
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.presentation.components.PrimaryActionButton
 import com.cmm.certificates.presentation.components.SelectFileIcon
+import com.cmm.certificates.presentation.components.SelectFileIconState
 import com.cmm.certificates.core.theme.AppTheme
 import com.cmm.certificates.core.ui.rememberFilePickerLauncher
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
@@ -176,16 +179,22 @@ fun ConversionScreen(
                     horizontalArrangement = Arrangement.spacedBy(Grid.x5),
                 ) {
                     SelectFileIcon(
-                        iconText = stringResource(Res.string.common_file_xlsx),
-                        selected = hasXlsx,
+                        icon = Res.drawable.xlsx,
+                        label = stringResource(Res.string.common_file_xlsx),
+                        state = selectFileIconState(hasXlsx, state.files.xlsxErrorText),
+                        fileName = state.files.xlsxFileName,
+                        errorText = state.files.xlsxErrorText,
                         tooltipText = xlsxTooltip,
                         onClick = { launchFilePicker("xlsx", viewModel::selectXlsx) },
                         enabled = state.supportsConversion,
                         modifier = Modifier.weight(1f),
                     )
                     SelectFileIcon(
-                        iconText = stringResource(Res.string.common_file_docx),
-                        selected = hasTemplate,
+                        icon = Res.drawable.docx,
+                        label = stringResource(Res.string.common_file_docx),
+                        state = selectFileIconState(hasTemplate, state.files.templateErrorText),
+                        fileName = state.files.templateFileName,
+                        errorText = state.files.templateErrorText,
                         tooltipText = docxTooltip,
                         onClick = { launchFilePicker("docx", viewModel::setTemplatePath) },
                         enabled = state.supportsConversion,
@@ -493,6 +502,17 @@ private fun buildPathTooltip(
     if (path.isNotBlank()) {
         append("\n")
         append(path)
+    }
+}
+
+private fun selectFileIconState(
+    selected: Boolean,
+    errorText: String?,
+): SelectFileIconState {
+    return when {
+        selected && !errorText.isNullOrBlank() -> SelectFileIconState.Error
+        selected -> SelectFileIconState.Selected
+        else -> SelectFileIconState.NotSelected
     }
 }
 

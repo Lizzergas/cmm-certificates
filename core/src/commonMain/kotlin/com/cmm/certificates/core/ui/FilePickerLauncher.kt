@@ -21,7 +21,7 @@ fun rememberFilePickerLauncher(): (String, (String) -> Unit) -> Unit {
                     mode = FileKitMode.Single,
                     type = FileKitType.File(listOf(extension)),
                 )
-                onSelect(file?.toString().orEmpty())
+                file?.toString()?.let(onSelect)
             }
         }
     }
@@ -39,7 +39,7 @@ fun rememberDirectoryPickerLauncher(): (String?, (String) -> Unit) -> Unit {
                 val selectedDirectory = FileKit.openDirectoryPicker(
                     directory = initialDirectory,
                 )
-                onSelect(selectedDirectory?.toString().orEmpty())
+                selectedDirectory?.toString()?.let(onSelect)
             }
         }
     }

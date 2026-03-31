@@ -1,5 +1,6 @@
 package com.cmm.certificates.core.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -37,6 +38,7 @@ fun ClearableOutlinedTextField(
     textStyle: TextStyle = LocalTextStyle.current,
     readOnly: Boolean = false,
     enabled: Boolean = true,
+    onClick: (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = {},
     showClearIcon: Boolean = value.isNotBlank(),
     onClear: (() -> Unit)? = null,
@@ -73,7 +75,11 @@ fun ClearableOutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = label,
-        modifier = modifier,
+        modifier = if (onClick != null) {
+            modifier.clickable(enabled = enabled, onClick = onClick)
+        } else {
+            modifier
+        },
         singleLine = singleLine,
         minLines = minLines,
         maxLines = maxLines,

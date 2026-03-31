@@ -52,8 +52,8 @@
     <string name="conversion_error_create_output_dir">Failed to create output folder.</string>
     <string name="conversion_error_write_pdf">Failed to generate PDF file.</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_subtitle">SMTP Configuration</string>
-    <string name="settings_section_title">SMTP Settings</string>
+    <string name="settings_subtitle">Email templates and app preferences</string>
+    <string name="settings_section_title">Email and app settings</string>
     <string name="settings_server_label">SMTP Server</string>
     <string name="settings_port_label">Port</string>
     <string name="settings_transport_label">Transport</string>
@@ -82,6 +82,8 @@ training</string>
     <string name="settings_signature_html_label">Signature HTML</string>
     <string name="settings_accredited_type_options_label">Accredited type options</string>
     <string name="settings_daily_limit_label">Daily email limit</string>
+    <string name="settings_email_configuration_button">Configure SMTP</string>
+    <string name="settings_email_configuration_title">SMTP settings</string>
     <string name="settings_theme_label">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
@@ -168,7 +170,7 @@ training</string>
     <string name="email_preview_success">Success!</string>
     <string name="email_preview_error_send_failed">Failed to send preview email.</string>
     <string name="settings_signature_section_title">Email signature</string>
-    <string name="settings_signature_action_edit">Edit signature</string>
+    <string name="settings_signature_action_edit">Edit email signature</string>
     <string name="settings_signature_summary_custom">Custom HTML</string>
     <string name="settings_signature_summary_template">%1$d lines • %2$s</string>
     <string name="settings_signature_style_italic">italic</string>

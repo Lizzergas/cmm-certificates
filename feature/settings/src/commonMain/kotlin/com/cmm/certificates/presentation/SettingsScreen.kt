@@ -47,7 +47,6 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.email_progress_daily_limit_unlimited_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
-import certificates.composeapp.generated.resources.conversion_choose_directory
 import certificates.composeapp.generated.resources.conversion_output_dir_label
 import certificates.composeapp.generated.resources.conversion_output_directory_hint
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
@@ -61,7 +60,10 @@ import certificates.composeapp.generated.resources.settings_clear_all_confirm
 import certificates.composeapp.generated.resources.settings_clear_all_message
 import certificates.composeapp.generated.resources.settings_clear_all_title
 import certificates.composeapp.generated.resources.settings_daily_limit_label
+import certificates.composeapp.generated.resources.settings_email_configuration_button
+import certificates.composeapp.generated.resources.settings_email_configuration_title
 import certificates.composeapp.generated.resources.settings_history_cache_button
+import certificates.composeapp.generated.resources.settings_history_cache_close
 import certificates.composeapp.generated.resources.settings_open_installation_directory
 import certificates.composeapp.generated.resources.settings_installation_directory_hint
 import certificates.composeapp.generated.resources.settings_output_directory_default_fallback_hint
@@ -71,6 +73,7 @@ import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
+import certificates.composeapp.generated.resources.settings_signature_action_edit
 import certificates.composeapp.generated.resources.settings_subject_label
 import certificates.composeapp.generated.resources.settings_theme_dark
 import certificates.composeapp.generated.resources.settings_theme_label
@@ -98,7 +101,6 @@ import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import com.cmm.certificates.presentation.components.HistoryCacheDialog
 import com.cmm.certificates.presentation.components.SignatureEditorDialog
-import com.cmm.certificates.presentation.components.SignatureSummaryCard
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -120,6 +122,28 @@ fun SettingsScreen(
     val launchDirectoryPicker = rememberDirectoryPickerLauncher()
     var showClearDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
+    var showSmtpDialog by remember { mutableStateOf(false) }
+    val actions = SettingsActions(
+        onHostChange = viewModel::setHost,
+        onPortChange = viewModel::setPort,
+        onTransportChange = viewModel::setTransport,
+        onUsernameChange = viewModel::setUsername,
+        onPasswordChange = viewModel::setPassword,
+        onSubjectChange = viewModel::setSubject,
+        onBodyChange = viewModel::setBody,
+        onDailyLimitChange = viewModel::setDailyLimit,
+        onThemeModeChange = viewModel::setThemeMode,
+        onAccreditedTypeOptionsChange = viewModel::setAccreditedTypeOptions,
+        onOutputDirectoryReset = viewModel::resetOutputDirectory,
+        onChooseOutputDirectory = {
+            launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
+        },
+        onOpenHistoryCache = { showHistoryDialog = true },
+        onOpenInstallationDirectory = viewModel::openInstallationDirectory,
+        onEditSignature = viewModel::openSignatureEditor,
+        onAuthenticate = viewModel::authenticate,
+        onOpenEmailConfiguration = { showSmtpDialog = true },
+    )
 
     if (showClearDialog) {
         AlertDialog(
@@ -156,6 +180,14 @@ fun SettingsScreen(
         onDismiss = { showHistoryDialog = false },
     )
 
+    if (showSmtpDialog) {
+        SmtpSettingsDialog(
+            state = state,
+            actions = actions,
+            onDismiss = { showSmtpDialog = false },
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -172,9 +204,6 @@ fun SettingsScreen(
         bottomBar = {
             SettingsBottomBar(
                 onClearAll = { showClearDialog = true },
-                onAuthenticate = viewModel::authenticate,
-                canAuthenticate = state.supportsEmailSending && state.smtp.canAuthenticate && !state.smtp.isAuthenticating,
-                supportsEmailSending = state.supportsEmailSending,
             )
         },
     ) { padding ->
@@ -188,25 +217,7 @@ fun SettingsScreen(
         ) {
             SettingsContent(
                 state = state,
-                actions = SettingsActions(
-                    onHostChange = viewModel::setHost,
-                    onPortChange = viewModel::setPort,
-                    onTransportChange = viewModel::setTransport,
-                    onUsernameChange = viewModel::setUsername,
-                    onPasswordChange = viewModel::setPassword,
-                    onSubjectChange = viewModel::setSubject,
-                    onBodyChange = viewModel::setBody,
-                    onDailyLimitChange = viewModel::setDailyLimit,
-                    onThemeModeChange = viewModel::setThemeMode,
-                    onAccreditedTypeOptionsChange = viewModel::setAccreditedTypeOptions,
-                    onOutputDirectoryReset = viewModel::resetOutputDirectory,
-                    onChooseOutputDirectory = {
-                        launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
-                    },
-                    onOpenHistoryCache = { showHistoryDialog = true },
-                    onOpenInstallationDirectory = viewModel::openInstallationDirectory,
-                    onEditSignature = viewModel::openSignatureEditor,
-                ),
+                actions = actions,
             )
         }
     }
@@ -240,13 +251,6 @@ private fun BoxScope.SettingsContent(
     actions: SettingsActions,
 ) {
     val scrollState = rememberScrollState()
-    val transportOptions = remember {
-        linkedMapOf(
-            SmtpTransport.SMTP to Res.string.settings_transport_smtp,
-            SmtpTransport.SMTPS to Res.string.settings_transport_smtps,
-            SmtpTransport.SMTP_TLS to Res.string.settings_transport_tls,
-        )
-    }
     val themeOptions = remember {
         linkedMapOf(
             AppThemeMode.LIGHT to Res.string.settings_theme_light,
@@ -262,53 +266,27 @@ private fun BoxScope.SettingsContent(
         verticalArrangement = Arrangement.spacedBy(Grid.x8),
     ) {
         SettingsCard(title = Res.string.settings_section_title) {
-            StatusLines(
-                error = state.smtp.errorMessage,
-                authenticated = state.smtp.isAuthenticated,
-            )
-
-            Row(
+            OutlinedButton(
+                onClick = actions.onOpenEmailConfiguration,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
-                verticalAlignment = Alignment.CenterVertically,
+                enabled = state.supportsEmailSending,
             ) {
-                SettingsField(
-                    label = Res.string.settings_server_label,
-                    value = state.smtp.host,
-                    onValueChange = actions.onHostChange,
-                    singleLine = true,
-                    modifier = Modifier.weight(2f),
-                )
-                SettingsField(
-                    label = Res.string.settings_port_label,
-                    value = state.smtp.port,
-                    onValueChange = actions.onPortChange,
-                    singleLine = true,
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.weight(1f),
+                Text(stringResource(Res.string.settings_email_configuration_button))
+            }
+            if (!state.supportsEmailSending) {
+                Text(
+                    text = stringResource(Res.string.email_sending_unsupported_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.shapes.small,
+                        )
+                        .padding(horizontal = Grid.x6, vertical = Grid.x3),
                 )
             }
-
-            SmtpTransportPicker(
-                selected = state.smtp.transport,
-                options = transportOptions,
-                onSelect = actions.onTransportChange,
-            )
-
-            SettingsField(
-                label = Res.string.settings_username_label,
-                value = state.smtp.username,
-                onValueChange = actions.onUsernameChange,
-                singleLine = true,
-            )
-            SettingsField(
-                label = Res.string.settings_password_label,
-                value = state.smtp.password,
-                onValueChange = actions.onPasswordChange,
-                singleLine = true,
-                keyboardType = KeyboardType.Password,
-                visualTransformation = PasswordVisualTransformation(),
-            )
 
             SettingsField(
                 label = Res.string.settings_subject_label,
@@ -388,10 +366,12 @@ private fun BoxScope.SettingsContent(
                 maxLines = 10,
                 showClearIcon = false,
             )
-            SignatureSummaryCard(
-                signatureHtml = state.email.signatureHtml,
-                onEdit = actions.onEditSignature,
-            )
+            OutlinedButton(
+                onClick = actions.onEditSignature,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(Res.string.settings_signature_action_edit))
+            }
         }
     }
 
@@ -419,6 +399,7 @@ private fun OutputDirectorySettingsField(
         label = { Text(stringResource(Res.string.conversion_output_dir_label)) },
         modifier = Modifier.fillMaxWidth(),
         readOnly = true,
+        onClick = onChoose,
         showClearIcon = hasCustomOutputDirectory,
         onClear = onReset,
         supportingText = {
@@ -439,12 +420,91 @@ private fun OutputDirectorySettingsField(
             }
         },
     )
-    OutlinedButton(
-        onClick = onChoose,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text(stringResource(Res.string.conversion_choose_directory))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SmtpSettingsDialog(
+    state: SettingsUiState,
+    actions: SettingsActions,
+    onDismiss: () -> Unit,
+) {
+    val transportOptions = remember {
+        linkedMapOf(
+            SmtpTransport.SMTP to Res.string.settings_transport_smtp,
+            SmtpTransport.SMTPS to Res.string.settings_transport_smtps,
+            SmtpTransport.SMTP_TLS to Res.string.settings_transport_tls,
+        )
     }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.settings_email_configuration_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Grid.x5),
+            ) {
+                StatusLines(
+                    error = state.smtp.errorMessage,
+                    authenticated = state.smtp.isAuthenticated,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Grid.x5),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    SettingsField(
+                        label = Res.string.settings_server_label,
+                        value = state.smtp.host,
+                        onValueChange = actions.onHostChange,
+                        singleLine = true,
+                        modifier = Modifier.weight(2f),
+                    )
+                    SettingsField(
+                        label = Res.string.settings_port_label,
+                        value = state.smtp.port,
+                        onValueChange = actions.onPortChange,
+                        singleLine = true,
+                        keyboardType = KeyboardType.Number,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                SmtpTransportPicker(
+                    selected = state.smtp.transport,
+                    options = transportOptions,
+                    onSelect = actions.onTransportChange,
+                )
+                SettingsField(
+                    label = Res.string.settings_username_label,
+                    value = state.smtp.username,
+                    onValueChange = actions.onUsernameChange,
+                    singleLine = true,
+                )
+                SettingsField(
+                    label = Res.string.settings_password_label,
+                    value = state.smtp.password,
+                    onValueChange = actions.onPasswordChange,
+                    singleLine = true,
+                    keyboardType = KeyboardType.Password,
+                    visualTransformation = PasswordVisualTransformation(),
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = actions.onAuthenticate,
+                enabled = state.supportsEmailSending && state.smtp.canAuthenticate && !state.smtp.isAuthenticating,
+            ) {
+                Text(stringResource(Res.string.settings_authenticate))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.settings_history_cache_close))
+            }
+        },
+    )
 }
 
 
@@ -481,9 +541,6 @@ private fun SettingsTopBar(
 @Composable
 private fun SettingsBottomBar(
     onClearAll: () -> Unit,
-    onAuthenticate: () -> Unit,
-    canAuthenticate: Boolean,
-    supportsEmailSending: Boolean,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -507,32 +564,6 @@ private fun SettingsBottomBar(
                     text = stringResource(Res.string.settings_clear_all),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            Button(
-                onClick = onAuthenticate,
-                enabled = canAuthenticate,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(Res.string.settings_authenticate),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-            if (!supportsEmailSending) {
-                Text(
-                    text = stringResource(Res.string.email_sending_unsupported_hint),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.shapes.small,
-                        )
-                        .padding(horizontal = Grid.x6, vertical = Grid.x3),
                 )
             }
         }
@@ -715,6 +746,8 @@ private data class SettingsActions(
     val onOpenHistoryCache: () -> Unit,
     val onOpenInstallationDirectory: () -> Unit,
     val onEditSignature: () -> Unit,
+    val onAuthenticate: () -> Unit,
+    val onOpenEmailConfiguration: () -> Unit,
 )
 
 @Preview
@@ -770,6 +803,8 @@ private fun SettingsContentPreview() {
                     onOpenHistoryCache = {},
                     onOpenInstallationDirectory = {},
                     onEditSignature = {},
+                    onAuthenticate = {},
+                    onOpenEmailConfiguration = {},
                 ),
             )
         }

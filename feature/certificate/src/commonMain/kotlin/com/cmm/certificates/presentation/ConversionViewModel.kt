@@ -4,23 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.OutputDirectory
-import com.cmm.certificates.preferredDefaultOutputDirectory
-import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
-import com.cmm.certificates.core.openFile
 import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.core.openFile
 import com.cmm.certificates.data.defaultLectorLabel
-import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.domain.GenerateCertificatesRequest
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
+import com.cmm.certificates.preferredDefaultOutputDirectory
+import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +41,7 @@ class ConversionViewModel(
     private val previewCertificate: PreviewCertificateUseCase,
 ) : ViewModel() {
     private val logTag = "ConversionVM"
-    private val installedTemplateFileName = "sablonas.docx"
+    private val installedTemplateFileName = "bazinis_šablonas.docx"
     private val capabilities = capabilityProvider.capabilities
     private val installationDirectoryPath = if (capabilities.canResolveOutputDirectory) {
         AppInstallation.installationDirectoryPath()
@@ -122,7 +123,12 @@ class ConversionViewModel(
     fun setTemplatePath(path: String) {
         if (!capabilities.canRunConversion) return
         logInfo(logTag, "Template selected: ${path.ifBlank { "<empty>" }}")
-        filesState.update { it.copy(templatePath = path) }
+        filesState.update {
+            it.copy(
+                templatePath = path,
+                templateErrorText = null,
+            )
+        }
     }
 
     fun setAccreditedId(value: String) {
@@ -161,7 +167,12 @@ class ConversionViewModel(
             logWarn(logTag, "Ignored XLSX selection because conversion is unsupported")
             return
         }
-        filesState.update { it.copy(xlsxPath = path) }
+        filesState.update {
+            it.copy(
+                xlsxPath = path,
+                xlsxErrorText = null,
+            )
+        }
         if (path.isBlank()) {
             entriesState.value = emptyList()
             logWarn(logTag, "Cleared XLSX selection")
@@ -232,7 +243,10 @@ class ConversionViewModel(
         logInfo(logTag, "Auto-selected installed template: $installedTemplatePath")
         filesState.update { current ->
             if (current.templatePath.isBlank()) {
-                current.copy(templatePath = installedTemplatePath)
+                current.copy(
+                    templatePath = installedTemplatePath,
+                    templateErrorText = null,
+                )
             } else {
                 current
             }
@@ -240,11 +254,18 @@ class ConversionViewModel(
     }
 
     private fun effectiveOutputDirectory(): String {
-        val configuredOutputDirectory = settingsRepository.state.value.certificate.outputDirectory.trim()
+        val configuredOutputDirectory =
+            settingsRepository.state.value.certificate.outputDirectory.trim()
         return when {
             configuredOutputDirectory.isBlank() -> defaultOutputDirectory
-            shouldResetLegacyInstallOutputDirectory(configuredOutputDirectory, installationDirectoryPath) -> {
-                logWarn(logTag, "Legacy installation output directory is not writable, falling back to default output directory")
+            shouldResetLegacyInstallOutputDirectory(
+                configuredOutputDirectory,
+                installationDirectoryPath
+            ) -> {
+                logWarn(
+                    logTag,
+                    "Legacy installation output directory is not writable, falling back to default output directory"
+                )
                 defaultOutputDirectory
             }
 
@@ -299,12 +320,24 @@ data class ConversionUiState(
 data class ConversionFilesState(
     val xlsxPath: String = "",
     val templatePath: String = "",
+    val xlsxErrorText: String? = null,
+    val templateErrorText: String? = null,
 ) {
     val hasXlsx: Boolean
         get() = xlsxPath.isNotBlank()
 
     val hasTemplate: Boolean
         get() = templatePath.isNotBlank()
+
+    val xlsxFileName: String?
+        get() = xlsxPath.takeIf { it.isNotBlank() }?.toFileName()
+
+    val templateFileName: String?
+        get() = templatePath.takeIf { it.isNotBlank() }?.toFileName()
+}
+
+private fun String.toFileName(): String {
+    return substringAfterLast('/').substringAfterLast('\\')
 }
 
 data class ConversionFormState(

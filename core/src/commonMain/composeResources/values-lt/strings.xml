@@ -52,8 +52,8 @@
     <string name="conversion_error_create_output_dir">Nepavyko sukurti išvesties aplanko. Pameginkite perkrauti programėlę su administratoriaus teisėmis.</string>
     <string name="conversion_error_write_pdf">Nepavyko sugeneruoti PDF failo.</string>
     <string name="settings_title">Nustatymai</string>
-    <string name="settings_subtitle">SMTP konfigūracija</string>
-    <string name="settings_section_title">SMTP nustatymai</string>
+    <string name="settings_subtitle">El. pašto šablonai ir programos nustatymai</string>
+    <string name="settings_section_title">El. pašto ir programos nustatymai</string>
     <string name="settings_server_label">SMTP serveris</string>
     <string name="settings_port_label">Prievadas</string>
     <string name="settings_transport_label">Transportas</string>
@@ -82,6 +82,8 @@ mokymuose</string>
     <string name="settings_signature_html_label">El. parašo HTML</string>
     <string name="settings_accredited_type_options_label">Renginio tipai</string>
     <string name="settings_daily_limit_label">Dienos el. laiškų limitas</string>
+    <string name="settings_email_configuration_button">Konfigūruoti SMTP</string>
+    <string name="settings_email_configuration_title">SMTP nustatymai</string>
     <string name="settings_theme_label">Tema</string>
     <string name="settings_theme_light">Šviesi</string>
     <string name="settings_theme_dark">Tamsi</string>
@@ -124,7 +126,7 @@ mokymuose</string>
     <string name="progress_time_label">Trukmė</string>
     <string name="progress_open_folder">Atidaryti aplanką</string>
     <string name="progress_open_folder_unsupported_hint">Ši platforma dar negali tiesiogiai atidaryti sugeneruotų aplankų.</string>
-    <string name="progress_convert_another">Konvertuoti kitą</string>
+    <string name="progress_convert_another">Grįžti</string>
     <string name="progress_send_emails">Siųsti el. laiškus</string>
     <string name="progress_send_emails_hint">Autentifikuokite SMTP nustatymuose, kad galėtumėte siųsti</string>
     <string name="progress_current_doc_label">Generuojamas PDF: %1$d</string>
@@ -168,7 +170,7 @@ mokymuose</string>
     <string name="email_preview_success">Sėkmingai!</string>
     <string name="email_preview_error_send_failed">Nepavyko išsiųsti peržiūros laiško.</string>
     <string name="settings_signature_section_title">El. parašas</string>
-    <string name="settings_signature_action_edit">Redaguoti parašą</string>
+    <string name="settings_signature_action_edit">Redaguoti el. parašą</string>
     <string name="settings_signature_summary_custom">Tinkintas HTML</string>
     <string name="settings_signature_summary_template">%1$d eil. • %2$s</string>
     <string name="settings_signature_style_italic">kursyvas</string>
