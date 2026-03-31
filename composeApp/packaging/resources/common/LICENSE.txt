@@ -1,0 +1,48 @@
+Proprietary Source License
+Copyright (c) 2026 Ainis Skominas. All rights reserved.
+
+This repository, its source code, object code, build scripts, assets, documentation,
+and related materials (collectively, the "Software") are proprietary and
+confidential.
+
+1. Ownership
+
+The Software is and remains the exclusive property of the Licensor. No right,
+title, or interest in the Software is transferred except for the limited rights
+expressly granted in a separate written agreement signed by the Licensor.
+
+For the avoidance of doubt:
+
+- the Software is licensed, not sold;
+- no copyright assignment is made by possession of this repository or any copy of it;
+- no "work made for hire" transfer applies unless explicitly stated in a signed,
+  separate written instrument that identifies the specific deliverable being
+  assigned.
+
+2. No License by Default
+
+Except as expressly stated in a separate written agreement signed by the
+Licensor, you may not use, copy, modify, publish, distribute, sublicense, rent,
+lease, lend, sell, disclose, reverse engineer, decompile, create derivative
+works from, or otherwise exploit the Software.
+
+3. Commercial Customer Use
+
+If you have received the Software under a signed commercial agreement, your
+rights are limited to the scope stated in that agreement. Any such agreement
+grants only a limited license and does not transfer ownership of the Software or
+its intellectual property rights unless an explicit written assignment says
+otherwise.
+
+4. Third-Party Components
+
+The Software may include or depend on third-party components that are licensed
+under their own terms. Those components remain subject to their respective
+licenses, which are not replaced by this license.
+
+5. Reservation of Rights
+
+All rights not expressly granted by the Licensor are reserved.
+
+For commercial licensing inquiries, source access requests, or redistribution
+rights, contact the Licensor before any use.

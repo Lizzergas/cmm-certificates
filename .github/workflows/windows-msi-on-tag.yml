@@ -1,4 +1,4 @@
-name: Build Windows MSI
+name: Build Windows Installers
 
 on:
   push:
@@ -97,14 +97,52 @@ jobs:
         env:
           ORG_GRADLE_PROJECT_appVersion: ${{ env.APP_VERSION }}
           ORG_GRADLE_PROJECT_appVersionCode: ${{ env.APP_VERSION_CODE }}
+          ORG_GRADLE_PROJECT_appCommitHash: ${{ github.sha }}
         run: .\gradlew.bat :composeApp:jvmTest :composeApp:test --stacktrace --no-daemon
 
-      - name: Build release MSI
+      - name: Build release Windows installers
         shell: pwsh
         env:
           ORG_GRADLE_PROJECT_appVersion: ${{ env.APP_VERSION }}
           ORG_GRADLE_PROJECT_appVersionCode: ${{ env.APP_VERSION_CODE }}
-        run: .\gradlew.bat :composeApp:packageReleaseMsi --stacktrace --no-daemon
+          ORG_GRADLE_PROJECT_appCommitHash: ${{ github.sha }}
+        run: .\gradlew.bat :composeApp:packageReleaseDistributionForCurrentOS --stacktrace --no-daemon
+
+      - name: Materialize Windows signing certificate
+        if: ${{ secrets.WINDOWS_SIGNING_CERT_BASE64 != '' && secrets.WINDOWS_SIGNING_CERT_PASSWORD != '' }}
+        shell: pwsh
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP 'windows-signing-cert.pfx'
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String('${{ secrets.WINDOWS_SIGNING_CERT_BASE64 }}'))
+          "WINDOWS_SIGNING_CERT_PATH=$certPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Sign Windows installers
+        if: ${{ env.WINDOWS_SIGNING_CERT_PATH != '' }}
+        shell: pwsh
+        env:
+          WINDOWS_SIGNING_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERT_PASSWORD }}
+          WINDOWS_SIGNING_TIMESTAMP_URL: ${{ secrets.WINDOWS_SIGNING_TIMESTAMP_URL || 'http://timestamp.digicert.com' }}
+        run: |
+          $artifacts = @(
+            Get-ChildItem 'composeApp/build/compose/binaries/main-release/msi/*.msi' -ErrorAction SilentlyContinue
+            Get-ChildItem 'composeApp/build/compose/binaries/main-release/exe/*.exe' -ErrorAction SilentlyContinue
+          ) | Where-Object { $_ -ne $null }
+
+          if ($artifacts.Count -eq 0) {
+            throw 'No Windows installer artifacts found to sign'
+          }
+
+          foreach ($artifact in $artifacts) {
+            & signtool sign /fd SHA256 /f "$env:WINDOWS_SIGNING_CERT_PATH" /p "$env:WINDOWS_SIGNING_CERT_PASSWORD" /tr "$env:WINDOWS_SIGNING_TIMESTAMP_URL" /td SHA256 "$($artifact.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to sign $($artifact.FullName)"
+            }
+
+            & signtool verify /pa "$($artifact.FullName)"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to verify signature for $($artifact.FullName)"
+            }
+          }
 
       - name: Upload Gradle reports on failure
         if: failure()
@@ -123,4 +161,11 @@ jobs:
         with:
           name: certificates-windows-msi-${{ env.APP_VERSION }}
           path: composeApp/build/compose/binaries/main-release/msi/*.msi
+          if-no-files-found: error
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: certificates-windows-exe-${{ env.APP_VERSION }}
+          path: composeApp/build/compose/binaries/main-release/exe/*.exe
           if-no-files-found: error

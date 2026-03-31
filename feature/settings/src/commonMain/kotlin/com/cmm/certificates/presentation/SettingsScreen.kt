@@ -46,11 +46,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.conversion_output_dir_label
 import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.email_progress_daily_limit_unlimited_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
-import certificates.composeapp.generated.resources.conversion_output_dir_label
-import certificates.composeapp.generated.resources.conversion_output_directory_hint
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
@@ -66,37 +65,43 @@ import certificates.composeapp.generated.resources.settings_email_configuration_
 import certificates.composeapp.generated.resources.settings_email_configuration_title
 import certificates.composeapp.generated.resources.settings_history_cache_button
 import certificates.composeapp.generated.resources.settings_history_cache_close
-import certificates.composeapp.generated.resources.settings_open_installation_directory
 import certificates.composeapp.generated.resources.settings_installation_directory_hint
+import certificates.composeapp.generated.resources.settings_legal_commit
+import certificates.composeapp.generated.resources.settings_legal_open_folder_hint
+import certificates.composeapp.generated.resources.settings_legal_summary
+import certificates.composeapp.generated.resources.settings_legal_title
+import certificates.composeapp.generated.resources.settings_legal_version
+import certificates.composeapp.generated.resources.settings_open_installation_directory
 import certificates.composeapp.generated.resources.settings_output_directory_default_fallback_hint
 import certificates.composeapp.generated.resources.settings_output_directory_default_install_hint
 import certificates.composeapp.generated.resources.settings_output_directory_invalid_hint
+import certificates.composeapp.generated.resources.settings_ownership_notice
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_server_label
 import certificates.composeapp.generated.resources.settings_signature_action_edit
 import certificates.composeapp.generated.resources.settings_subject_label
+import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_theme_dark
 import certificates.composeapp.generated.resources.settings_theme_label
 import certificates.composeapp.generated.resources.settings_theme_light
-import certificates.composeapp.generated.resources.settings_subtitle
 import certificates.composeapp.generated.resources.settings_title
 import certificates.composeapp.generated.resources.settings_transport_label
 import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
+import certificates.composeapp.generated.resources.settings_username_label
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.core.presentation.asString
-import certificates.composeapp.generated.resources.settings_username_label
 import com.cmm.certificates.core.theme.AppTheme
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.rememberDirectoryPickerLauncher
-import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
 import com.cmm.certificates.feature.settings.domain.AppThemeMode
+import com.cmm.certificates.feature.settings.domain.AppearanceSettingsState
 import com.cmm.certificates.feature.settings.domain.CertificateSettingsState
 import com.cmm.certificates.feature.settings.domain.EmailTemplateSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
@@ -142,6 +147,7 @@ fun SettingsScreen(
         },
         onOpenHistoryCache = { showHistoryDialog = true },
         onOpenInstallationDirectory = viewModel::openInstallationDirectory,
+        onOpenLegalResourcesDirectory = viewModel::openLegalResourcesDirectory,
         onEditSignature = viewModel::openSignatureEditor,
         onAuthenticate = viewModel::authenticate,
         onOpenEmailConfiguration = { showSmtpDialog = true },
@@ -375,6 +381,43 @@ private fun BoxScope.SettingsContent(
                 Text(stringResource(Res.string.settings_signature_action_edit))
             }
         }
+
+        SettingsCard(
+            title = Res.string.settings_legal_title,
+            onClick = if (state.canOpenLegalResourcesDirectory) actions.onOpenLegalResourcesDirectory else null,
+        ) {
+            Text(
+                text = stringResource(Res.string.settings_legal_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(Res.string.settings_ownership_notice),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            state.appVersionName?.let { versionName ->
+                Text(
+                    text = stringResource(Res.string.settings_legal_version, versionName),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            state.appCommitHash?.let { commitHash ->
+                Text(
+                    text = stringResource(Res.string.settings_legal_commit, commitHash),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (state.canOpenLegalResourcesDirectory) {
+                Text(
+                    text = stringResource(Res.string.settings_legal_open_folder_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 
     AppVerticalScrollbar(
@@ -586,10 +629,15 @@ private fun SettingsBottomBar(
 @Composable
 private fun SettingsCard(
     title: StringResource,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .let { modifier ->
+                if (onClick != null) modifier.clickable(onClick = onClick) else modifier
+            },
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.extraLarge,
         border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
@@ -758,6 +806,7 @@ private data class SettingsActions(
     val onChooseOutputDirectory: () -> Unit,
     val onOpenHistoryCache: () -> Unit,
     val onOpenInstallationDirectory: () -> Unit,
+    val onOpenLegalResourcesDirectory: () -> Unit,
     val onEditSignature: () -> Unit,
     val onAuthenticate: () -> Unit,
     val onOpenEmailConfiguration: () -> Unit,
@@ -815,6 +864,7 @@ private fun SettingsContentPreview() {
                     onChooseOutputDirectory = {},
                     onOpenHistoryCache = {},
                     onOpenInstallationDirectory = {},
+                    onOpenLegalResourcesDirectory = {},
                     onEditSignature = {},
                     onAuthenticate = {},
                     onOpenEmailConfiguration = {},

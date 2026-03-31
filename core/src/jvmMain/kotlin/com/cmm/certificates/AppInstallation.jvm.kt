@@ -8,7 +8,6 @@ actual object AppInstallation {
             resourcesDirectory()?.resolve(fileName),
             installationDirectory()?.resolve(fileName),
             projectPackagingResource(fileName),
-            File(System.getProperty("user.dir"), fileName),
         )
 
         return candidates.firstOrNull { it.isFile }?.absolutePath
@@ -47,7 +46,25 @@ actual object AppInstallation {
             ?.takeIf(File::isDirectory)
     }
 
-    private fun projectPackagingResource(fileName: String): File {
-        return File(System.getProperty("user.dir"), "composeApp/packaging/resources/common/$fileName")
+    private fun projectPackagingResource(fileName: String): File? {
+        return projectPackagingResourcesDirectory()?.resolve(fileName)?.takeIf(File::isFile)
+    }
+
+    private fun projectPackagingResourcesDirectory(): File? {
+        val currentDirectory = System.getProperty("user.dir")
+            ?.takeIf(String::isNotBlank)
+            ?.let(::File)
+            ?.takeIf(File::isDirectory)
+            ?: return null
+
+        return generateSequence(currentDirectory) { it.parentFile }
+            .take(8)
+            .flatMap { directory ->
+                sequenceOf(
+                    File(directory, "composeApp/packaging/resources/common"),
+                    File(directory, "packaging/resources/common"),
+                )
+            }
+            .firstOrNull(File::isDirectory)
     }
 }

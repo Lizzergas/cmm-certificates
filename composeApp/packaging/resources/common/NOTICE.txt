@@ -1,0 +1,14 @@
+Notice
+Copyright (c) 2026 Ainis Skominas. All rights reserved.
+
+This product is proprietary software. It is licensed, not sold.
+
+Unless a separately signed written assignment states otherwise, all right,
+title, and interest in the software, source code, object code, installer
+packages, branding, and related intellectual property remain with the Licensor.
+
+Customer or recipient receives only the limited usage rights expressly granted
+in the applicable written license agreement.
+
+All trademarks, service marks, logos, and product names remain the property of
+their respective owners.

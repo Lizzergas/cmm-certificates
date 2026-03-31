@@ -1,0 +1,87 @@
+Commercial End User License Agreement
+
+IMPORTANT: THIS SOFTWARE IS LICENSED, NOT SOLD.
+
+This End User License Agreement ("Agreement") governs use of the executable
+application, installer packages, updates, and accompanying documentation
+(collectively, the "Software") provided by the Licensor to the customer
+identified in the applicable order form, statement of work, invoice, or other
+commercial agreement (the "Customer").
+
+1. License Grant
+
+Subject to Customer's compliance with this Agreement and any applicable
+commercial agreement, the Licensor grants Customer a limited, revocable,
+non-exclusive, non-transferable, non-sublicensable license to install and use
+the Software in object-code form for Customer's internal business operations.
+
+2. Ownership
+
+The Software and all intellectual property rights in and to the Software remain
+exclusively owned by the Licensor. Customer receives only the limited license
+rights expressly granted in this Agreement. No ownership rights are transferred.
+
+The Software is not assigned to Customer and is not deemed a work made for hire
+for Customer unless an explicit, separately signed written assignment states
+otherwise.
+
+3. Restrictions
+
+Customer must not, except to the extent required by applicable law:
+
+- copy the Software except for reasonable backup or deployment copies;
+- modify, adapt, translate, or create derivative works of the Software;
+- reverse engineer, decompile, disassemble, or otherwise attempt to derive
+  source code from the Software;
+- sell, lease, rent, sublicense, distribute, outsource, timeshare, or otherwise
+  make the Software available to third parties;
+- remove or obscure proprietary notices, trademarks, or copyright notices.
+
+4. Source Code
+
+This Agreement covers binary/object-code use unless a separate written agreement
+expressly grants source code access. If source code access is ever granted, such
+access remains subject to the Licensor's ownership and any additional written
+license restrictions.
+
+5. Updates and Support
+
+Updates, maintenance, hosting, support, or custom development are provided only
+if expressly stated in a separate written commercial agreement.
+
+6. Third-Party Software
+
+The Software may include third-party components subject to their own license
+terms. Customer agrees to comply with those third-party terms where applicable.
+
+7. Term and Termination
+
+This Agreement remains in effect until terminated. The Licensor may terminate
+this Agreement if Customer breaches it and fails to cure the breach after notice,
+if cure is permitted. Upon termination, Customer must stop using the Software
+and delete or destroy all copies under its control, except where retention is
+required by law.
+
+8. Warranty Disclaimer
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED "AS IS" AND
+"AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED,
+STATUTORY, OR OTHERWISE, INCLUDING ANY IMPLIED WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+9. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR WILL NOT BE LIABLE FOR ANY
+INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR
+FOR ANY LOSS OF DATA, REVENUE, PROFITS, OR BUSINESS OPPORTUNITY, EVEN IF ADVISED
+OF THE POSSIBILITY OF SUCH DAMAGES. THE LICENSOR'S AGGREGATE LIABILITY ARISING
+OUT OF OR RELATING TO THE SOFTWARE WILL NOT EXCEED THE AMOUNTS PAID BY CUSTOMER
+FOR THE SOFTWARE LICENSE GIVING RISE TO THE CLAIM DURING THE TWELVE (12) MONTHS
+PRECEDING THE CLAIM.
+
+10. Order of Precedence
+
+If Customer has a separately signed commercial agreement with the Licensor, that
+agreement controls over this Agreement to the extent of any conflict, provided
+that ownership of the Software remains with the Licensor unless that separate
+agreement contains an explicit written assignment.

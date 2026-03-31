@@ -2,6 +2,7 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.AppBuildInfo
 import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.preferredDefaultOutputDirectory
@@ -41,6 +42,13 @@ class SettingsViewModel(
 ) : ViewModel() {
     private val supportsOutputDirectories = capabilityProvider.capabilities.canResolveOutputDirectory
     private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
+    private val legalResourcesDirectoryPath = listOfNotNull(
+        AppInstallation.installedResourcePath(EULA_FILE_NAME),
+        AppInstallation.installedResourcePath(LICENSE_FILE_NAME),
+        AppInstallation.installedResourcePath(THIRD_PARTY_NOTICES_FILE_NAME),
+    ).firstOrNull()?.let(::parentDirectoryPath)
+    private val appVersionName = AppBuildInfo.versionName()
+    private val appCommitHash = AppBuildInfo.commitHash()
     private val installationDirectoryPath = if (supportsOutputDirectories) {
         AppInstallation.installationDirectoryPath()
     } else {
@@ -69,6 +77,9 @@ class SettingsViewModel(
             sentHistory = sentHistory,
             cachedEmails = cachedEmails,
             installationDirectoryPath = installationDirectoryPath,
+            legalResourcesDirectoryPath = legalResourcesDirectoryPath,
+            appVersionName = appVersionName,
+            appCommitHash = appCommitHash,
         )
     }.stateIn(
         viewModelScope,
@@ -114,6 +125,10 @@ class SettingsViewModel(
 
     fun openInstallationDirectory() {
         installationDirectoryPath?.let(::openFolder)
+    }
+
+    fun openLegalResourcesDirectory() {
+        legalResourcesDirectoryPath?.let(::openFolder)
     }
 
     private fun migrateLegacyInstallOutputDirectoryIfNeeded() {
@@ -233,6 +248,9 @@ data class SettingsUiState(
     val cachedEmails: List<CachedEmailEntry> = emptyList(),
     val cachedLastReason: EmailStopReason? = null,
     val installationDirectoryPath: String? = null,
+    val legalResourcesDirectoryPath: String? = null,
+    val appVersionName: String? = null,
+    val appCommitHash: String? = null,
     val isOutputDirectoryWritable: Boolean = true,
     val outputDirectoryUsesInstallationDefault: Boolean = false,
     val supportsEmailSending: Boolean = true,
@@ -246,6 +264,9 @@ data class SettingsUiState(
     val canOpenInstallationDirectory: Boolean
         get() = !installationDirectoryPath.isNullOrBlank()
 
+    val canOpenLegalResourcesDirectory: Boolean
+        get() = !legalResourcesDirectoryPath.isNullOrBlank()
+
     val shouldShowOutputDirectoryWarning: Boolean
         get() = hasCustomOutputDirectory && !isOutputDirectoryWritable
 }
@@ -257,6 +278,9 @@ private fun SettingsState.toUiState(
     sentHistory: List<SentEmailRecord>,
     cachedEmails: CachedEmailBatch,
     installationDirectoryPath: String?,
+    legalResourcesDirectoryPath: String?,
+    appVersionName: String?,
+    appCommitHash: String?,
 ): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
@@ -269,6 +293,9 @@ private fun SettingsState.toUiState(
         cachedEmails = cachedEmails.entries,
         cachedLastReason = cachedEmails.lastReason,
         installationDirectoryPath = installationDirectoryPath,
+        legalResourcesDirectoryPath = legalResourcesDirectoryPath,
+        appVersionName = appVersionName,
+        appCommitHash = appCommitHash,
         isOutputDirectoryWritable = if (defaultOutputDirectory.isBlank() && certificate.outputDirectory.isBlank()) {
             true
         } else {
@@ -279,3 +306,13 @@ private fun SettingsState.toUiState(
         supportsEmailSending = supportsEmailSending,
     )
 }
+
+private fun parentDirectoryPath(path: String): String? {
+    val normalizedPath = path.trimEnd('/', '\\')
+    val separatorIndex = maxOf(normalizedPath.lastIndexOf('/'), normalizedPath.lastIndexOf('\\'))
+    return normalizedPath.takeIf { separatorIndex > 0 }?.substring(0, separatorIndex)
+}
+
+private const val LICENSE_FILE_NAME = "LICENSE.txt"
+private const val EULA_FILE_NAME = "EULA.txt"
+private const val THIRD_PARTY_NOTICES_FILE_NAME = "THIRD_PARTY_NOTICES.txt"

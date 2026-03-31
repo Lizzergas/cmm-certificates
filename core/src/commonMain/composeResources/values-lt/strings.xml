@@ -53,7 +53,7 @@
     <string name="conversion_error_invalid_doc_id">Pažymėjimo numeris turi būti skaičius.</string>
     <string name="conversion_error_load_template">Nepavyko įkelti šablono.</string>
     <string name="conversion_error_create_output_dir">Nepavyko sukurti išvesties aplanko. Pameginkite perkrauti programėlę su administratoriaus teisėmis.</string>
-    <string name="conversion_error_write_pdf">Nepavyko sugeneruoti PDF failo.</string>
+    <string name="conversion_error_write_pdf">Nepavyko sugeneruoti PDF failo. Patikrinkite ar nėra Adobe Acrobat įjungto, taip pat Excel failo struktūrą</string>
     <string name="conversion_error_accredited_id_required">Būtina įvesti akredituoto ID.</string>
     <string name="conversion_error_doc_id_required">Būtina įvesti pažymėjimo numerio pradžią.</string>
     <string name="conversion_error_accredited_type_required">Būtina pasirinkti renginio tipą.</string>
@@ -100,7 +100,13 @@ mokymuose</string>
     <string name="settings_theme_light">Šviesi</string>
     <string name="settings_theme_dark">Tamsi</string>
     <string name="settings_history_cache_button">Istorija / talpykla</string>
+    <string name="settings_legal_title">Apie programą ir teisinė informacija</string>
+    <string name="settings_legal_summary">Šioje programos versijoje pateikiama kliento EULA, nuosavybės pranešimas ir trečiųjų šalių pranešimai supakuotame teisinių dokumentų aplanke.</string>
+    <string name="settings_ownership_notice">Programinė įranga yra licencijuojama, o ne parduodama. Išeitinio kodo, produkto ir susijusios intelektinės nuosavybės teisės lieka Ainis Skominas, nebent atskiras rašytinis perleidimas aiškiai numatytų kitaip.</string>
     <string name="settings_open_installation_directory">Atidaryti programos aplanką</string>
+    <string name="settings_legal_version">Versija: %1$s</string>
+    <string name="settings_legal_commit">Commit hash: %1$s</string>
+    <string name="settings_legal_open_folder_hint">Spustelėkite, kad atidarytumėte teisinių dokumentų aplanką.</string>
     <string name="settings_installation_directory_hint">Programos diegimo aplankas</string>
     <string name="settings_output_directory_default_install_hint">Numatytoji išsaugojimo vieta yra programos aplankas, jei į jį galima rašyti.</string>
     <string name="settings_output_directory_default_fallback_hint">Jei į programos aplanką rašyti negalima, programa naudoja ~/pdf.</string>

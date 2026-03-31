@@ -1,0 +1,37 @@
+Third-Party Notices
+
+IMPORTANT: This file is a working inventory for packaging and customer review.
+It is not a substitute for a fully verified third-party notice bundle. Before
+external distribution, verify the exact dependency graph, versions, license
+texts, and attribution requirements for every bundled component.
+
+This project directly references, among others, libraries and tooling from the
+following vendors or projects:
+
+- JetBrains Compose Multiplatform
+- Kotlin and kotlinx libraries
+- AndroidX libraries
+- Koin
+- FileKit
+- Apache POI
+- Apache PDFBox
+- docx4j
+- Simple Java Mail / Jakarta Mail
+- Sentry
+- icons-lucide-cmp
+- colorpicker-compose
+- SLF4J / Log4j
+
+Additional transitive dependencies may also be included at build or runtime.
+
+Each third-party component remains subject to its own license terms. The
+proprietary license for this project applies only to original materials owned by
+the Licensor and does not replace or supersede any third-party license.
+
+Operational guidance:
+
+1. Generate a final dependency report from Gradle before release.
+2. Verify every bundled library version against the final build artifacts.
+3. Collect and ship any required license texts and notices with the installer.
+4. Keep this file synchronized with `gradle/libs.versions.toml` and the final
+   packaged runtime.

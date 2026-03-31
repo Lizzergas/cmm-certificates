@@ -80,17 +80,20 @@ Abi reikšmės bus paverstos į Word eilutės lūžį (nauja eilutė).
 - `EMAIL.md` - SMTP ir siuntimo elgsena
 - `PDF_GEN.md` - DOCX -> PDF pipeline JVM platformoje
 - `docs/architecture.md` - dabartinė repo architektūra
+- `docs/windows-packaging.md` - Windows diegiklių konfigūracija ir release procesas
+- `docs/licensing.md` - nuosavybinės licencijos ir kliento naudojimo modelis
 
 ## Windows release
-Windows `.msi` diegiklis surenkamas per GitHub Actions workflow `.github/workflows/windows-msi-on-tag.yml`.
+Windows diegikliai surenkami per GitHub Actions workflow `.github/workflows/windows-msi-on-tag.yml`.
 
 Trumpa procedūra:
 1. Įsitikinkite, kad pakeitimai yra commit'inti ir išpushinti į GitHub.
 2. Sukurkite tag'ą formatu `vMAJOR.MINOR.BUILD`, pvz. `v1.0.1`.
 3. Išpushinkite tag'ą:
    `git push origin v1.0.1`
-4. GitHub automatiškai paleis Windows build'ą ir sugeneruos `.msi` artefaktą.
-5. Atsidarykite repo `Actions` skiltį ir atsisiųskite artefaktą iš paskutinio `Build Windows MSI` paleidimo.
+4. GitHub automatiškai paleis Windows build'ą ir sugeneruos `.msi` ir `.exe` artefaktus.
+5. Jei sukonfigūruoti Windows code-signing secret'ai, artefaktai bus pasirašyti automatiškai.
+6. Atsidarykite repo `Actions` skiltį ir atsisiųskite artefaktus iš paskutinio `Build Windows Installers` paleidimo.
 
 Pavyzdys:
 `./scripts/bump-release-tag.sh`

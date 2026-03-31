@@ -100,7 +100,13 @@ training</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_history_cache_button">History / Cache</string>
+    <string name="settings_legal_title">About and legal</string>
+    <string name="settings_legal_summary">This installation includes the customer EULA, ownership notice, and third-party notices in the packaged legal files folder.</string>
+    <string name="settings_ownership_notice">This software is licensed, not sold. Ownership of the source code, product, and related intellectual property remains with the Licensor unless a separate written assignment explicitly says otherwise.</string>
     <string name="settings_open_installation_directory">Open installation folder</string>
+    <string name="settings_legal_version">Version: %1$s</string>
+    <string name="settings_legal_commit">Commit: %1$s</string>
+    <string name="settings_legal_open_folder_hint">Click to open the legal files folder.</string>
     <string name="settings_installation_directory_hint">Installed app folder</string>
     <string name="settings_output_directory_default_install_hint">Default output uses the installation folder when it is writable.</string>
     <string name="settings_output_directory_default_fallback_hint">If the installation folder is not writable, the app falls back to ~/pdf.</string>
