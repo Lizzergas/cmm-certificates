@@ -2,6 +2,7 @@ package com.cmm.certificates.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,6 +40,8 @@ fun ClearableOutlinedTextField(
     readOnly: Boolean = false,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
+    isError: Boolean = false,
+    tooltipText: String? = null,
     trailingIcon: @Composable (() -> Unit)? = {},
     showClearIcon: Boolean = value.isNotBlank(),
     onClear: (() -> Unit)? = null,
@@ -71,25 +74,40 @@ fun ClearableOutlinedTextField(
         }
     }
 
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = label,
-        modifier = if (onClick != null) {
-            modifier.clickable(enabled = enabled, onClick = onClick)
-        } else {
-            modifier
-        },
-        singleLine = singleLine,
-        minLines = minLines,
-        maxLines = maxLines,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        visualTransformation = visualTransformation,
-        textStyle = textStyle,
-        readOnly = readOnly,
-        enabled = enabled,
-        trailingIcon = trailingContent,
-        supportingText = supportingText,
-    )
+    val clickableModifier = if (onClick != null) {
+        Modifier.clickable(enabled = enabled, onClick = onClick)
+    } else {
+        Modifier
+    }
+    val textFieldContent: @Composable (Modifier) -> Unit = { textFieldModifier ->
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = label,
+            modifier = textFieldModifier.then(clickableModifier),
+            singleLine = singleLine,
+            minLines = minLines,
+            maxLines = maxLines,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            visualTransformation = visualTransformation,
+            textStyle = textStyle,
+            readOnly = readOnly,
+            enabled = enabled,
+            isError = isError,
+            trailingIcon = trailingContent,
+            supportingText = supportingText,
+        )
+    }
+
+    if (tooltipText.isNullOrBlank()) {
+        textFieldContent(modifier)
+    } else {
+        TooltipWrapper(
+            tooltipText = tooltipText,
+            modifier = modifier,
+        ) {
+            textFieldContent(Modifier.fillMaxWidth())
+        }
+    }
 }

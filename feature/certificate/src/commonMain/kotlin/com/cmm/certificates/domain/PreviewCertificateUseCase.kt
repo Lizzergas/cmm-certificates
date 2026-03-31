@@ -20,22 +20,13 @@ class PreviewCertificateUseCase(
                 logWarn(logTag, "Preview aborted: missing template path")
                 return@withContext null
             }
-            if (request.entries.isEmpty()) {
-                logWarn(logTag, "Preview aborted: no parsed entries")
-                return@withContext null
-            }
-            if (request.accreditedId.isBlank() ||
-                request.docIdStart.isBlank() ||
-                request.accreditedHours.isBlank() ||
-                request.certificateName.isBlank() ||
-                request.lector.isBlank()
-            ) {
-                logWarn(logTag, "Preview aborted: missing certificate form fields")
-                return@withContext null
-            }
+        if (request.entries.isEmpty()) {
+            logWarn(logTag, "Preview aborted: no parsed entries")
+            return@withContext null
+        }
 
-            val docId = request.docIdStart.trim().toLongOrNull()
-            if (docId == null) {
+        val docId = request.docIdStart.trim().toLongOrNull()
+        if (docId == null) {
                 logWarn(
                     logTag,
                     "Preview aborted: invalid document id start '${request.docIdStart}'"

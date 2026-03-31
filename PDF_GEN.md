@@ -47,6 +47,7 @@ This separates concerns correctly:
 ## Additional Notes
 - This pipeline is currently implemented only for the JVM target.
 - Placeholder replacement traverses paragraphs, tables, headers, and footers.
+- The same paragraph/table/header/footer traversal is also used to inspect which `{{...}}` placeholders exist in a selected DOCX template, so the conversion form can disable irrelevant inputs before generation starts.
 - Split Word runs are handled before PDF conversion so placeholders can span multiple DOCX runs.
 - Replacement values also normalize `\n` and `w:br` markers into Word line breaks.
 

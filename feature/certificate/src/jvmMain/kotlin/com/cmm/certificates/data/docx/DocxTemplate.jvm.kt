@@ -29,10 +29,18 @@ import javax.imageio.ImageIO
 actual object DocxTemplate {
     private const val LOG_TAG = "DocxTemplate"
     private const val PDF_CONVERSION_TIMEOUT_SECONDS = 90L
+    private val PlaceholderRegex = Regex("""\{\{[^{}]+}}""")
 
     actual fun loadTemplate(path: String): ByteArray {
         logInfo(LOG_TAG, "Reading template file: $path")
         return File(path).readBytes()
+    }
+
+    actual fun inspectTemplatePlaceholders(path: String): Set<String> {
+        logInfo(LOG_TAG, "Inspecting DOCX placeholders: $path")
+        return inspectTemplatePlaceholders(loadTemplate(path)).also {
+            logInfo(LOG_TAG, "Detected placeholders: ${it.joinToString()}")
+        }
     }
 
     actual fun fillTemplateToPdf(
@@ -125,6 +133,24 @@ actual object DocxTemplate {
         }
     }
 
+    private fun inspectTemplatePlaceholders(templateBytes: ByteArray): Set<String> {
+        val doc = XWPFDocument(ByteArrayInputStream(templateBytes))
+        doc.use { document ->
+            val placeholders = linkedSetOf<String>()
+            document.paragraphs.forEach { paragraph -> placeholders += extractPlaceholders(paragraph.text) }
+            document.tables.forEach { table -> collectPlaceholdersFromTable(table, placeholders) }
+            document.headerList.forEach { header ->
+                header.paragraphs.forEach { paragraph -> placeholders += extractPlaceholders(paragraph.text) }
+                header.tables.forEach { table -> collectPlaceholdersFromTable(table, placeholders) }
+            }
+            document.footerList.forEach { footer ->
+                footer.paragraphs.forEach { paragraph -> placeholders += extractPlaceholders(paragraph.text) }
+                footer.tables.forEach { table -> collectPlaceholdersFromTable(table, placeholders) }
+            }
+            return placeholders
+        }
+    }
+
 
     private fun buildDocxBytes(
         templateBytes: ByteArray,
@@ -163,6 +189,19 @@ actual object DocxTemplate {
                 cell.tables.forEach { nested -> replaceInTable(nested, replacements) }
             }
         }
+    }
+
+    private fun collectPlaceholdersFromTable(table: XWPFTable, placeholders: MutableSet<String>) {
+        table.rows.forEach { row ->
+            row.tableCells.forEach { cell ->
+                cell.paragraphs.forEach { paragraph -> placeholders += extractPlaceholders(paragraph.text) }
+                cell.tables.forEach { nested -> collectPlaceholdersFromTable(nested, placeholders) }
+            }
+        }
+    }
+
+    private fun extractPlaceholders(text: String): Set<String> {
+        return PlaceholderRegex.findAll(text).map { it.value }.toSet()
     }
 
     private fun replaceInParagraph(paragraph: XWPFParagraph, replacements: Map<String, String>) {

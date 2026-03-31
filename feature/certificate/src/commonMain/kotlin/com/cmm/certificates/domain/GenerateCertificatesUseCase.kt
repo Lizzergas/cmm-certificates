@@ -2,7 +2,6 @@ package com.cmm.certificates.domain
 
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_create_output_dir
-import certificates.composeapp.generated.resources.conversion_error_fields_required
 import certificates.composeapp.generated.resources.conversion_error_invalid_doc_id
 import certificates.composeapp.generated.resources.conversion_error_load_template
 import certificates.composeapp.generated.resources.conversion_error_no_entries
@@ -53,16 +52,6 @@ class GenerateCertificatesUseCase(
         if (request.entries.isEmpty()) {
             logWarn(logTag, "Conversion aborted: no parsed entries")
             progressRepository.fail(UiMessage(Res.string.conversion_error_no_entries))
-            return
-        }
-        if (request.accreditedId.isBlank() ||
-            request.docIdStart.isBlank() ||
-            request.accreditedHours.isBlank() ||
-            request.certificateName.isBlank() ||
-            request.lector.isBlank()
-        ) {
-            logWarn(logTag, "Conversion aborted: missing certificate form fields")
-            progressRepository.fail(UiMessage(Res.string.conversion_error_fields_required))
             return
         }
 

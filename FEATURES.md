@@ -3,9 +3,10 @@
 ## Current User Flow
 1. Select an XLSX file and a DOCX template on the Conversion screen.
 2. Fill certificate fields (IDs, hours, name, lecturer, etc.).
-3. Click **Convert to PDF**.
-4. Watch progress on the PDF Conversion Progress screen.
-5. On success, optionally send a preview email or send emails to all recipients.
+3. Click **Preview PDF** or **Convert to PDF**.
+4. If required input is missing, the screen keeps the action visible, highlights the exact invalid fields/files, and shows inline error text.
+5. Watch progress on the PDF Conversion Progress screen after a valid conversion request.
+6. On success, optionally send a preview email or send emails to all recipients.
 
 PDF generation is local on JVM and no longer requires network access. Network access is still relevant for SMTP email delivery.
 
@@ -25,6 +26,11 @@ DOCX templates use placeholders like:
 - `{{sertifikato_pavadinimas}}`
 - `{{destytojas}}`
 - `{{destytojo_tipas}}`
+
+Conversion-screen validation is now placeholder-aware:
+- The selected DOCX template is inspected on JVM to discover which placeholders are present.
+- Fields backed by missing template placeholders are disabled and shown with an explanatory tooltip/supporting text.
+- `{{dokumento_id}}` remains editable even if absent from the DOCX because it is still used for PDF filenames.
 
 ## PDF Generation (JVM)
 - Replaces placeholders using Apache POI.
@@ -85,7 +91,7 @@ See `PDF_GEN.md` for the detailed pipeline.
 | Open output folder | Yes | Not yet | Not yet |
 
 ## UI Components
-- `SelectFileIcon`: file selection cards (idle/selected states).
+- `SelectFileIcon`: file selection cards with idle/selected/error states, file name display, and inline error text.
 - `PrimaryActionButton`: main CTA with enabled/disabled styling.
 - `ProgressIndicatorContent` / `ProgressErrorContent`: shared progress UI.
 - `PreviewEmailDialog`: reusable preview email dialog.

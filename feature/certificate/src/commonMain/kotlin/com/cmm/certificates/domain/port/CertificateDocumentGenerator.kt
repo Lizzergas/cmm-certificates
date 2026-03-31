@@ -3,6 +3,8 @@ package com.cmm.certificates.domain.port
 interface CertificateDocumentGenerator {
     fun loadTemplate(path: String): ByteArray
 
+    fun inspectTemplatePlaceholders(path: String): Set<String>
+
     fun fillTemplateToPdf(
         templateBytes: ByteArray,
         outputPath: String,

@@ -6,8 +6,10 @@ Programa skirta pažymėjimų generavimui iš XLSX registracijos duomenų ir DOC
 1. Pasirinkite XLSX failą su registracijos duomenimis.
 2. Pasirinkite DOCX šabloną.
 3. Užpildykite sertifikato laukus (ID, valandos, pavadinimas, lektorius ir kt.).
-4. Spauskite „Konvertuoti į PDF“.
-5. Desktop/JVM programoje failai pagal nutylėjimą bus sugeneruoti į `~/pdf/<sertifikato_pavadinimas>`, bet išsaugojimo aplanką galima pasirinkti per programos aplanko parinkiklį.
+4. Spauskite „Peržiūrėti PDF“ arba „Konvertuoti į PDF“.
+5. Jei trūksta failų ar laukų, ekranas pažymės konkrečias klaidas ties XLSX / DOCX pasirinkimu ir pačiais formos laukais.
+6. Jei DOCX šablone nėra tam tikros žymės, atitinkamas laukas bus išjungtas ir užvedus pelę bus parodyta priežastis.
+7. Desktop/JVM programoje failai pagal nutylėjimą bus sugeneruoti į `~/pdf/<sertifikato_pavadinimas>`, bet išsaugojimo aplanką galima pasirinkti per programos aplanko parinkiklį.
 
 ## Pastabos
 - PDF generavimas vyksta lokaliai JVM programoje ir konvertavimui interneto ryšys nebėra privalomas.
@@ -41,6 +43,11 @@ DOCX šablone naudokite žymes:
 - `{{sertifikato_pavadinimas}}`
 - `{{destytojas}}`
 - `{{destytojo_tipas}}`
+
+Pastabos apie žymes:
+- Konvertavimo ekranas patikrina, kurios žymės realiai yra pasirinktame DOCX faile.
+- Jei žymės nėra, su ja susietas formos laukas taps neaktyvus ir nebus laikomas privalomu.
+- `{{dokumento_id}}` laukas lieka aktyvus net tada, kai šios žymės nėra, nes jis vis tiek naudojamas PDF failų vardams.
 
 ## Nauja eilutė šablone
 Jei norite įterpti naują eilutę lauke:

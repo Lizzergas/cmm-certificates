@@ -2,6 +2,7 @@ package com.cmm.certificates.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
@@ -393,33 +395,44 @@ private fun OutputDirectorySettingsField(
     onReset: () -> Unit,
     onChoose: () -> Unit,
 ) {
-    ClearableOutlinedTextField(
-        value = outputDirectory,
-        onValueChange = {},
-        label = { Text(stringResource(Res.string.conversion_output_dir_label)) },
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        readOnly = true,
-        onClick = onChoose,
-        showClearIcon = hasCustomOutputDirectory,
-        onClear = onReset,
-        supportingText = {
-            Column(verticalArrangement = Arrangement.spacedBy(Grid.x1)) {
-                Text(stringResource(Res.string.conversion_output_directory_hint))
-                if (!isWritable) {
-                    Text(
-                        text = stringResource(Res.string.settings_output_directory_invalid_hint),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                } else if (hasCustomOutputDirectory) {
-                    Unit
-                } else if (usesInstallationDefault) {
-                    Text(stringResource(Res.string.settings_output_directory_default_install_hint))
-                } else {
-                    Text(stringResource(Res.string.settings_output_directory_default_fallback_hint))
-                }
+        verticalArrangement = Arrangement.spacedBy(Grid.x2),
+    ) {
+        Text(
+            text = stringResource(Res.string.conversion_output_dir_label),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium,
+        )
+        Text(
+            text = outputDirectory,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onChoose)
+                .padding(vertical = Grid.x3),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (isWritable) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            },
+            textDecoration = TextDecoration.Underline,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(Grid.x1)) {
+            if (!isWritable) {
+                Text(
+                    text = stringResource(Res.string.settings_output_directory_invalid_hint),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else if (hasCustomOutputDirectory) {
+                Unit
+            } else if (usesInstallationDefault) {
+                Text(stringResource(Res.string.settings_output_directory_default_install_hint))
+            } else {
+                Text(stringResource(Res.string.settings_output_directory_default_fallback_hint))
             }
-        },
-    )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

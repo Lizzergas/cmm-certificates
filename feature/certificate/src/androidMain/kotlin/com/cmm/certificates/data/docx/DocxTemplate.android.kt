@@ -5,6 +5,8 @@ actual object DocxTemplate {
         throw UnsupportedOperationException("DOCX templating is only supported on JVM desktop targets for now.")
     }
 
+    actual fun inspectTemplatePlaceholders(path: String): Set<String> = emptySet()
+
     actual fun fillTemplateToPdf(
         templateBytes: ByteArray,
         outputPath: String,

@@ -1,7 +1,10 @@
 package com.cmm.certificates.data.docx
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument
+import com.cmm.certificates.presentation.buildTemplateSupportState
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DocxTemplateJvmTest {
@@ -33,6 +36,44 @@ class DocxTemplateJvmTest {
             assertTrue(document.headerList.joinToString("\n") { it.text }.contains("Music Workshop"))
             assertTrue(document.footerList.joinToString("\n") { it.text }.contains("2026-03-26"))
         }
+    }
+
+    @Test
+    fun inspectTemplatePlaceholders_collectsParagraphTableHeaderAndFooterTags() {
+        val templateBytes = buildTemplateDocx()
+        val tempFile = kotlin.io.path.createTempFile(suffix = ".docx").toFile()
+        tempFile.writeBytes(templateBytes)
+        tempFile.deleteOnExit()
+
+        val placeholders = DocxTemplate.inspectTemplatePlaceholders(tempFile.absolutePath)
+
+        assertEquals(
+            setOf(
+                "{{vardas_pavarde}}",
+                "{{destytojas}}",
+                "{{sertifikato_pavadinimas}}",
+                "{{data}}",
+            ),
+            placeholders,
+        )
+    }
+
+    @Test
+    fun inspectTemplatePlaceholders_ignoresMalformedTagAndDisablesMatchingField() {
+        val document = XWPFDocument()
+        document.createParagraph().createRun().setText(
+            "Nr. {{dokumento_id}}\nAkreditacijos Nr. {{akreditacijos_id}}\n{{vardas_pavarde}}\ndalyvavo {{akreditacijos_valando} akademiniu valandu {{akreditacijos_tipas}}\n{{sertifikato_pavadinimas}}\n{{destytojo_tipas}} {{destytojas}}\nReg. data {{data}}"
+        )
+        val tempFile = kotlin.io.path.createTempFile(suffix = ".docx").toFile()
+        tempFile.outputStream().use { document.write(it) }
+        tempFile.deleteOnExit()
+
+        val placeholders = DocxTemplate.inspectTemplatePlaceholders(tempFile.absolutePath)
+        val support = buildTemplateSupportState(placeholders)
+
+        assertTrue("{{akreditacijos_tipas}}" in placeholders)
+        assertFalse("{{akreditacijos_valandos}}" in placeholders)
+        assertFalse(support.accreditedHours.isEnabled)
     }
 
     private fun buildTemplateDocx(): ByteArray {

@@ -2,6 +2,8 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.conversion_error_no_entries
 import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.core.domain.ConnectivityMonitor
@@ -10,10 +12,12 @@ import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.core.openFile
+import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.data.defaultLectorLabel
 import com.cmm.certificates.domain.GenerateCertificatesRequest
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
+import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
@@ -39,6 +43,7 @@ class ConversionViewModel(
     private val parseRegistrations: ParseRegistrationsUseCase,
     private val generateCertificates: GenerateCertificatesUseCase,
     private val previewCertificate: PreviewCertificateUseCase,
+    private val documentGenerator: CertificateDocumentGenerator,
 ) : ViewModel() {
     private val logTag = "ConversionVM"
     private val installedTemplateFileName = "bazinis_šablonas.docx"
@@ -63,6 +68,7 @@ class ConversionViewModel(
     )
     private val filesState = MutableStateFlow(ConversionFilesState())
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
+    private val hasAttemptedSubmitState = MutableStateFlow(false)
     private val previewLoadingState = MutableStateFlow(false)
 
     init {
@@ -71,34 +77,54 @@ class ConversionViewModel(
 
     val uiState: StateFlow<ConversionUiState> = combine(
         combine(
-            formState,
-            filesState,
-            entriesState,
+            combine(
+                formState,
+                filesState,
+                entriesState,
+                hasAttemptedSubmitState,
+            ) { form, files, entries, hasAttemptedSubmit ->
+                ConversionInputSnapshot(
+                    form = form,
+                    files = files,
+                    entries = entries,
+                    hasAttemptedSubmit = hasAttemptedSubmit,
+                )
+            },
             settingsRepository.state,
             connectivityMonitor.isNetworkAvailable,
-        ) { form, files, entries, settings, networkAvailable ->
+        ) { snapshot, settings, networkAvailable ->
             val options = parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
                 .ifEmpty { defaultAccreditedTypeOptions }
             val resolvedType =
-                if (form.accreditedType.isNotBlank() && form.accreditedType in options) {
-                    form.accreditedType
+                if (snapshot.form.accreditedType.isNotBlank() && snapshot.form.accreditedType in options) {
+                    snapshot.form.accreditedType
                 } else {
                     options.firstOrNull().orEmpty()
                 }
-            val resolvedForm = if (resolvedType == form.accreditedType) {
-                form
+            val resolvedForm = if (resolvedType == snapshot.form.accreditedType) {
+                snapshot.form
             } else {
-                form.copy(accreditedType = resolvedType)
+                snapshot.form.copy(accreditedType = resolvedType)
             }
-            ConversionUiState(
-                files = files,
+            val templateSupport = buildTemplateSupportState(snapshot.files.templateAvailableTags)
+            val validation = buildConversionValidationState(
+                files = snapshot.files,
                 form = resolvedForm,
+                entriesCount = snapshot.entries.size,
+                templateSupport = templateSupport,
+                hasAttemptedSubmit = snapshot.hasAttemptedSubmit,
+            )
+            ConversionUiState(
+                files = snapshot.files,
+                form = resolvedForm,
+                templateSupport = templateSupport,
+                validation = validation,
                 accreditedTypeOptions = options,
                 isNetworkAvailable = networkAvailable,
                 isSmtpAuthenticated = settings.smtp.isAuthenticated,
                 supportsConversion = capabilities.canRunConversion,
                 supportsEmailSending = capabilities.canSendEmails,
-                entries = entries,
+                entries = snapshot.entries,
             )
         },
         previewLoadingState,
@@ -123,11 +149,47 @@ class ConversionViewModel(
     fun setTemplatePath(path: String) {
         if (!capabilities.canRunConversion) return
         logInfo(logTag, "Template selected: ${path.ifBlank { "<empty>" }}")
+        updateTemplateSelection(path)
+    }
+
+    private fun updateTemplateSelection(path: String) {
         filesState.update {
             it.copy(
                 templatePath = path,
-                templateErrorText = null,
+                templateLoadError = null,
+                templateAvailableTags = null,
+                isTemplateInspectionInProgress = path.isNotBlank(),
             )
+        }
+        if (path.isBlank()) return
+        viewModelScope.launch {
+            val placeholders = runCatching {
+                withContext(Dispatchers.IO) { documentGeneratorPlaceholders(path) }
+            }
+            filesState.update { current ->
+                if (current.templatePath != path) return@update current
+                placeholders.fold(
+                    onSuccess = { tags ->
+                        current.copy(
+                            templateLoadError = null,
+                            templateAvailableTags = tags,
+                            isTemplateInspectionInProgress = false,
+                        )
+                    },
+                    onFailure = { error ->
+                        logError(
+                            logTag,
+                            "Failed to inspect DOCX template placeholders: $path",
+                            error
+                        )
+                        current.copy(
+                            templateLoadError = docxInspectErrorMessage(),
+                            templateAvailableTags = null,
+                            isTemplateInspectionInProgress = false,
+                        )
+                    },
+                )
+            }
         }
     }
 
@@ -170,7 +232,7 @@ class ConversionViewModel(
         filesState.update {
             it.copy(
                 xlsxPath = path,
-                xlsxErrorText = null,
+                xlsxLoadError = null,
             )
         }
         if (path.isBlank()) {
@@ -183,23 +245,41 @@ class ConversionViewModel(
             val parsed = runCatching {
                 withContext(Dispatchers.IO) { parseRegistrations(path).getOrThrow() }
             }
-            entriesState.value = parsed.getOrElse {
+            val entries = parsed.getOrElse {
                 logError(logTag, "Failed to parse XLSX: $path", it)
                 emptyList()
+            }
+            entriesState.value = entries
+            filesState.update { current ->
+                if (current.xlsxPath != path) return@update current
+                current.copy(
+                    xlsxLoadError = when {
+                        parsed.isFailure -> xlsxParseErrorMessage()
+                        entries.isEmpty() -> UiMessage(Res.string.conversion_error_no_entries)
+                        else -> null
+                    },
+                )
             }
             logInfo(logTag, "Parsed ${entriesState.value.size} XLSX entries")
         }
     }
 
-    fun generateDocuments() {
+    fun generateDocuments(): Boolean {
         if (!capabilities.canRunConversion) {
             logWarn(logTag, "Ignored conversion request because conversion is unsupported")
-            return
+            return false
+        }
+        hasAttemptedSubmitState.value = true
+        val validation = currentValidationState()
+        if (validation.hasBlockingErrors) {
+            logWarn(logTag, "Ignored conversion request because validation failed")
+            return false
         }
         viewModelScope.launch {
             logInfo(logTag, "Starting conversion request")
             generateDocumentsInternal()
         }
+        return true
     }
 
     fun previewDocument() {
@@ -208,6 +288,12 @@ class ConversionViewModel(
             return
         }
         if (previewLoadingState.value) return
+        hasAttemptedSubmitState.value = true
+        val validation = currentValidationState()
+        if (validation.hasBlockingErrors) {
+            logWarn(logTag, "Ignored preview request because validation failed")
+            return
+        }
         viewModelScope.launch {
             previewLoadingState.value = true
             try {
@@ -241,16 +327,23 @@ class ConversionViewModel(
         }
 
         logInfo(logTag, "Auto-selected installed template: $installedTemplatePath")
-        filesState.update { current ->
-            if (current.templatePath.isBlank()) {
-                current.copy(
-                    templatePath = installedTemplatePath,
-                    templateErrorText = null,
-                )
-            } else {
-                current
-            }
+        if (filesState.value.templatePath.isBlank()) {
+            updateTemplateSelection(installedTemplatePath)
         }
+    }
+
+    private fun currentValidationState(): ConversionValidationState {
+        return buildConversionValidationState(
+            files = filesState.value,
+            form = formState.value,
+            entriesCount = entriesState.value.size,
+            templateSupport = buildTemplateSupportState(filesState.value.templateAvailableTags),
+            hasAttemptedSubmit = true,
+        )
+    }
+
+    private fun documentGeneratorPlaceholders(path: String): Set<String> {
+        return documentGenerator.inspectTemplatePlaceholders(path)
     }
 
     private fun effectiveOutputDirectory(): String {
@@ -290,9 +383,18 @@ class ConversionViewModel(
     }
 }
 
+private data class ConversionInputSnapshot(
+    val form: ConversionFormState,
+    val files: ConversionFilesState,
+    val entries: List<RegistrationEntry>,
+    val hasAttemptedSubmit: Boolean,
+)
+
 data class ConversionUiState(
     val files: ConversionFilesState = ConversionFilesState(),
     val form: ConversionFormState = ConversionFormState(),
+    val templateSupport: ConversionTemplateSupportState = ConversionTemplateSupportState(),
+    val validation: ConversionValidationState = ConversionValidationState(),
     val accreditedTypeOptions: List<String> = emptyList(),
     val isNetworkAvailable: Boolean = true,
     val isSmtpAuthenticated: Boolean = false,
@@ -302,17 +404,6 @@ data class ConversionUiState(
     val entries: List<RegistrationEntry> = emptyList(),
     val cachedEmailsCount: Int = 0,
 ) {
-    val isConversionEnabled: Boolean
-        get() = supportsConversion &&
-                files.xlsxPath.isNotBlank() &&
-                files.templatePath.isNotBlank() &&
-                form.accreditedId.isNotBlank() &&
-                form.docIdStart.isNotBlank() &&
-                form.accreditedHours.isNotBlank() &&
-                form.certificateName.isNotBlank() &&
-                form.lector.isNotBlank() &&
-                entries.isNotEmpty()
-
     val canRetryCachedEmails: Boolean
         get() = cachedEmailsCount > 0 && supportsEmailSending && isNetworkAvailable && isSmtpAuthenticated
 }
@@ -320,8 +411,10 @@ data class ConversionUiState(
 data class ConversionFilesState(
     val xlsxPath: String = "",
     val templatePath: String = "",
-    val xlsxErrorText: String? = null,
-    val templateErrorText: String? = null,
+    val xlsxLoadError: UiMessage? = null,
+    val templateLoadError: UiMessage? = null,
+    val templateAvailableTags: Set<String>? = null,
+    val isTemplateInspectionInProgress: Boolean = false,
 ) {
     val hasXlsx: Boolean
         get() = xlsxPath.isNotBlank()

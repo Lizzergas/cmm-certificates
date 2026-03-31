@@ -69,6 +69,8 @@ import certificates.composeapp.generated.resources.email_progress_cached_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
 import certificates.composeapp.generated.resources.email_progress_retry_cached
 import certificates.composeapp.generated.resources.xlsx
+import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.core.presentation.asString
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
@@ -110,8 +112,9 @@ fun ConversionScreen(
                 state = state,
                 onPreviewClick = viewModel::previewDocument,
                 onConversionClick = {
-                    viewModel.generateDocuments()
-                    onStartConversion()
+                    if (viewModel.generateDocuments()) {
+                        onStartConversion()
+                    }
                 }
             )
         },
@@ -181,9 +184,9 @@ fun ConversionScreen(
                     SelectFileIcon(
                         icon = Res.drawable.xlsx,
                         label = stringResource(Res.string.common_file_xlsx),
-                        state = selectFileIconState(hasXlsx, state.files.xlsxErrorText),
+                        state = selectFileIconState(hasXlsx, state.validation.xlsxError?.asString()),
                         fileName = state.files.xlsxFileName,
-                        errorText = state.files.xlsxErrorText,
+                        errorText = state.validation.xlsxError?.asString(),
                         tooltipText = xlsxTooltip,
                         onClick = { launchFilePicker("xlsx", viewModel::selectXlsx) },
                         enabled = state.supportsConversion,
@@ -192,9 +195,9 @@ fun ConversionScreen(
                     SelectFileIcon(
                         icon = Res.drawable.docx,
                         label = stringResource(Res.string.common_file_docx),
-                        state = selectFileIconState(hasTemplate, state.files.templateErrorText),
+                        state = selectFileIconState(hasTemplate, state.validation.templateError?.asString()),
                         fileName = state.files.templateFileName,
-                        errorText = state.files.templateErrorText,
+                        errorText = state.validation.templateError?.asString(),
                         tooltipText = docxTooltip,
                         onClick = { launchFilePicker("docx", viewModel::setTemplatePath) },
                         enabled = state.supportsConversion,
@@ -204,6 +207,9 @@ fun ConversionScreen(
 
                 CertificateDetailsSection(
                     form = state.form,
+                    templateSupport = state.templateSupport,
+                    validation = state.validation,
+                    isTemplateInspectionInProgress = state.files.isTemplateInspectionInProgress,
                     accreditedTypeOptions = state.accreditedTypeOptions,
                     enabled = state.supportsConversion,
                     actions = ConversionFormActions(
@@ -266,11 +272,15 @@ private fun ConversionBottomBarPreview() {
 @Composable
 private fun CertificateDetailsSection(
     form: ConversionFormState,
+    templateSupport: ConversionTemplateSupportState,
+    validation: ConversionValidationState,
+    isTemplateInspectionInProgress: Boolean,
     accreditedTypeOptions: List<String>,
     enabled: Boolean,
     actions: ConversionFormActions,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val inputsEnabled = enabled && !isTemplateInspectionInProgress
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -299,24 +309,37 @@ private fun CertificateDetailsSection(
                     onValueChange = actions.onAccreditedIdChange,
                     label = { Text(stringResource(Res.string.conversion_accredited_id_label)) },
                     modifier = Modifier.weight(1f),
-                    enabled = enabled,
+                    enabled = enabled && templateSupport.accreditedId.isEnabled,
+                    isError = validation.accreditedIdError != null,
+                    tooltipText = templateSupport.accreditedId.disabledTooltip?.asString(),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
+                    supportingText = supportingTextFor(
+                        error = validation.accreditedIdError,
+                        helper = templateSupport.accreditedId.disabledSupportingText,
+                    ),
                 )
                 ClearableOutlinedTextField(
                     value = form.docIdStart,
                     onValueChange = actions.onDocIdStartChange,
                     label = { Text(stringResource(Res.string.conversion_doc_id_label)) },
                     modifier = Modifier.weight(1f),
-                    enabled = enabled,
+                    enabled = enabled && templateSupport.docIdStart.isEnabled,
+                    isError = validation.docIdStartError != null,
+                    tooltipText = templateSupport.docIdStart.disabledTooltip?.asString(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = MaterialTheme.typography.bodySmall,
+                    supportingText = supportingTextFor(
+                        error = validation.docIdStartError,
+                        helper = templateSupport.docIdStart.disabledSupportingText,
+                    ),
                 )
             }
+            val accreditedTypeEnabled = enabled && templateSupport.accreditedType.isEnabled
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { if (enabled) expanded = !expanded },
+                onExpandedChange = { if (accreditedTypeEnabled) expanded = !expanded },
             ) {
                 val fillMaxWidth = Modifier.fillMaxWidth()
                 ClearableOutlinedTextField(
@@ -328,15 +351,21 @@ private fun CertificateDetailsSection(
                         ExposedDropdownMenuAnchorType.PrimaryNotEditable,
                         true
                     ),
-                    enabled = enabled,
+                    enabled = accreditedTypeEnabled,
+                    isError = validation.accreditedTypeError != null,
+                    tooltipText = templateSupport.accreditedType.disabledTooltip?.asString(),
                     readOnly = true,
                     singleLine = true,
                     showClearIcon = false,
                     textStyle = MaterialTheme.typography.bodySmall,
                     onClear = { actions.onAccreditedTypeChange("") },
+                    supportingText = supportingTextFor(
+                        error = validation.accreditedTypeError,
+                        helper = templateSupport.accreditedType.disabledSupportingText,
+                    ),
                 )
                 ExposedDropdownMenu(
-                    expanded = enabled && expanded,
+                    expanded = accreditedTypeEnabled && expanded,
                     onDismissRequest = { expanded = false },
                 ) {
                     accreditedTypeOptions.forEach { option ->
@@ -355,19 +384,31 @@ private fun CertificateDetailsSection(
                 onValueChange = actions.onAccreditedHoursChange,
                 label = { Text(stringResource(Res.string.conversion_accredited_hours_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
+                enabled = enabled && templateSupport.accreditedHours.isEnabled,
+                isError = validation.accreditedHoursError != null,
+                tooltipText = templateSupport.accreditedHours.disabledTooltip?.asString(),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                supportingText = supportingTextFor(
+                    error = validation.accreditedHoursError,
+                    helper = templateSupport.accreditedHours.disabledSupportingText,
+                ),
             )
             ClearableOutlinedTextField(
                 value = form.certificateName,
                 onValueChange = actions.onCertificateNameChange,
                 label = { Text(stringResource(Res.string.conversion_certificate_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
+                enabled = enabled && templateSupport.certificateName.isEnabled,
+                isError = validation.certificateNameError != null,
+                tooltipText = templateSupport.certificateName.disabledTooltip?.asString(),
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
+                supportingText = supportingTextFor(
+                    error = validation.certificateNameError,
+                    helper = templateSupport.certificateName.disabledSupportingText,
+                ),
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -378,18 +419,30 @@ private fun CertificateDetailsSection(
                     onValueChange = actions.onLectorGenderChange,
                     label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
                     modifier = Modifier.weight(1f),
-                    enabled = enabled,
+                    enabled = enabled && templateSupport.lectorGender.isEnabled,
+                    isError = validation.lectorGenderError != null,
+                    tooltipText = templateSupport.lectorGender.disabledTooltip?.asString(),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
+                    supportingText = supportingTextFor(
+                        error = validation.lectorGenderError,
+                        helper = templateSupport.lectorGender.disabledSupportingText,
+                    ),
                 )
                 ClearableOutlinedTextField(
                     value = form.lector,
                     onValueChange = actions.onLectorChange,
                     label = { Text(stringResource(Res.string.conversion_lector_label)) },
                     modifier = Modifier.weight(1f),
-                    enabled = enabled,
+                    enabled = enabled && templateSupport.lector.isEnabled,
+                    isError = validation.lectorError != null,
+                    tooltipText = templateSupport.lector.disabledTooltip?.asString(),
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall,
+                    supportingText = supportingTextFor(
+                        error = validation.lectorError,
+                        helper = templateSupport.lector.disabledSupportingText,
+                    ),
                 )
             }
         }
@@ -441,7 +494,7 @@ private fun ConversionBottomBar(
                             .padding(horizontal = Grid.x6, vertical = Grid.x3),
                         textAlign = TextAlign.Center,
                     )
-                } else if (!state.isConversionEnabled) {
+                } else if (state.validation.hasBlockingErrors) {
                     Text(
                         text = stringResource(Res.string.conversion_validation_hint),
                         style = MaterialTheme.typography.labelSmall,
@@ -478,14 +531,14 @@ private fun ConversionBottomBar(
                         text = stringResource(Res.string.conversion_preview_button),
                         onClick = onPreviewClick,
                         modifier = Modifier.weight(1f),
-                        enabled = state.isConversionEnabled,
+                        enabled = state.supportsConversion,
                         loading = state.isPreviewLoading,
                     )
                     PrimaryActionButton(
                         text = stringResource(Res.string.conversion_convert_button),
                         onClick = onConversionClick,
                         modifier = Modifier.weight(1f),
-                        enabled = state.isConversionEnabled,
+                        enabled = state.supportsConversion,
                     )
                 }
             }
@@ -510,9 +563,27 @@ private fun selectFileIconState(
     errorText: String?,
 ): SelectFileIconState {
     return when {
-        selected && !errorText.isNullOrBlank() -> SelectFileIconState.Error
+        !errorText.isNullOrBlank() -> SelectFileIconState.Error
         selected -> SelectFileIconState.Selected
         else -> SelectFileIconState.NotSelected
+    }
+}
+
+private fun supportingTextFor(
+    error: UiMessage?,
+    helper: UiMessage?,
+): (@Composable () -> Unit)? {
+    if (error == null && helper == null) return null
+    return {
+        val color = if (error != null) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+        Text(
+            text = (error ?: helper)?.asString().orEmpty(),
+            color = color,
+        )
     }
 }
 

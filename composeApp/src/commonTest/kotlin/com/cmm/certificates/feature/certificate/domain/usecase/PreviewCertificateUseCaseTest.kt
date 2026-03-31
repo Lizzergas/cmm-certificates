@@ -68,6 +68,8 @@ private class FakeCertificateDocumentGenerator : CertificateDocumentGenerator {
         return byteArrayOf(1, 2, 3)
     }
 
+    override fun inspectTemplatePlaceholders(path: String): Set<String> = emptySet()
+
     override fun fillTemplateToPdf(
         templateBytes: ByteArray,
         outputPath: String,
