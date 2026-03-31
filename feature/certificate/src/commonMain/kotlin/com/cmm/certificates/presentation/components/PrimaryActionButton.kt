@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,20 +34,23 @@ fun PrimaryActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    loading: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
-    val containerColor = if (enabled) colors.primary else colors.surface
-    val contentColor = if (enabled) colors.onPrimary else colors.onSurfaceVariant
-    val shadowElevation = if (enabled) Grid.x6 else Grid.x0
-    val border = if (enabled) null else BorderStroke(Stroke.thin, colors.outlineVariant)
-    val badgeColor = if (enabled) contentColor.copy(alpha = 0.2f) else colors.surfaceVariant
+    val isHighlighted = enabled
+    val isInteractive = enabled && !loading
+    val containerColor = if (isHighlighted) colors.primary else colors.surface
+    val contentColor = if (isHighlighted) colors.onPrimary else colors.onSurfaceVariant
+    val shadowElevation = if (isHighlighted) Grid.x6 else Grid.x0
+    val border = if (isHighlighted) null else BorderStroke(Stroke.thin, colors.outlineVariant)
+    val badgeColor = if (isHighlighted) contentColor.copy(alpha = 0.2f) else colors.surfaceVariant
 
     Button(
         onClick = onClick,
         modifier = modifier
             .height(Grid.x28)
             .shadow(shadowElevation, MaterialTheme.shapes.large),
-        enabled = enabled,
+        enabled = isInteractive,
         shape = MaterialTheme.shapes.large,
         border = border,
         colors = ButtonDefaults.buttonColors(
@@ -67,11 +71,19 @@ fun PrimaryActionButton(
                 shape = MaterialTheme.shapes.small,
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = stringResource(Res.string.common_format_pdf),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    if (loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(Grid.x8),
+                            strokeWidth = Grid.x1,
+                            color = contentColor,
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(Res.string.common_format_pdf),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.width(Grid.x4))
@@ -97,5 +109,13 @@ private fun PrimaryActionButtonPreviewLight() {
 private fun PrimaryActionButtonPreviewDark() {
     AppTheme(darkTheme = true) {
         PrimaryActionButton(text = "Convert", onClick = {}, enabled = false)
+    }
+}
+
+@Preview
+@Composable
+private fun PrimaryActionButtonPreviewLoading() {
+    AppTheme(darkTheme = false) {
+        PrimaryActionButton(text = "Preview", onClick = {}, loading = true)
     }
 }

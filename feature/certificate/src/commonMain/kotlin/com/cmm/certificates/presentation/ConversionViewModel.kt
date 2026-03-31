@@ -8,6 +8,7 @@ import com.cmm.certificates.preferredDefaultOutputDirectory
 import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
+import com.cmm.certificates.core.openFile
 import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
@@ -15,11 +16,11 @@ import com.cmm.certificates.data.defaultLectorLabel
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.domain.GenerateCertificatesRequest
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
+import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,7 @@ class ConversionViewModel(
     capabilityProvider: PlatformCapabilityProvider,
     private val parseRegistrations: ParseRegistrationsUseCase,
     private val generateCertificates: GenerateCertificatesUseCase,
+    private val previewCertificate: PreviewCertificateUseCase,
 ) : ViewModel() {
     private val logTag = "ConversionVM"
     private val installedTemplateFileName = "sablonas.docx"
@@ -60,6 +62,7 @@ class ConversionViewModel(
     )
     private val filesState = MutableStateFlow(ConversionFilesState())
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
+    private val previewLoadingState = MutableStateFlow(false)
 
     init {
         selectInstalledTemplateIfAvailable()
@@ -97,10 +100,12 @@ class ConversionViewModel(
                 entries = entries,
             )
         },
+        previewLoadingState,
         emailProgressRepository.cachedEmails,
-    ) { baseState, cachedEmails ->
+    ) { baseState, isPreviewLoading, cachedEmails ->
         baseState.copy(
-            cachedEmailsCount = cachedEmails.entries.size
+            isPreviewLoading = isPreviewLoading,
+            cachedEmailsCount = cachedEmails.entries.size,
         )
     }.stateIn(
         viewModelScope,
@@ -186,22 +191,32 @@ class ConversionViewModel(
         }
     }
 
+    fun previewDocument() {
+        if (!capabilities.canRunConversion) {
+            logWarn(logTag, "Ignored preview request because conversion is unsupported")
+            return
+        }
+        if (previewLoadingState.value) return
+        viewModelScope.launch {
+            previewLoadingState.value = true
+            try {
+                logInfo(logTag, "Starting preview request")
+                val previewPath = previewCertificate(buildGenerateRequest(uiState.value))
+                if (previewPath.isNullOrBlank()) {
+                    logWarn(logTag, "Preview PDF was not generated")
+                    return@launch
+                }
+                if (!openFile(previewPath)) {
+                    logWarn(logTag, "Failed to open preview PDF: $previewPath")
+                }
+            } finally {
+                previewLoadingState.value = false
+            }
+        }
+    }
+
     private suspend fun generateDocumentsInternal() {
-        val snapshot = uiState.value
-        generateCertificates(
-            GenerateCertificatesRequest(
-                templatePath = snapshot.files.templatePath,
-                entries = snapshot.entries,
-                accreditedId = snapshot.form.accreditedId,
-                docIdStart = snapshot.form.docIdStart,
-                accreditedType = snapshot.form.accreditedType,
-                accreditedHours = snapshot.form.accreditedHours,
-                certificateName = snapshot.form.certificateName,
-                lector = snapshot.form.lector,
-                lectorGender = snapshot.form.lectorGender,
-                outputDirectory = effectiveOutputDirectory(),
-            )
-        )
+        generateCertificates(buildGenerateRequest(uiState.value))
     }
 
     private fun selectInstalledTemplateIfAvailable() {
@@ -237,6 +252,21 @@ class ConversionViewModel(
             else -> configuredOutputDirectory
         }
     }
+
+    private fun buildGenerateRequest(snapshot: ConversionUiState): GenerateCertificatesRequest {
+        return GenerateCertificatesRequest(
+            templatePath = snapshot.files.templatePath,
+            entries = snapshot.entries,
+            accreditedId = snapshot.form.accreditedId,
+            docIdStart = snapshot.form.docIdStart,
+            accreditedType = snapshot.form.accreditedType,
+            accreditedHours = snapshot.form.accreditedHours,
+            certificateName = snapshot.form.certificateName,
+            lector = snapshot.form.lector,
+            lectorGender = snapshot.form.lectorGender,
+            outputDirectory = effectiveOutputDirectory(),
+        )
+    }
 }
 
 data class ConversionUiState(
@@ -247,6 +277,7 @@ data class ConversionUiState(
     val isSmtpAuthenticated: Boolean = false,
     val supportsConversion: Boolean = true,
     val supportsEmailSending: Boolean = true,
+    val isPreviewLoading: Boolean = false,
     val entries: List<RegistrationEntry> = emptyList(),
     val cachedEmailsCount: Int = 0,
 ) {

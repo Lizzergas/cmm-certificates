@@ -5,6 +5,7 @@ import com.cmm.certificates.data.DocxCertificateDocumentGenerator
 import com.cmm.certificates.data.XlsxRegistrationParser
 import com.cmm.certificates.domain.BuildCertificateReplacementsUseCase
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
+import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.OutputDirectoryResolver
@@ -21,5 +22,6 @@ val conversionModule = module {
     singleOf(::ParseRegistrationsUseCase)
     singleOf(::BuildCertificateReplacementsUseCase)
     singleOf(::GenerateCertificatesUseCase)
+    singleOf(::PreviewCertificateUseCase)
     viewModelOf(::ConversionViewModel)
 }

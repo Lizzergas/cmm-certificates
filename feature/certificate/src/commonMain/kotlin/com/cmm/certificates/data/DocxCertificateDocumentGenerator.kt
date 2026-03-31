@@ -17,4 +17,14 @@ class DocxCertificateDocumentGenerator : CertificateDocumentGenerator {
             replacements = replacements,
         )
     }
+
+    override fun createPreviewPdf(
+        templateBytes: ByteArray,
+        replacements: Map<String, String>,
+    ): String? {
+        return DocxTemplate.createPreviewPdf(
+            templateBytes = templateBytes,
+            replacements = replacements,
+        )
+    }
 }

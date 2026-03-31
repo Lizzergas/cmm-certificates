@@ -12,4 +12,9 @@ actual object DocxTemplate {
     ) {
         throw UnsupportedOperationException("PDF generation is only supported on JVM desktop targets for now.")
     }
+
+    actual fun createPreviewPdf(
+        templateBytes: ByteArray,
+        replacements: Map<String, String>,
+    ): String? = null
 }

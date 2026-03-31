@@ -24,6 +24,7 @@
     <string name="conversion_template_hint">Tap to select template</string>
     <string name="conversion_output_directory_title">Output Folder</string>
     <string name="conversion_output_directory_hint">Tap to choose destination</string>
+    <string name="conversion_preview_button">Preview PDF</string>
     <string name="conversion_convert_button">Convert to PDF</string>
     <string name="conversion_validation_hint">Select all files to continue</string>
     <string name="conversion_form_section_title">Certificate Details</string>

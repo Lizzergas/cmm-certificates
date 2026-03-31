@@ -1,0 +1,12 @@
+package com.cmm.certificates.core
+
+import java.awt.Desktop
+import java.io.File
+
+actual fun openFile(path: String): Boolean {
+    return runCatching {
+        if (!Desktop.isDesktopSupported()) return false
+        Desktop.getDesktop().open(File(path))
+        true
+    }.getOrDefault(false)
+}

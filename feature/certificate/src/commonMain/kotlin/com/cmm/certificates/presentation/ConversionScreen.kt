@@ -57,6 +57,7 @@ import certificates.composeapp.generated.resources.conversion_form_section_title
 import certificates.composeapp.generated.resources.conversion_lector_gender_label
 import certificates.composeapp.generated.resources.conversion_lector_label
 import certificates.composeapp.generated.resources.conversion_offline_hint
+import certificates.composeapp.generated.resources.conversion_preview_button
 import certificates.composeapp.generated.resources.conversion_unsupported_hint
 import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
@@ -104,6 +105,7 @@ fun ConversionScreen(
         bottomBar = {
             ConversionBottomBar(
                 state = state,
+                onPreviewClick = viewModel::previewDocument,
                 onConversionClick = {
                     viewModel.generateDocuments()
                     onStartConversion()
@@ -245,6 +247,7 @@ private fun ConversionBottomBarPreview() {
                     )
                 ),
             ),
+            onPreviewClick = {},
             onConversionClick = {},
         )
     }
@@ -397,6 +400,7 @@ private data class ConversionFormActions(
 @Composable
 private fun ConversionBottomBar(
     state: ConversionUiState,
+    onPreviewClick: () -> Unit,
     onConversionClick: () -> Unit,
 ) {
     Surface(
@@ -457,12 +461,24 @@ private fun ConversionBottomBar(
                         textAlign = TextAlign.Center,
                     )
                 }
-                PrimaryActionButton(
-                    text = stringResource(Res.string.conversion_convert_button),
-                    onClick = onConversionClick,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = state.isConversionEnabled,
-                )
+                    horizontalArrangement = Arrangement.spacedBy(Grid.x4),
+                ) {
+                    PrimaryActionButton(
+                        text = stringResource(Res.string.conversion_preview_button),
+                        onClick = onPreviewClick,
+                        modifier = Modifier.weight(1f),
+                        enabled = state.isConversionEnabled,
+                        loading = state.isPreviewLoading,
+                    )
+                    PrimaryActionButton(
+                        text = stringResource(Res.string.conversion_convert_button),
+                        onClick = onConversionClick,
+                        modifier = Modifier.weight(1f),
+                        enabled = state.isConversionEnabled,
+                    )
+                }
             }
         }
     }

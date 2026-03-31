@@ -1,7 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-val desktopAppName = "CMM Sertifikatai"
+val desktopAppName = "Pažymėjimų konverteris"
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -82,11 +82,11 @@ compose.desktop {
             packageName = desktopAppName
             packageVersion = project.version.toString()
             includeAllModules = true
-            description = "CMM certificate generation and email delivery desktop app"
+            description = "Pažymėjimų konverteris"
             vendor = "CMM"
 
             linux {
-                packageName = "cmm-sertifikatai"
+                packageName = "pazymejimu-konverteris"
             }
 
             macOS {

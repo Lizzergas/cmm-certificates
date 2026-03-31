@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -84,6 +85,20 @@ actual object DocxTemplate {
             logError(LOG_TAG, "DOCX to PDF generation failed for $outputPath", t)
             throw t
         }
+    }
+
+    actual fun createPreviewPdf(
+        templateBytes: ByteArray,
+        replacements: Map<String, String>,
+    ): String? {
+        val previewFile = Files.createTempFile("cmm-preview-", ".pdf").toFile()
+        previewFile.deleteOnExit()
+        fillTemplateToPdf(
+            templateBytes = templateBytes,
+            outputPath = previewFile.absolutePath,
+            replacements = replacements,
+        )
+        return previewFile.absolutePath
     }
 
     private fun convertToPdfBytesWithTimeout(wordPackage: WordprocessingMLPackage): ByteArray {

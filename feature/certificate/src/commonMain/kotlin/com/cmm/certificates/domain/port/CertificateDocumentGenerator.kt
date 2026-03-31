@@ -8,4 +8,9 @@ interface CertificateDocumentGenerator {
         outputPath: String,
         replacements: Map<String, String>,
     )
+
+    fun createPreviewPdf(
+        templateBytes: ByteArray,
+        replacements: Map<String, String>,
+    ): String?
 }
