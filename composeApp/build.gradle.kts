@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 import java.time.Year
 
 val desktopAppName = providers.gradleProperty("appDisplayName").orElse("CMM Sertifikatai").get()
@@ -19,6 +20,17 @@ val windowsInstallationPath = providers.gradleProperty("windowsInstallationPath"
 val windowsPerUserInstall = providers.gradleProperty("windowsPerUserInstall")
     .map(String::toBoolean)
     .orElse(false)
+val windowsInstallerIcon = project.file("packaging/icons/cmm_logo.ico")
+val isWindowsHost = System.getProperty("os.name").startsWith("Windows", ignoreCase = true)
+val shouldValidateWindowsInstallerIcon = gradle.startParameter.taskNames.any { taskName ->
+    val simpleName = taskName.substringAfterLast(':')
+    simpleName.matches(Regex("package.*(Exe|Msi)")) ||
+        (isWindowsHost && simpleName.contains("DistributionForCurrentOS"))
+}
+
+if (shouldValidateWindowsInstallerIcon) {
+    requireValidWindowsIcon(windowsInstallerIcon)
+}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -123,7 +135,7 @@ compose.desktop {
                 menu = true
                 shortcut = true
                 menuGroup = desktopAppVendor
-                iconFile.set(project.file("packaging/icons/cmm_logo.ico"))
+                iconFile.set(windowsInstallerIcon)
             }
         }
     }
@@ -133,4 +145,28 @@ tasks.register("test") {
     group = "verification"
     description = "Runs Compose app Android host tests."
     dependsOn(tasks.named("testAndroidHostTest"))
+}
+
+fun requireValidWindowsIcon(file: File) {
+    require(file.isFile) {
+        "Missing Windows installer icon at ${file.absolutePath}. Provide a real .ico file."
+    }
+    require(isValidWindowsIcon(file)) {
+        "Invalid Windows installer icon at ${file.absolutePath}. Expected a real .ico file, not a renamed PNG or another format."
+    }
+}
+
+fun isValidWindowsIcon(file: File): Boolean {
+    if (!file.isFile) return false
+
+    return runCatching {
+        file.inputStream().use { input ->
+            val header = ByteArray(4)
+            input.read(header) == header.size &&
+                header[0] == 0.toByte() &&
+                header[1] == 0.toByte() &&
+                header[2] == 1.toByte() &&
+                header[3] == 0.toByte()
+        }
+    }.getOrDefault(false)
 }
