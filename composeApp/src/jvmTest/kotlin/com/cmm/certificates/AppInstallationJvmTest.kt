@@ -13,7 +13,7 @@ class AppInstallationJvmTest {
             val path = AppInstallation.installedResourcePath("EULA.txt")
 
             assertNotNull(path)
-            assertTrue(path.endsWith("packaging/resources/common/EULA.txt"))
+            assertTrue(path.normalizedPath().endsWith("packaging/resources/common/EULA.txt"))
         }
     }
 
@@ -30,9 +30,11 @@ class AppInstallationJvmTest {
             val path = AppInstallation.installedResourcePath("LICENSE.txt")
 
             assertNotNull(path)
-            assertTrue(path.endsWith("packaging/resources/common/LICENSE.txt"))
+            assertTrue(path.normalizedPath().endsWith("packaging/resources/common/LICENSE.txt"))
         }
     }
+
+    private fun String.normalizedPath(): String = replace('\\', '/')
 
     private fun withUserDir(directory: File, block: () -> Unit) {
         val previousUserDir = System.getProperty("user.dir")
