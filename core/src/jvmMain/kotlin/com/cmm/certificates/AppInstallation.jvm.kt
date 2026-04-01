@@ -5,9 +5,9 @@ import java.io.File
 actual object AppInstallation {
     actual fun installedResourcePath(fileName: String): String? {
         val candidates = listOfNotNull(
+            projectPackagingResource(fileName),
             resourcesDirectory()?.resolve(fileName),
             installationDirectory()?.resolve(fileName),
-            projectPackagingResource(fileName),
         )
 
         return candidates.firstOrNull { it.isFile }?.absolutePath
