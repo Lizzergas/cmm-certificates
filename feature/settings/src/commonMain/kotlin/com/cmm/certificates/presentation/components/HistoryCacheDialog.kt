@@ -1,6 +1,12 @@
 package com.cmm.certificates.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.email_stop_reason_cached_suffix
@@ -220,7 +227,7 @@ private fun SentHistoryPage(sentHistory: List<SentEmailRecord>) {
                 verticalArrangement = Arrangement.spacedBy(Grid.x4),
             ) {
                 items(filtered, key = SentEmailRecord::id) { record ->
-                    HistoryRecordCard(record)
+                    ExpandableHistoryRecordCard(record)
                 }
             }
         }
@@ -274,7 +281,7 @@ private fun CachedEmailsPage(
                 verticalArrangement = Arrangement.spacedBy(Grid.x4),
             ) {
                 items(filtered, key = CachedEmailEntry::id) { entry ->
-                    CachedEmailCard(
+                    ExpandableCachedEmailCard(
                         entry = entry,
                         cachedLastReason = cachedLastReason,
                         onRemove = { onRemoveCachedEmail(entry.id) },
@@ -312,37 +319,51 @@ private fun HistoryFilters(
 }
 
 @Composable
-private fun HistoryRecordCard(record: SentEmailRecord) {
-    HistoryCard {
+private fun ExpandableHistoryRecordCard(record: SentEmailRecord) {
+    var expanded by rememberSaveable(record.id) { mutableStateOf(false) }
+
+    HistoryCard(onClick = { expanded = !expanded }) {
         HistoryHeader(
             title = record.requestLabel(),
             subtitle = stringResource(Res.string.settings_history_sent_at_label) + ": " + formatTimestamp(record.sentAt),
         )
         Text(
-            text = "${stringResource(Res.string.settings_history_subject_label)}: ${record.subject}",
+            text = record.subject,
             style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${record.certificateName}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        record.attachmentName?.takeIf { it.isNotBlank() }?.let { attachmentName ->
-            Text(
-                text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut(),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
+                Text(
+                    text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${record.certificateName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                record.attachmentName?.takeIf { it.isNotBlank() }?.let { attachmentName ->
+                    Text(
+                        text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun CachedEmailCard(
+private fun ExpandableCachedEmailCard(
     entry: CachedEmailEntry,
     cachedLastReason: EmailStopReason?,
     onRemove: () -> Unit,
 ) {
-    HistoryCard {
+    var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
+
+    HistoryCard(onClick = { expanded = !expanded }) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -357,26 +378,36 @@ private fun CachedEmailCard(
                     subtitle = stringResource(Res.string.settings_history_cached_at_label) + ": " + formatTimestamp(entry.cachedAt),
                 )
                 Text(
-                    text = "${stringResource(Res.string.settings_history_subject_label)}: ${entry.request.subject}",
+                    text = entry.request.subject,
                     style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${entry.request.certificateName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                entry.request.attachmentName?.takeIf { it.isNotBlank() }?.let { attachmentName ->
-                    Text(
-                        text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                cachedLastReason?.let { reason ->
-                    Text(
-                        text = "${stringResource(Res.string.settings_history_reason_label)}: ${resolveStopReason(reason)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
+                        Text(
+                            text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${entry.request.certificateName}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        entry.request.attachmentName?.takeIf { it.isNotBlank() }?.let { attachmentName ->
+                            Text(
+                                text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        cachedLastReason?.let { reason ->
+                            Text(
+                                text = "${stringResource(Res.string.settings_history_reason_label)}: ${resolveStopReason(reason)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
             }
             IconButton(onClick = onRemove) {
@@ -390,9 +421,14 @@ private fun CachedEmailCard(
 }
 
 @Composable
-private fun HistoryCard(content: @Composable ColumnScope.() -> Unit) {
+private fun HistoryCard(
+    onClick: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
         border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
         tonalElevation = Grid.x1,

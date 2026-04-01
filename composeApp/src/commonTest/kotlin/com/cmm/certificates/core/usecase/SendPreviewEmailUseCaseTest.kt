@@ -137,6 +137,7 @@ class SendPreviewEmailUseCaseTest {
             initialState = PdfConversionProgressState(
                 outputDir = "/tmp/output",
                 docIdStart = 500,
+                feedbackUrl = "https://example.com/form",
                 entries = listOf(sampleEntry()),
             )
         )
@@ -152,6 +153,10 @@ class SendPreviewEmailUseCaseTest {
         assertEquals("preview@example.com", settingsRepository.state.value.email.previewEmail)
         assertEquals(true, settingsRepository.saved)
         assertEquals("/tmp/output/500.pdf", emailGateway.sentRequests.single().attachmentPath)
+        assertEquals(
+            "Hello https://example.com/form",
+            emailGateway.sentRequests.single().body,
+        )
     }
 
     private fun sampleEntry(): RegistrationEntry {
@@ -213,7 +218,7 @@ private class FakeSettingsRepository(
                 ),
                 email = EmailTemplateSettingsState(
                     subject = "Preview",
-                    body = "Hello",
+                    body = "Hello {{feedback_url}}",
                     signatureHtml = "<div>Best regards</div>",
                 ),
                 certificate = CertificateSettingsState(),
@@ -228,7 +233,14 @@ private class FakePdfProgressRepository(
     private val _state = MutableStateFlow(initialState)
     override val state: StateFlow<PdfConversionProgressState> = _state
 
-    override fun start(total: Int, outputDir: String, certificateName: String, docIdStart: Long, entries: List<RegistrationEntry>) {}
+    override fun start(
+        total: Int,
+        outputDir: String,
+        certificateName: String,
+        docIdStart: Long,
+        feedbackUrl: String,
+        entries: List<RegistrationEntry>,
+    ) {}
     override fun update(current: Int) {}
     override fun setCurrentDocId(docId: Long?) {}
     override fun finish() {}

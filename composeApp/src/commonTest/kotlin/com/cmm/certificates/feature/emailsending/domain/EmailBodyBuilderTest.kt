@@ -43,4 +43,24 @@ class EmailBodyBuilderTest {
             result,
         )
     }
+
+    @Test
+    fun rendersFeedbackUrlPlaceholderUsingRuntimeVariables() {
+        val result = renderEmailTemplate(
+            text = "Atsiliepimas: {{feedback_url}}",
+            variables = EmailTemplateVariables(feedbackUrl = "https://example.com/form"),
+        )
+
+        assertEquals("Atsiliepimas: https://example.com/form", result)
+    }
+
+    @Test
+    fun rendersBlankForMissingFeedbackUrl() {
+        val result = renderEmailTemplate(
+            text = "Atsiliepimas: {{feedback_url}}",
+            variables = EmailTemplateVariables(),
+        )
+
+        assertEquals("Atsiliepimas: ", result)
+    }
 }

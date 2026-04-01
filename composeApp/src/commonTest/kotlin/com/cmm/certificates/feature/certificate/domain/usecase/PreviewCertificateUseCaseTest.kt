@@ -33,6 +33,7 @@ class PreviewCertificateUseCaseTest {
                 accreditedType = "seminar",
                 accreditedHours = "8",
                 certificateName = "Music Workshop",
+                feedbackUrl = "",
                 lector = "Jane Doe",
                 lectorGender = "Lecturer:",
                 outputDirectory = "",

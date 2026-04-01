@@ -2,7 +2,9 @@ package com.cmm.certificates.feature.emailsending.domain.usecase
 
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.feature.emailsending.domain.EmailTemplateVariables
 import com.cmm.certificates.feature.emailsending.domain.buildEmailHtmlBody
+import com.cmm.certificates.feature.emailsending.domain.renderEmailTemplate
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
@@ -48,8 +50,15 @@ class SendGeneratedEmailsUseCase(
         }
 
         val settingsState = settingsRepository.state.value
+        val templateVariables = EmailTemplateVariables(
+            feedbackUrl = conversionState.feedbackUrl,
+        )
+        val resolvedBody = renderEmailTemplate(
+            text = settingsState.email.body,
+            variables = templateVariables,
+        )
         val htmlBody = buildEmailHtmlBody(
-            body = settingsState.email.body,
+            body = resolvedBody,
             signatureHtml = settingsState.email.signatureHtml,
         )
         val requests = buildEmailRequests(
@@ -58,7 +67,7 @@ class SendGeneratedEmailsUseCase(
             outputDir = conversionState.outputDir,
             certificateName = conversionState.certificateName,
             subject = settingsState.email.subject,
-            body = settingsState.email.body,
+            body = resolvedBody,
             htmlBody = htmlBody,
         )
         if (requests.isEmpty()) {

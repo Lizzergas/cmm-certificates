@@ -215,6 +215,10 @@ class ConversionViewModel(
         formState.update { it.copy(certificateName = value) }
     }
 
+    fun setFeedbackUrl(value: String) {
+        formState.update { it.copy(feedbackUrl = value) }
+    }
+
     fun setLector(value: String) {
         formState.update { it.copy(lector = value) }
     }
@@ -376,6 +380,7 @@ class ConversionViewModel(
             accreditedType = snapshot.form.accreditedType,
             accreditedHours = snapshot.form.accreditedHours,
             certificateName = snapshot.form.certificateName,
+            feedbackUrl = snapshot.form.feedbackUrl,
             lector = snapshot.form.lector,
             lectorGender = snapshot.form.lectorGender,
             outputDirectory = effectiveOutputDirectory(),
@@ -439,6 +444,7 @@ data class ConversionFormState(
     val accreditedType: String = "",
     val accreditedHours: String = "",
     val certificateName: String = "",
+    val feedbackUrl: String = "",
     val lector: String = "",
     val lectorGender: String = defaultLectorLabel(),
 )

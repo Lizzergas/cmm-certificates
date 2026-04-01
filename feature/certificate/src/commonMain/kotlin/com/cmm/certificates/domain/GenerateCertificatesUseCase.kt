@@ -30,6 +30,7 @@ data class GenerateCertificatesRequest(
     val accreditedType: String,
     val accreditedHours: String,
     val certificateName: String,
+    val feedbackUrl: String,
     val lector: String,
     val lectorGender: String,
     val outputDirectory: String,
@@ -99,6 +100,7 @@ class GenerateCertificatesUseCase(
                 outputDir = outputDir,
                 certificateName = request.certificateName,
                 docIdStart = docIdStart,
+                feedbackUrl = request.feedbackUrl,
                 entries = request.entries,
             )
             for ((index, entry) in request.entries.withIndex()) {

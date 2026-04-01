@@ -54,6 +54,9 @@ import certificates.composeapp.generated.resources.conversion_accredited_type_la
 import certificates.composeapp.generated.resources.conversion_certificate_name_label
 import certificates.composeapp.generated.resources.conversion_convert_button
 import certificates.composeapp.generated.resources.conversion_doc_id_label
+import certificates.composeapp.generated.resources.conversion_email_extras_section_title
+import certificates.composeapp.generated.resources.conversion_feedback_url_hint
+import certificates.composeapp.generated.resources.conversion_feedback_url_label
 import certificates.composeapp.generated.resources.conversion_form_section_title
 import certificates.composeapp.generated.resources.conversion_lector_gender_label
 import certificates.composeapp.generated.resources.conversion_lector_label
@@ -221,6 +224,12 @@ fun ConversionScreen(
                         onLectorChange = viewModel::setLector,
                         onLectorGenderChange = viewModel::setLectorGender,
                     ),
+                )
+
+                EmailExtrasSection(
+                    feedbackUrl = state.form.feedbackUrl,
+                    enabled = state.supportsConversion,
+                    onFeedbackUrlChange = viewModel::setFeedbackUrl,
                 )
 
                 Spacer(modifier = Modifier.height(Grid.x6))
@@ -458,6 +467,46 @@ private data class ConversionFormActions(
     val onLectorChange: (String) -> Unit,
     val onLectorGenderChange: (String) -> Unit,
 )
+
+@Composable
+private fun EmailExtrasSection(
+    feedbackUrl: String,
+    enabled: Boolean,
+    onFeedbackUrlChange: (String) -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
+        tonalElevation = Grid.x1,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(CardPadding),
+            verticalArrangement = Arrangement.spacedBy(Grid.x4),
+        ) {
+            Text(
+                text = stringResource(Res.string.conversion_email_extras_section_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            ClearableOutlinedTextField(
+                value = feedbackUrl,
+                onValueChange = onFeedbackUrlChange,
+                label = { Text(stringResource(Res.string.conversion_feedback_url_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall,
+                supportingText = {
+                    Text(stringResource(Res.string.conversion_feedback_url_hint))
+                },
+            )
+        }
+    }
+}
 
 @Composable
 private fun ConversionBottomBar(

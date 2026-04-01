@@ -76,6 +76,7 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.log4j.core)
         }
     }
 }

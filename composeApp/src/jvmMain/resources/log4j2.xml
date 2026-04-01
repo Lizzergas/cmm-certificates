@@ -1,26 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+  <Properties>
+    <Property name="AppLogFile">${sys:cmm.log.file:-${sys:java.io.tmpdir}/cmmcertificates-app.log}</Property>
+  </Properties>
+
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
+      <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY"/>
       <PatternLayout pattern="[%t] %-5level %logger - %msg%n%throwable"/>
     </Console>
+
+    <RollingFile
+      name="AppLogFile"
+      fileName="${AppLogFile}"
+      filePattern="${AppLogFile}.%i"
+      immediateFlush="true"
+      append="true"
+    >
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger - %msg%n%throwable"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="5 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="3"/>
+    </RollingFile>
   </Appenders>
 
   <Loggers>
+    <Logger name="com.cmm.certificates" level="info" additivity="false">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
+    </Logger>
+
     <Logger name="org.docx4j.fonts" level="error" additivity="false">
       <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
     </Logger>
 
     <Logger name="org.apache.fontbox" level="error" additivity="false">
       <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
     </Logger>
 
     <Logger name="org.docx4j.utils.ResourceUtils" level="error" additivity="false">
       <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
     </Logger>
 
-    <Root level="warn">
+    <Logger name="org.simplejavamail" level="info" additivity="false">
       <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
+    </Logger>
+
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppLogFile"/>
     </Root>
   </Loggers>
 </Configuration>

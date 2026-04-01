@@ -12,6 +12,7 @@ data class PdfConversionProgressState(
     val outputDir: String = "",
     val certificateName: String = "",
     val docIdStart: Long? = null,
+    val feedbackUrl: String = "",
     val entries: List<RegistrationEntry> = emptyList(),
     val currentDocId: Long? = null,
     val cancelRequested: Boolean = false,

@@ -38,8 +38,8 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.simple.java.mail)
-            implementation(libs.slf4j.simple)
             implementation(libs.log4j.core)
+            implementation(libs.log4j.slf4j2.impl)
         }
     }
 }

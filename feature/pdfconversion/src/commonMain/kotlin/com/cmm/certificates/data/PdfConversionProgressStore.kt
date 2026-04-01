@@ -17,6 +17,7 @@ class PdfConversionProgressStore {
         outputDir: String,
         certificateName: String,
         docIdStart: Long,
+        feedbackUrl: String,
         entries: List<RegistrationEntry>,
     ) {
         _state.value = PdfConversionProgressState(
@@ -26,6 +27,7 @@ class PdfConversionProgressStore {
             outputDir = outputDir,
             certificateName = certificateName,
             docIdStart = docIdStart,
+            feedbackUrl = feedbackUrl,
             entries = entries,
             cancelRequested = false,
             startedAtMillis = nowMillis(),

@@ -12,6 +12,7 @@ interface PdfConversionProgressRepository {
         outputDir: String,
         certificateName: String,
         docIdStart: Long,
+        feedbackUrl: String,
         entries: List<RegistrationEntry>,
     )
 

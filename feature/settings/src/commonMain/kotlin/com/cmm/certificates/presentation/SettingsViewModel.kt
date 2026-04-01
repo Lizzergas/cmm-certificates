@@ -8,12 +8,23 @@ import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.preferredDefaultOutputDirectory
 import com.cmm.certificates.shouldResetLegacyInstallOutputDirectory
 import com.cmm.certificates.core.openFolder
+import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
+import com.cmm.certificates.core.logging.AppLogSupport
+import com.cmm.certificates.core.logging.LogSubmissionResult
+import com.cmm.certificates.core.logging.logInfo
+import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.core.signature.SignatureEditorController
 import com.cmm.certificates.core.signature.SignatureEditorMode
 import com.cmm.certificates.core.signature.SignatureEditorUiState
 import com.cmm.certificates.core.signature.SignatureFont
 import com.cmm.certificates.core.usecase.ClearAllDataUseCase
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.network_unavailable_message
+import certificates.composeapp.generated.resources.settings_send_logs_empty
+import certificates.composeapp.generated.resources.settings_send_logs_failed
+import certificates.composeapp.generated.resources.settings_send_logs_success
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
@@ -27,6 +38,7 @@ import com.cmm.certificates.feature.settings.domain.SettingsState
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -38,10 +50,13 @@ class SettingsViewModel(
     private val emailProgressRepository: EmailProgressRepository,
     private val clearAllDataUseCase: ClearAllDataUseCase,
     private val signatureEditor: SignatureEditorController,
+    private val connectivityMonitor: ConnectivityMonitor,
     capabilityProvider: PlatformCapabilityProvider,
 ) : ViewModel() {
+    private val logTag = "SettingsVM"
     private val supportsOutputDirectories = capabilityProvider.capabilities.canResolveOutputDirectory
     private val supportsEmailSending = capabilityProvider.capabilities.canSendEmails
+    private val supportsLogSubmission = AppLogSupport.isSupported()
     private val legalResourcesDirectoryPath = listOfNotNull(
         AppInstallation.installedResourcePath(EULA_FILE_NAME),
         AppInstallation.installedResourcePath(LICENSE_FILE_NAME),
@@ -64,22 +79,38 @@ class SettingsViewModel(
         migrateLegacyInstallOutputDirectoryIfNeeded()
     }
 
+    private val logSubmissionState = MutableStateFlow(LogSubmissionUiState())
+
     val uiState: StateFlow<SettingsUiState> = combine(
-        settingsRepository.state,
-        emailProgressRepository.sentCountInLast24Hours,
-        emailProgressRepository.sentHistory,
-        emailProgressRepository.cachedEmails,
-    ) { settings, sentCount, sentHistory, cachedEmails ->
-        settings.toUiState(
-            sentToday = sentCount,
+        combine(
+            settingsRepository.state,
+            emailProgressRepository.sentCountInLast24Hours,
+            emailProgressRepository.sentHistory,
+            emailProgressRepository.cachedEmails,
+        ) { settings, sentCount, sentHistory, cachedEmails ->
+            SettingsSnapshot(
+                settings = settings,
+                sentToday = sentCount,
+                sentHistory = sentHistory,
+                cachedEmails = cachedEmails,
+            )
+        },
+        connectivityMonitor.isNetworkAvailable,
+        logSubmissionState,
+    ) { snapshot, isNetworkAvailable, logSubmissionState ->
+        snapshot.settings.toUiState(
+            sentToday = snapshot.sentToday,
             supportsEmailSending = supportsEmailSending,
+            supportsLogSubmission = supportsLogSubmission,
             defaultOutputDirectory = defaultOutputDirectory,
-            sentHistory = sentHistory,
-            cachedEmails = cachedEmails,
+            sentHistory = snapshot.sentHistory,
+            cachedEmails = snapshot.cachedEmails,
             installationDirectoryPath = installationDirectoryPath,
             legalResourcesDirectoryPath = legalResourcesDirectoryPath,
             appVersionName = appVersionName,
             appCommitHash = appCommitHash,
+            isNetworkAvailable = isNetworkAvailable,
+            logSubmissionState = logSubmissionState,
         )
     }.stateIn(
         viewModelScope,
@@ -154,6 +185,49 @@ class SettingsViewModel(
 
     fun clearAll() {
         viewModelScope.launch { clearAllDataUseCase.clearAll() }
+    }
+
+    fun sendLogs() {
+        if (!supportsLogSubmission || logSubmissionState.value.isSubmitting) return
+
+        viewModelScope.launch {
+            logSubmissionState.value = LogSubmissionUiState(isSubmitting = true)
+            connectivityMonitor.refresh()
+
+            if (!connectivityMonitor.isNetworkAvailable.value) {
+                logWarn(logTag, "Skipped log submission because network is unavailable")
+                logSubmissionState.value = LogSubmissionUiState(
+                    message = UiMessage(Res.string.network_unavailable_message),
+                )
+                return@launch
+            }
+
+            when (AppLogSupport.submitCurrentLog()) {
+                LogSubmissionResult.SUCCESS -> {
+                    logInfo(logTag, "Submitted app logs to Sentry")
+                    logSubmissionState.value = LogSubmissionUiState(
+                        message = UiMessage(Res.string.settings_send_logs_success),
+                        isSuccess = true,
+                    )
+                }
+
+                LogSubmissionResult.NO_LOGS -> {
+                    logWarn(logTag, "Skipped log submission because the log file is empty")
+                    logSubmissionState.value = LogSubmissionUiState(
+                        message = UiMessage(Res.string.settings_send_logs_empty),
+                    )
+                }
+
+                LogSubmissionResult.FAILED,
+                LogSubmissionResult.UNSUPPORTED,
+                -> {
+                    logWarn(logTag, "Failed to submit app logs")
+                    logSubmissionState.value = LogSubmissionUiState(
+                        message = UiMessage(Res.string.settings_send_logs_failed),
+                    )
+                }
+            }
+        }
     }
 
     fun openSignatureEditor() {
@@ -254,6 +328,11 @@ data class SettingsUiState(
     val isOutputDirectoryWritable: Boolean = true,
     val outputDirectoryUsesInstallationDefault: Boolean = false,
     val supportsEmailSending: Boolean = true,
+    val supportsLogSubmission: Boolean = false,
+    val isNetworkAvailable: Boolean = true,
+    val isSendingLogs: Boolean = false,
+    val logSubmissionMessage: UiMessage? = null,
+    val isLogSubmissionSuccess: Boolean = false,
 ) {
     val resolvedOutputDirectory: String
         get() = certificate.outputDirectory.ifBlank { defaultOutputDirectory }
@@ -269,11 +348,15 @@ data class SettingsUiState(
 
     val shouldShowOutputDirectoryWarning: Boolean
         get() = hasCustomOutputDirectory && !isOutputDirectoryWritable
+
+    val canSendLogs: Boolean
+        get() = supportsLogSubmission && isNetworkAvailable && !isSendingLogs
 }
 
 private fun SettingsState.toUiState(
     sentToday: Int,
     supportsEmailSending: Boolean,
+    supportsLogSubmission: Boolean,
     defaultOutputDirectory: String,
     sentHistory: List<SentEmailRecord>,
     cachedEmails: CachedEmailBatch,
@@ -281,6 +364,8 @@ private fun SettingsState.toUiState(
     legalResourcesDirectoryPath: String?,
     appVersionName: String?,
     appCommitHash: String?,
+    isNetworkAvailable: Boolean,
+    logSubmissionState: LogSubmissionUiState,
 ): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
@@ -304,8 +389,26 @@ private fun SettingsState.toUiState(
         outputDirectoryUsesInstallationDefault = certificate.outputDirectory.isBlank() &&
             installationDirectoryPath == defaultOutputDirectory,
         supportsEmailSending = supportsEmailSending,
+        supportsLogSubmission = supportsLogSubmission,
+        isNetworkAvailable = isNetworkAvailable,
+        isSendingLogs = logSubmissionState.isSubmitting,
+        logSubmissionMessage = logSubmissionState.message,
+        isLogSubmissionSuccess = logSubmissionState.isSuccess,
     )
 }
+
+private data class LogSubmissionUiState(
+    val isSubmitting: Boolean = false,
+    val message: UiMessage? = null,
+    val isSuccess: Boolean = false,
+)
+
+private data class SettingsSnapshot(
+    val settings: SettingsState,
+    val sentToday: Int,
+    val sentHistory: List<SentEmailRecord>,
+    val cachedEmails: CachedEmailBatch,
+)
 
 private fun parentDirectoryPath(path: String): String? {
     val normalizedPath = path.trimEnd('/', '\\')

@@ -26,6 +26,9 @@
     <string name="conversion_output_directory_hint">Palieskite, kad pasirinktumėte vietą</string>
     <string name="conversion_preview_button">Peržiūrėti PDF</string>
     <string name="conversion_convert_button">Konvertuoti į PDF</string>
+    <string name="conversion_email_extras_section_title">El. pašto priedai</string>
+    <string name="conversion_feedback_url_label">Atsiliepimo nuoroda</string>
+    <string name="conversion_feedback_url_hint">Neprivaloma. Pakeičia {{feedback_url}} el. laiško šablone.</string>
     <string name="conversion_validation_hint">Norėdami tęsti, pataisykite pažymėtus laukus.</string>
     <string name="conversion_form_section_title">Sertifikato duomenys</string>
     <string name="conversion_accredited_id_label">Akredituoto ID</string>
@@ -76,6 +79,7 @@
     <string name="settings_password_label">Slaptažodis</string>
     <string name="settings_subject_label">Laiško tema</string>
     <string name="settings_body_label">Laiško tekstas</string>
+    <string name="settings_body_placeholder_hint">Palaikoma žymė: {{feedback_url}}</string>
     <string name="settings_default_email_subject">Pažyma</string>
     <string name="settings_default_email_body">Laba diena,
 
@@ -96,6 +100,11 @@ mokymuose</string>
     <string name="settings_daily_limit_label">Dienos el. laiškų limitas</string>
     <string name="settings_email_configuration_button">Konfigūruoti SMTP</string>
     <string name="settings_email_configuration_title">SMTP nustatymai</string>
+    <string name="settings_send_logs">Siųsti naudojimo duomenis</string>
+    <string name="settings_send_logs_success">Naudojimo duomenys išsiųsti.</string>
+    <string name="settings_send_logs_failed">Nepavyko išsiųsti naudojimo duomenų.</string>
+    <string name="settings_send_logs_empty">Kol kas nėra ką siųsti.</string>
+    <string name="settings_send_logs_unsupported_hint">Ši platforma dar nepalaiko naudojimo duomenų siuntimo.</string>
     <string name="settings_theme_label">Tema</string>
     <string name="settings_theme_light">Šviesi</string>
     <string name="settings_theme_dark">Tamsi</string>

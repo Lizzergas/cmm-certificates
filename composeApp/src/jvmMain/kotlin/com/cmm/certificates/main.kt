@@ -7,12 +7,14 @@ import androidx.compose.ui.window.rememberWindowState
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.app_name
 import certificates.composeapp.generated.resources.cmm_logo
+import com.cmm.certificates.core.logging.AppLogSupport
 import com.cmm.certificates.core.initializeSentry
 import io.github.vinceglb.filekit.FileKit
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 fun main() {
+    AppLogSupport.initialize()
     initializeSentry()
     FileKit.init(appId = "com.cmm.certificates")
     application {

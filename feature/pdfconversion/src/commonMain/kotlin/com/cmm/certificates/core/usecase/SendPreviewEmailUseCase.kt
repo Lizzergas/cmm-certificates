@@ -12,7 +12,9 @@ import certificates.composeapp.generated.resources.common_error_smtp_incomplete
 import certificates.composeapp.generated.resources.email_preview_error_send_failed
 import com.cmm.certificates.feature.emailsending.domain.port.EmailGateway
 import com.cmm.certificates.feature.emailsending.domain.EmailSendRequest
+import com.cmm.certificates.feature.emailsending.domain.EmailTemplateVariables
 import com.cmm.certificates.feature.emailsending.domain.buildEmailHtmlBody
+import com.cmm.certificates.feature.emailsending.domain.renderEmailTemplate
 import com.cmm.certificates.feature.pdfconversion.domain.PdfConversionProgressRepository
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
 import com.cmm.certificates.joinPath
@@ -76,17 +78,25 @@ class SendPreviewEmailUseCase(
         settingsRepository.save()
         logInfo(logTag, "Saved preview email recipient")
 
+        val conversionState = pdfConversionProgressRepository.state.value
+        val templateVariables = EmailTemplateVariables(
+            feedbackUrl = conversionState.feedbackUrl,
+        )
+        val resolvedBody = renderEmailTemplate(
+            text = settingsState.email.body,
+            variables = templateVariables,
+        )
         val htmlBody = buildEmailHtmlBody(
-            body = settingsState.email.body,
+            body = resolvedBody,
             signatureHtml = settingsState.email.signatureHtml,
         )
-        val certificateName = pdfConversionProgressRepository.state.value.certificateName
+        val certificateName = conversionState.certificateName
         val request = EmailSendRequest(
             toEmail = trimmedEmail,
             toName = trimmedEmail,
             certificateName = certificateName,
             subject = settingsState.email.subject,
-            body = settingsState.email.body,
+            body = resolvedBody,
             htmlBody = htmlBody,
             attachmentPath = attachmentPath,
             attachmentName = attachmentName,

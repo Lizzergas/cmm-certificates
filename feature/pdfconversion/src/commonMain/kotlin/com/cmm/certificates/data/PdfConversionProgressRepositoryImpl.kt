@@ -16,6 +16,7 @@ class PdfConversionProgressRepositoryImpl(
         outputDir: String,
         certificateName: String,
         docIdStart: Long,
+        feedbackUrl: String,
         entries: List<RegistrationEntry>,
     ) {
         store.start(
@@ -23,6 +24,7 @@ class PdfConversionProgressRepositoryImpl(
             outputDir = outputDir,
             certificateName = certificateName,
             docIdStart = docIdStart,
+            feedbackUrl = feedbackUrl,
             entries = entries,
         )
     }

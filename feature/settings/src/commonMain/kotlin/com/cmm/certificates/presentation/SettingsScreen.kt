@@ -50,11 +50,13 @@ import certificates.composeapp.generated.resources.conversion_output_dir_label
 import certificates.composeapp.generated.resources.email_progress_daily_limit_status
 import certificates.composeapp.generated.resources.email_progress_daily_limit_unlimited_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
+import certificates.composeapp.generated.resources.network_unavailable_message
 import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
 import certificates.composeapp.generated.resources.settings_body_label
+import certificates.composeapp.generated.resources.settings_body_placeholder_hint
 import certificates.composeapp.generated.resources.settings_clear_all
 import certificates.composeapp.generated.resources.settings_clear_all_cancel
 import certificates.composeapp.generated.resources.settings_clear_all_confirm
@@ -79,6 +81,8 @@ import certificates.composeapp.generated.resources.settings_ownership_notice
 import certificates.composeapp.generated.resources.settings_password_label
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
+import certificates.composeapp.generated.resources.settings_send_logs
+import certificates.composeapp.generated.resources.settings_send_logs_unsupported_hint
 import certificates.composeapp.generated.resources.settings_server_label
 import certificates.composeapp.generated.resources.settings_signature_action_edit
 import certificates.composeapp.generated.resources.settings_subject_label
@@ -151,6 +155,7 @@ fun SettingsScreen(
         onEditSignature = viewModel::openSignatureEditor,
         onAuthenticate = viewModel::authenticate,
         onOpenEmailConfiguration = { showSmtpDialog = true },
+        onSendLogs = viewModel::sendLogs,
     )
 
     if (showClearDialog) {
@@ -309,6 +314,9 @@ private fun BoxScope.SettingsContent(
                 minLines = 5,
                 maxLines = 10,
                 showClearIcon = false,
+                supportingText = {
+                    Text(stringResource(Res.string.settings_body_placeholder_hint))
+                },
             )
             SettingsField(
                 label = Res.string.settings_daily_limit_label,
@@ -379,6 +387,42 @@ private fun BoxScope.SettingsContent(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(Res.string.settings_signature_action_edit))
+            }
+            OutlinedButton(
+                onClick = actions.onSendLogs,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.canSendLogs,
+            ) {
+                Text(stringResource(Res.string.settings_send_logs))
+            }
+            when {
+                !state.supportsLogSubmission -> {
+                    Text(
+                        text = stringResource(Res.string.settings_send_logs_unsupported_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                !state.isNetworkAvailable -> {
+                    Text(
+                        text = stringResource(Res.string.network_unavailable_message),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+
+                state.logSubmissionMessage != null -> {
+                    Text(
+                        text = state.logSubmissionMessage.asString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (state.isLogSubmissionSuccess) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.error
+                        },
+                    )
+                }
             }
         }
 
@@ -810,6 +854,7 @@ private data class SettingsActions(
     val onEditSignature: () -> Unit,
     val onAuthenticate: () -> Unit,
     val onOpenEmailConfiguration: () -> Unit,
+    val onSendLogs: () -> Unit,
 )
 
 @Preview
@@ -848,6 +893,7 @@ private fun SettingsContentPreview() {
                     defaultOutputDirectory = "/Users/tester/pdf",
                     sentToday = 32,
                     supportsEmailSending = true,
+                    supportsLogSubmission = true,
                 ),
                 actions = SettingsActions(
                     onHostChange = {},
@@ -868,6 +914,7 @@ private fun SettingsContentPreview() {
                     onEditSignature = {},
                     onAuthenticate = {},
                     onOpenEmailConfiguration = {},
+                    onSendLogs = {},
                 ),
             )
         }

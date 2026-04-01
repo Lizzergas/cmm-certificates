@@ -1,21 +1,21 @@
 package com.cmm.certificates.core.logging
 
 import io.sentry.kotlin.multiplatform.Sentry
-import java.util.logging.Level
-import java.util.logging.Logger
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 
-private fun logger(tag: String): Logger = Logger.getLogger(tag)
+private fun logger(tag: String): Logger = LogManager.getLogger("com.cmm.certificates.$tag")
 
 actual fun logInfo(tag: String, message: String) {
-    logger(tag).log(Level.INFO, message)
+    logger(tag).info(message)
 }
 
 actual fun logWarn(tag: String, message: String) {
-    logger(tag).log(Level.WARNING, message)
+    logger(tag).warn(message)
 }
 
 actual fun logError(tag: String, message: String, throwable: Throwable?) {
-    logger(tag).log(Level.SEVERE, message, throwable)
+    logger(tag).error(message, throwable)
     if (throwable != null) {
         Sentry.captureException(throwable)
     } else {

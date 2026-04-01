@@ -26,6 +26,9 @@
     <string name="conversion_output_directory_hint">Tap to choose destination</string>
     <string name="conversion_preview_button">Preview PDF</string>
     <string name="conversion_convert_button">Convert to PDF</string>
+    <string name="conversion_email_extras_section_title">Email extras</string>
+    <string name="conversion_feedback_url_label">Feedback URL</string>
+    <string name="conversion_feedback_url_hint">Optional. Replaces {{feedback_url}} in the email body template.</string>
     <string name="conversion_validation_hint">Fix the highlighted fields to continue.</string>
     <string name="conversion_form_section_title">Certificate Details</string>
     <string name="conversion_accredited_id_label">Accredited ID</string>
@@ -76,6 +79,7 @@
     <string name="settings_password_label">Password</string>
     <string name="settings_subject_label">Email subject</string>
     <string name="settings_body_label">Email body</string>
+    <string name="settings_body_placeholder_hint">Supported placeholder: {{feedback_url}}</string>
     <string name="settings_default_email_subject">Certificate</string>
     <string name="settings_default_email_body">Hello,
 
@@ -96,6 +100,11 @@ training</string>
     <string name="settings_daily_limit_label">Daily email limit</string>
     <string name="settings_email_configuration_button">Configure SMTP</string>
     <string name="settings_email_configuration_title">SMTP settings</string>
+    <string name="settings_send_logs">Send logs</string>
+    <string name="settings_send_logs_success">Logs sent successfully.</string>
+    <string name="settings_send_logs_failed">Failed to send logs.</string>
+    <string name="settings_send_logs_empty">No logs to send yet.</string>
+    <string name="settings_send_logs_unsupported_hint">This platform does not support log submission yet.</string>
     <string name="settings_theme_label">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
