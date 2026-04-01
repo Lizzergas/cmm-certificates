@@ -120,6 +120,13 @@ fun ConversionScreen(
     val launchFilePicker = rememberFilePickerLauncher()
     val scrollState = rememberScrollState()
 
+    state.previewPdfPath?.let { previewPdfPath ->
+        PdfPreviewDialog(
+            pdfPath = previewPdfPath,
+            onDismiss = viewModel::dismissPreview,
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {

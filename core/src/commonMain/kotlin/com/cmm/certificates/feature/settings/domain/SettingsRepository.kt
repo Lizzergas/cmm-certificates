@@ -17,6 +17,7 @@ interface SettingsRepository {
     fun setPreviewEmail(value: String)
     fun setDailyLimit(value: Int)
     fun setThemeMode(value: AppThemeMode)
+    fun setUseInAppPdfPreview(value: Boolean)
     suspend fun save()
     suspend fun authenticate(): Boolean
     suspend fun resetAndClear()

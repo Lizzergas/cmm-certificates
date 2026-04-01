@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -96,6 +97,8 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
+import certificates.composeapp.generated.resources.settings_pdf_preview_hint
+import certificates.composeapp.generated.resources.settings_pdf_preview_toggle
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.core.presentation.asString
 import com.cmm.certificates.core.theme.AppTheme
@@ -144,6 +147,7 @@ fun SettingsScreen(
         onBodyChange = viewModel::setBody,
         onDailyLimitChange = viewModel::setDailyLimit,
         onThemeModeChange = viewModel::setThemeMode,
+        onUseInAppPdfPreviewChange = viewModel::setUseInAppPdfPreview,
         onAccreditedTypeOptionsChange = viewModel::setAccreditedTypeOptions,
         onOutputDirectoryReset = viewModel::resetOutputDirectory,
         onChooseOutputDirectory = {
@@ -345,6 +349,10 @@ private fun BoxScope.SettingsContent(
                 options = themeOptions,
                 onSelect = actions.onThemeModeChange,
             )
+            PreviewPreferenceField(
+                useInAppPreview = state.appearance.useInAppPdfPreview,
+                onCheckedChange = actions.onUseInAppPdfPreviewChange,
+            )
             OutputDirectorySettingsField(
                 outputDirectory = state.resolvedOutputDirectory,
                 hasCustomOutputDirectory = state.hasCustomOutputDirectory,
@@ -518,6 +526,41 @@ private fun OutputDirectorySettingsField(
             } else {
                 Text(stringResource(Res.string.settings_output_directory_default_fallback_hint))
             }
+        }
+    }
+}
+
+@Composable
+private fun PreviewPreferenceField(
+    useInAppPreview: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!useInAppPreview) }
+            .padding(vertical = Grid.x1),
+        horizontalArrangement = Arrangement.spacedBy(Grid.x4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = useInAppPreview,
+            onCheckedChange = onCheckedChange,
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(Grid.x1),
+        ) {
+            Text(
+                text = stringResource(Res.string.settings_pdf_preview_toggle),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(Res.string.settings_pdf_preview_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -845,6 +888,7 @@ private data class SettingsActions(
     val onBodyChange: (String) -> Unit,
     val onDailyLimitChange: (String) -> Unit,
     val onThemeModeChange: (AppThemeMode) -> Unit,
+    val onUseInAppPdfPreviewChange: (Boolean) -> Unit,
     val onAccreditedTypeOptionsChange: (String) -> Unit,
     val onOutputDirectoryReset: () -> Unit,
     val onChooseOutputDirectory: () -> Unit,
@@ -905,6 +949,7 @@ private fun SettingsContentPreview() {
                     onBodyChange = {},
                     onDailyLimitChange = {},
                     onThemeModeChange = {},
+                    onUseInAppPdfPreviewChange = {},
                     onAccreditedTypeOptionsChange = {},
                     onOutputDirectoryReset = {},
                     onChooseOutputDirectory = {},

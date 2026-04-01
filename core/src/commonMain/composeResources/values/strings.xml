@@ -26,6 +26,10 @@
     <string name="conversion_output_directory_title">Output Folder</string>
     <string name="conversion_output_directory_hint">Tap to choose destination</string>
     <string name="conversion_preview_button">Preview PDF</string>
+    <string name="conversion_preview_dialog_title">PDF preview</string>
+    <string name="conversion_preview_loading">Loading preview...</string>
+    <string name="conversion_preview_error">Failed to render the preview PDF.</string>
+    <string name="conversion_preview_unavailable_hint">In-app PDF preview is not available on this platform yet.</string>
     <string name="conversion_convert_button">Convert to PDF</string>
     <string name="conversion_email_extras_section_title">Email extras</string>
     <string name="conversion_feedback_url_label">Feedback URL</string>
@@ -115,6 +119,8 @@ training</string>
     <string name="settings_theme_label">Theme</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_pdf_preview_toggle">Use in-app PDF preview</string>
+    <string name="settings_pdf_preview_hint">Disable this if you prefer opening preview PDFs in your system viewer.</string>
     <string name="settings_history_cache_button">History / Cache</string>
     <string name="settings_legal_title">About and legal</string>
     <string name="settings_legal_summary">This installation includes the customer EULA, ownership notice, and third-party notices in the packaged legal files folder.</string>

@@ -50,6 +50,7 @@ data class CertificateSettingsState(
 
 data class AppearanceSettingsState(
     val themeMode: AppThemeMode = AppThemeMode.LIGHT,
+    val useInAppPdfPreview: Boolean = true,
 )
 
 data class SettingsState(

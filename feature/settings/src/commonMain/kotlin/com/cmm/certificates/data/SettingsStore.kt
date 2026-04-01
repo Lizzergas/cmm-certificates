@@ -2,6 +2,7 @@ package com.cmm.certificates.data
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -31,6 +32,7 @@ class SettingsStore(
         val previewEmail = stringPreferencesKey("email_preview_address")
         val dailyLimit = intPreferencesKey("email_daily_limit")
         val themeMode = stringPreferencesKey("app_theme_mode")
+        val useInAppPdfPreview = booleanPreferencesKey("use_in_app_pdf_preview")
     }
 
     suspend fun loadOrDefault(): StoredSettings {
@@ -53,6 +55,7 @@ class SettingsStore(
             previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
             dailyLimit = prefs.intOrDefault(Keys.dailyLimit, DEFAULT_DAILY_LIMIT),
             themeMode = prefs.enumOrDefault(Keys.themeMode, AppThemeMode.LIGHT),
+            useInAppPdfPreview = prefs[Keys.useInAppPdfPreview] ?: true,
         )
     }
 
@@ -71,6 +74,7 @@ class SettingsStore(
             prefs[Keys.previewEmail] = settings.previewEmail
             prefs[Keys.dailyLimit] = settings.dailyLimit
             prefs[Keys.themeMode] = settings.themeMode.name
+            prefs[Keys.useInAppPdfPreview] = settings.useInAppPdfPreview
         }
     }
 
@@ -92,5 +96,6 @@ class SettingsStore(
         val previewEmail: String,
         val dailyLimit: Int,
         val themeMode: AppThemeMode,
+        val useInAppPdfPreview: Boolean,
     )
 }

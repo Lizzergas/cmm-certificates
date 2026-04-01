@@ -144,6 +144,8 @@ class SettingsViewModel(
 
     fun setThemeMode(value: AppThemeMode) = settingsRepository.setThemeMode(value)
 
+    fun setUseInAppPdfPreview(value: Boolean) = settingsRepository.setUseInAppPdfPreview(value)
+
     fun setOutputDirectory(value: String) = settingsRepository.setOutputDirectory(value.trim())
 
     fun resetOutputDirectory() = settingsRepository.setOutputDirectory("")

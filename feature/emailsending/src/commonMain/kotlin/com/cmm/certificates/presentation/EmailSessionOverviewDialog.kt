@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.window.Dialog
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_certificate_name_label
 import certificates.composeapp.generated.resources.email_progress_overview_cached_empty
@@ -53,6 +52,7 @@ import certificates.composeapp.generated.resources.settings_history_reason_label
 import certificates.composeapp.generated.resources.settings_history_results_summary
 import certificates.composeapp.generated.resources.settings_history_sent_at_label
 import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.ui.AnimatedDialog
 import com.cmm.certificates.core.ui.EmptyHistoryState
 import com.cmm.certificates.core.ui.HistoryCard
 import com.cmm.certificates.core.ui.HistoryFilters
@@ -84,7 +84,7 @@ fun EmailSessionOverviewDialog(
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
 
-    Dialog(onDismissRequest = onDismiss) {
+    AnimatedDialog(onDismiss = onDismiss) { requestDismiss ->
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = Grid.x3,
@@ -107,7 +107,7 @@ fun EmailSessionOverviewDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = requestDismiss) {
                         Icon(
                             imageVector = Lucide.X,
                             contentDescription = stringResource(Res.string.settings_history_cache_close),
@@ -158,7 +158,7 @@ fun EmailSessionOverviewDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = requestDismiss) {
                         Text(stringResource(Res.string.settings_history_cache_close))
                     }
                 }

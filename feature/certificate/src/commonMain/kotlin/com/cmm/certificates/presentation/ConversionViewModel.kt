@@ -72,12 +72,13 @@ class ConversionViewModel(
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
     private val hasAttemptedSubmitState = MutableStateFlow(false)
     private val previewLoadingState = MutableStateFlow(false)
+    private val previewPdfPathState = MutableStateFlow<String?>(null)
 
     init {
         selectInstalledTemplateIfAvailable()
     }
 
-    val uiState: StateFlow<ConversionUiState> = combine(
+    private val baseUiState = combine(
         combine(
             combine(
                 formState,
@@ -136,6 +137,13 @@ class ConversionViewModel(
             isPreviewLoading = isPreviewLoading,
             cachedEmailsCount = cachedEmails.entries.size,
         )
+    }
+
+    val uiState: StateFlow<ConversionUiState> = combine(
+        baseUiState,
+        previewPdfPathState,
+    ) { baseState, previewPdfPath ->
+        baseState.copy(previewPdfPath = previewPdfPath)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
@@ -309,18 +317,25 @@ class ConversionViewModel(
             previewLoadingState.value = true
             try {
                 logInfo(logTag, "Starting preview request")
+                previewPdfPathState.value = null
                 val previewPath = previewCertificate(buildGenerateRequest(uiState.value))
                 if (previewPath.isNullOrBlank()) {
                     logWarn(logTag, "Preview PDF was not generated")
                     return@launch
                 }
-                if (!openFile(previewPath)) {
+                if (settingsRepository.state.value.appearance.useInAppPdfPreview) {
+                    previewPdfPathState.value = previewPath
+                } else if (!openFile(previewPath)) {
                     logWarn(logTag, "Failed to open preview PDF: $previewPath")
                 }
             } finally {
                 previewLoadingState.value = false
             }
         }
+    }
+
+    fun dismissPreview() {
+        previewPdfPathState.value = null
     }
 
     private suspend fun generateDocumentsInternal() {
@@ -417,6 +432,7 @@ data class ConversionUiState(
     val supportsConversion: Boolean = true,
     val supportsEmailSending: Boolean = true,
     val isPreviewLoading: Boolean = false,
+    val previewPdfPath: String? = null,
     val entries: List<RegistrationEntry> = emptyList(),
     val cachedEmailsCount: Int = 0,
 ) {

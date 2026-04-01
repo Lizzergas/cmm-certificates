@@ -53,6 +53,7 @@ import certificates.composeapp.generated.resources.settings_history_sent_at_labe
 import certificates.composeapp.generated.resources.settings_history_sent_empty
 import certificates.composeapp.generated.resources.settings_history_sent_on_date_summary
 import com.cmm.certificates.core.theme.Grid
+import com.cmm.certificates.core.ui.AnimatedDialog
 import com.cmm.certificates.core.ui.EmptyHistoryState
 import com.cmm.certificates.core.ui.HistoryCard
 import com.cmm.certificates.core.ui.HistoryFilters
@@ -84,7 +85,7 @@ fun HistoryCacheDialog(
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
 
-    Dialog(onDismissRequest = onDismiss) {
+    AnimatedDialog(onDismiss = onDismiss) { requestDismiss ->
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = Grid.x3,
@@ -107,7 +108,7 @@ fun HistoryCacheDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = requestDismiss) {
                         Icon(
                             imageVector = Lucide.X,
                             contentDescription = stringResource(Res.string.settings_history_cache_close),
@@ -149,7 +150,7 @@ fun HistoryCacheDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = requestDismiss) {
                         Text(stringResource(Res.string.settings_history_cache_close))
                     }
                 }

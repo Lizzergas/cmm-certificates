@@ -133,6 +133,15 @@ class SettingsRepositoryImpl(
         }
     }
 
+    override fun setUseInAppPdfPreview(value: Boolean) {
+        _state.update { current ->
+            current.copy(
+                smtp = current.smtp.copy(errorMessage = null),
+                appearance = current.appearance.copy(useInAppPdfPreview = value),
+            )
+        }
+    }
+
     override suspend fun resetAndClear() {
         logWarn(logTag, "Resetting settings state and clearing persistent store")
         _state.value = defaultSettingsState()
@@ -209,6 +218,7 @@ class SettingsRepositoryImpl(
                 ),
                 appearance = current.appearance.copy(
                     themeMode = stored.themeMode,
+                    useInAppPdfPreview = stored.useInAppPdfPreview,
                 ),
             )
         }
@@ -240,5 +250,6 @@ private fun SettingsState.toStoredSettings(): SettingsStore.StoredSettings {
         previewEmail = email.previewEmail,
         dailyLimit = email.dailyLimit,
         themeMode = appearance.themeMode,
+        useInAppPdfPreview = appearance.useInAppPdfPreview,
     )
 }

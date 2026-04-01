@@ -27,9 +27,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,7 +47,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_signature_action_cancel
 import certificates.composeapp.generated.resources.settings_signature_action_pick_color
@@ -89,6 +88,7 @@ import com.cmm.certificates.core.signature.SignatureValidationError
 import com.cmm.certificates.core.theme.AppTheme
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
+import com.cmm.certificates.core.ui.AnimatedDialog
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Pipette
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
@@ -122,7 +122,7 @@ fun SignatureEditorDialog(
 ) {
     if (!state.isOpen) return
 
-    Dialog(onDismissRequest = onDismiss) {
+    AnimatedDialog(onDismiss = onDismiss) { requestDismiss ->
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = Grid.x3,
@@ -208,7 +208,7 @@ fun SignatureEditorDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = requestDismiss) {
                         Text(text = stringResource(Res.string.settings_signature_action_cancel))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Grid.x4)) {
@@ -477,7 +477,7 @@ private fun SignatureColorPickerDialog(
     val controller = rememberColorPickerController()
     val colors = MaterialTheme.colorScheme
     var selectedHex by remember { mutableStateOf(normalizeHexInput(initialHex)) }
-    Dialog(onDismissRequest = onDismiss) {
+    AnimatedDialog(onDismiss = onDismiss) { requestDismiss ->
         Surface(
             shape = MaterialTheme.shapes.extraLarge,
             tonalElevation = Grid.x3,
@@ -540,7 +540,7 @@ private fun SignatureColorPickerDialog(
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(Grid.x3)) {
-                        TextButton(onClick = onDismiss) {
+                        TextButton(onClick = requestDismiss) {
                             Text(text = stringResource(Res.string.settings_signature_action_cancel))
                         }
                         Button(onClick = { onConfirm(selectedHex) }) {
