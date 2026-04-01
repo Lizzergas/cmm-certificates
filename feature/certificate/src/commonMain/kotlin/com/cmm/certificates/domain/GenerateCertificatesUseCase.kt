@@ -25,6 +25,7 @@ private const val DEFAULT_OUTPUT_PATH = "pdf/"
 data class GenerateCertificatesRequest(
     val templatePath: String,
     val entries: List<RegistrationEntry>,
+    val certificateDate: String,
     val accreditedId: String,
     val docIdStart: String,
     val accreditedType: String,

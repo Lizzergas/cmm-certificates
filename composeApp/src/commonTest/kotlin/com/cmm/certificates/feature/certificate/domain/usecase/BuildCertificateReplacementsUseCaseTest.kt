@@ -3,7 +3,6 @@ package com.cmm.certificates.feature.certificate.domain.usecase
 import com.cmm.certificates.domain.BuildCertificateReplacementsUseCase
 import com.cmm.certificates.domain.GenerateCertificatesRequest
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
-import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,6 +15,7 @@ class BuildCertificateReplacementsUseCaseTest {
         val request = GenerateCertificatesRequest(
             templatePath = "template.docx",
             entries = emptyList(),
+            certificateDate = "2026 m. kovo 26 d.",
             accreditedId = "IVP-10",
             docIdStart = "100",
             accreditedType = "seminar",
@@ -27,8 +27,6 @@ class BuildCertificateReplacementsUseCaseTest {
             outputDirectory = "",
         )
         val entry = RegistrationEntry(
-            date = LocalDateTime(2026, 3, 26, 10, 0),
-            formattedDate = "2026-03-26",
             primaryEmail = "ada@example.com",
             name = "Ada",
             surname = "Lovelace",
@@ -40,7 +38,7 @@ class BuildCertificateReplacementsUseCaseTest {
         val replacements = useCase(request, entry, docId = 123)
 
         assertEquals("Ada Lovelace", replacements["{{vardas_pavarde}}"])
-        assertEquals("2026-03-26", replacements["{{data}}"])
+        assertEquals("2026 m. kovo 26 d.", replacements["{{data}}"])
         assertEquals("123", replacements["{{dokumento_id}}"])
         assertEquals("Music Workshop", replacements["{{sertifikato_pavadinimas}}"])
     }

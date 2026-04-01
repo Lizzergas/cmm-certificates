@@ -6,7 +6,6 @@ import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -28,6 +27,7 @@ class PreviewCertificateUseCaseTest {
                     sampleEntry(name = "Ada", surname = "Lovelace"),
                     sampleEntry(name = "Grace", surname = "Hopper"),
                 ),
+                certificateDate = "2026 m. kovo 26 d.",
                 accreditedId = "IVP-10",
                 docIdStart = "100",
                 accreditedType = "seminar",
@@ -48,8 +48,6 @@ class PreviewCertificateUseCaseTest {
     }
 
     private fun sampleEntry(name: String, surname: String) = RegistrationEntry(
-        date = LocalDateTime(2026, 3, 26, 10, 0),
-        formattedDate = "2026-03-26",
         primaryEmail = "preview@example.com",
         name = name,
         surname = surname,

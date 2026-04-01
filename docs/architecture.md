@@ -89,7 +89,7 @@ Examples:
 
 ### Conversion Flow
 
-- `ConversionViewModel` builds input state from form values, selected files, parsed XLSX rows, settings, connectivity, and cached-email metadata.
+- `ConversionViewModel` builds input state from form values, including the manual certificate date, selected files, parsed XLSX rows, settings, connectivity, and cached-email metadata.
 - `ParseRegistrationsUseCase` delegates XLSX parsing through the `RegistrationParser` port.
 - `GenerateCertificatesUseCase` delegates template loading, PDF generation, and output directory handling through ports.
 - Progress is persisted in `PdfConversionProgressRepository` so later screens can continue from generated output metadata.

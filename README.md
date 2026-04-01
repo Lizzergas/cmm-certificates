@@ -5,7 +5,7 @@ Programa skirta pažymėjimų generavimui iš XLSX registracijos duomenų ir DOC
 ## Kaip naudotis
 1. Pasirinkite XLSX failą su registracijos duomenimis.
 2. Pasirinkite DOCX šabloną.
-3. Užpildykite sertifikato laukus (ID, valandos, pavadinimas, lektorius ir kt.).
+3. Užpildykite sertifikato laukus (datą, ID, valandas, pavadinimą, lektorių ir kt.).
 4. Spauskite „Peržiūrėti PDF“ arba „Konvertuoti į PDF“.
 5. Jei trūksta failų ar laukų, ekranas pažymės konkrečias klaidas ties XLSX / DOCX pasirinkimu ir pačiais formos laukais.
 6. Jei DOCX šablone nėra tam tikros žymės, atitinkamas laukas bus išjungtas ir užvedus pelę bus parodyta priežastis.
@@ -21,7 +21,7 @@ Programa skirta pažymėjimų generavimui iš XLSX registracijos duomenų ir DOC
 ## XLSX duomenų schema
 Programa šiuo metu remiasi fiksuota pirmo lapo stulpelių tvarka:
 
-1. data / registracijos laikas
+1. data / registracijos laikas (naudojama tik eilučių nuskaitymo ribai)
 2. pirminis el. paštas
 3. vardas
 4. pavardė
@@ -31,6 +31,8 @@ Programa šiuo metu remiasi fiksuota pirmo lapo stulpelių tvarka:
 8. viešinimo sutikimas
 
 Tuščia pirmo stulpelio reikšmė sustabdo tolimesnį eilučių skaitymą.
+
+Pažymėjimo data `{{data}}` nebėra imama iš XLSX. Ji įvedama Conversion ekrane naudojant `YYYY-MM-DD` formatą arba datos parinkiklį, o į DOCX šabloną vis tiek įrašoma tuo pačiu lietuvišku formatu kaip ir anksčiau.
 
 ## Šablono žymės
 DOCX šablone naudokite žymes:

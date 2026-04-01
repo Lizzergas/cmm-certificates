@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
+    <string name="common_action_cancel">Atšaukti</string>
     <string name="common_clear_text">Išvalyti tekstą</string>
     <string name="common_file_xlsx">XLSX</string>
     <string name="common_file_docx">DOCX</string>
@@ -31,6 +32,10 @@
     <string name="conversion_feedback_url_hint">Neprivaloma. Pakeičia {{feedback_url}} el. laiško šablone.</string>
     <string name="conversion_validation_hint">Norėdami tęsti, pataisykite pažymėtus laukus.</string>
     <string name="conversion_form_section_title">Sertifikato duomenys</string>
+    <string name="conversion_certificate_date_label">Pažymėjimo data</string>
+    <string name="conversion_certificate_date_hint">Naudokite YYYY-MM-DD formatą arba pasirinkite datą kalendoriuje.</string>
+    <string name="conversion_certificate_date_not_selected">Data nepasirinkta</string>
+    <string name="conversion_pick_date_button">Pasirinkti datą</string>
     <string name="conversion_accredited_id_label">Akredituoto ID</string>
     <string name="conversion_doc_id_label">Pažymėjimo numeris</string>
     <string name="conversion_accredited_type_label">Renginio tipas</string>
@@ -57,6 +62,8 @@
     <string name="conversion_error_load_template">Nepavyko įkelti šablono.</string>
     <string name="conversion_error_create_output_dir">Nepavyko sukurti išvesties aplanko. Pameginkite perkrauti programėlę su administratoriaus teisėmis.</string>
     <string name="conversion_error_write_pdf">Nepavyko sugeneruoti PDF failo. Patikrinkite ar nėra Adobe Acrobat įjungto, taip pat Excel failo struktūrą</string>
+    <string name="conversion_error_certificate_date_required">Būtina įvesti pažymėjimo datą.</string>
+    <string name="conversion_error_certificate_date_invalid">Pažymėjimo data turi būti YYYY-MM-DD formatu.</string>
     <string name="conversion_error_accredited_id_required">Būtina įvesti akredituoto ID.</string>
     <string name="conversion_error_doc_id_required">Būtina įvesti pažymėjimo numerio pradžią.</string>
     <string name="conversion_error_accredited_type_required">Būtina pasirinkti renginio tipą.</string>
@@ -168,6 +175,13 @@ mokymuose</string>
     <string name="email_progress_success_title">Išsiųsta %1$d el. laiškų\nsėkmingai</string>
     <string name="email_progress_cancel">Atšaukti</string>
     <string name="email_progress_finish">Baigti</string>
+    <string name="email_progress_overview_button">Apžvalga</string>
+    <string name="email_progress_overview_title">Siuntimo apžvalga</string>
+    <string name="email_progress_overview_summary">Išsiųsta: %1$d / Neišsiųsta: %2$d</string>
+    <string name="email_progress_overview_sent_to">Išsiųsta į %1$s</string>
+    <string name="email_progress_overview_cached_to">Neišsiųsta į %1$s</string>
+    <string name="email_progress_overview_sent_empty">Šio siuntimo metu laiškų išsiųsta nebuvo.</string>
+    <string name="email_progress_overview_cached_empty">Šiame siuntime neliko neišsiųstų laiškų.</string>
     <string name="email_progress_error_title">Nepavyko išsiųsti el. laiškų</string>
     <string name="email_stop_reason_smtp_auth">Reikalinga SMTP autentifikacija.</string>
     <string name="email_stop_reason_doc_id_missing">Trūksta pažymėjimo numerio.</string>

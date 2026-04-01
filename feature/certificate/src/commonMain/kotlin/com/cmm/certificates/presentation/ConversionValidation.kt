@@ -3,6 +3,8 @@ package com.cmm.certificates.presentation
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_accredited_hours_required
 import certificates.composeapp.generated.resources.conversion_error_accredited_id_required
+import certificates.composeapp.generated.resources.conversion_error_certificate_date_invalid
+import certificates.composeapp.generated.resources.conversion_error_certificate_date_required
 import certificates.composeapp.generated.resources.conversion_error_accredited_type_required
 import certificates.composeapp.generated.resources.conversion_error_certificate_name_required
 import certificates.composeapp.generated.resources.conversion_error_doc_id_required
@@ -16,7 +18,9 @@ import certificates.composeapp.generated.resources.conversion_error_xlsx_require
 import certificates.composeapp.generated.resources.conversion_missing_template_tag_supporting
 import certificates.composeapp.generated.resources.conversion_missing_template_tag_tooltip
 import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.domain.parseCertificateDateInput
 
+internal const val CertificateDateTag = "{{data}}"
 internal const val AccreditedIdTag = "{{akreditacijos_id}}"
 internal const val DocIdTag = "{{dokumento_id}}"
 internal const val AccreditedTypeTag = "{{akreditacijos_tipas}}"
@@ -47,6 +51,7 @@ data class TemplateFieldAvailability(
 }
 
 data class ConversionTemplateSupportState(
+    val certificateDate: TemplateFieldAvailability = TemplateFieldAvailability(CertificateDateTag),
     val accreditedId: TemplateFieldAvailability = TemplateFieldAvailability(AccreditedIdTag),
     val docIdStart: TemplateFieldAvailability = TemplateFieldAvailability(DocIdTag, disableWhenMissing = false),
     val accreditedType: TemplateFieldAvailability = TemplateFieldAvailability(AccreditedTypeTag),
@@ -59,6 +64,7 @@ data class ConversionTemplateSupportState(
 data class ConversionValidationState(
     val xlsxError: UiMessage? = null,
     val templateError: UiMessage? = null,
+    val certificateDateError: UiMessage? = null,
     val accreditedIdError: UiMessage? = null,
     val docIdStartError: UiMessage? = null,
     val accreditedTypeError: UiMessage? = null,
@@ -71,6 +77,7 @@ data class ConversionValidationState(
         get() = listOf(
             xlsxError,
             templateError,
+            certificateDateError,
             accreditedIdError,
             docIdStartError,
             accreditedTypeError,
@@ -92,6 +99,7 @@ fun buildTemplateSupportState(templateAvailableTags: Set<String>?): ConversionTe
     }
 
     return ConversionTemplateSupportState(
+        certificateDate = field(CertificateDateTag),
         accreditedId = field(AccreditedIdTag),
         docIdStart = field(DocIdTag, disableWhenMissing = false),
         accreditedType = field(AccreditedTypeTag),
@@ -137,6 +145,10 @@ fun buildConversionValidationState(
     return ConversionValidationState(
         xlsxError = xlsxError,
         templateError = templateError,
+        certificateDateError = certificateDateFieldError(
+            value = form.certificateDate,
+            availability = templateSupport.certificateDate,
+        ),
         accreditedIdError = requiredFieldError(
             value = form.accreditedId,
             availability = templateSupport.accreditedId,
@@ -182,6 +194,19 @@ private fun requiredFieldError(
 ): UiMessage? {
     if (!availability.isEnabled) return null
     return if (value.isBlank()) UiMessage(errorResource) else null
+}
+
+private fun certificateDateFieldError(
+    value: String,
+    availability: TemplateFieldAvailability,
+): UiMessage? {
+    if (!availability.isEnabled) return null
+    if (value.isBlank()) return UiMessage(Res.string.conversion_error_certificate_date_required)
+    return if (parseCertificateDateInput(value) == null) {
+        UiMessage(Res.string.conversion_error_certificate_date_invalid)
+    } else {
+        null
+    }
 }
 
 fun xlsxParseErrorMessage(): UiMessage = UiMessage(Res.string.conversion_error_xlsx_parse)

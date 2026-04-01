@@ -2,7 +2,7 @@
 
 ## Current User Flow
 1. Select an XLSX file and a DOCX template on the Conversion screen.
-2. Fill certificate fields (IDs, hours, name, lecturer, etc.).
+2. Fill certificate fields (date, IDs, hours, name, lecturer, etc.).
 3. Click **Preview PDF** or **Convert to PDF**.
 4. If required input is missing, the screen keeps the action visible, highlights the exact invalid fields/files, and shows inline error text.
 5. Watch progress on the PDF Conversion Progress screen after a valid conversion request.
@@ -27,6 +27,8 @@ DOCX templates use placeholders like:
 - `{{destytojas}}`
 - `{{destytojo_tipas}}`
 
+`{{data}}` now comes from a manual date field on the Conversion screen. Users can type it in `YYYY-MM-DD` format or choose it via the date picker, and the generated DOCX still receives the same Lithuanian certificate-date string as before.
+
 Conversion-screen validation is now placeholder-aware:
 - The selected DOCX template is inspected on JVM to discover which placeholders are present.
 - Fields backed by missing template placeholders are disabled and shown with an explanatory tooltip/supporting text.
@@ -44,9 +46,7 @@ See `PDF_GEN.md` for the detailed pipeline.
 - Parses the first sheet without external XLSX libraries.
 - Column mapping is positional (A–H), not header-based.
 - Stops at first empty date cell or fully empty row.
-- Timestamp formats:
-  - String: `MM/dd/yyyy HH:mm:ss`
-  - Excel serial (1900 system with leap-year bug adjustment)
+- The first column remains a row-boundary sentinel, but certificate output no longer reads the date value from XLSX.
 
 ## Email Sending
 - SMTP configured in **Settings**.

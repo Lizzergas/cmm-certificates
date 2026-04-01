@@ -29,10 +29,12 @@ import com.cmm.certificates.feature.settings.domain.SmtpSettingsState
 import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import com.cmm.certificates.presentation.EmailSenderViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -99,6 +101,120 @@ class EmailSenderViewModelTest {
         assertEquals(0, repository.clearCalls)
     }
 
+    @Test
+    fun uiState_exposesOnlyCurrentSessionOverviewItems() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val recentSent = SentEmailRecord(
+            id = "recent",
+            sentAt = 250L,
+            toEmail = "recent@example.com",
+            toName = "Recent",
+            certificateName = "Certificate Recent",
+            subject = "Subject",
+            attachmentName = "250.pdf",
+        )
+        val repository = PreviewEmailProgressRepository(
+            state = EmailProgressState(
+                total = 2,
+                current = 1,
+                startedAtMillis = 200L,
+                endedAtMillis = 300L,
+            ),
+            sentHistory = listOf(
+                recentSent.copy(id = "old", sentAt = 150L),
+                recentSent,
+            ),
+            cachedBatch = CachedEmailBatch(
+                entries = listOf(
+                    CachedEmailEntry(
+                        id = "cached",
+                        request = EmailSendRequest(
+                            toEmail = "cached@example.com",
+                            toName = "Cached",
+                            certificateName = "Certificate Cached",
+                            subject = "Subject",
+                            body = "Body",
+                            attachmentName = "251.pdf",
+                        ),
+                        cachedAt = 280L,
+                    )
+                ),
+                lastReason = EmailStopReason.Cancelled,
+            ),
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            cachedCount = 1,
+            authenticated = true,
+            canSendEmails = true,
+            networkAvailable = true,
+        )
+        val collector = backgroundScope.launch { viewModel.uiState.collect {} }
+
+        advanceUntilIdle()
+
+        assertEquals(listOf(recentSent), viewModel.uiState.value.currentSessionSentHistory)
+        assertEquals(1, viewModel.uiState.value.currentSessionCachedEmails.size)
+        assertEquals(EmailStopReason.Cancelled, viewModel.uiState.value.currentSessionCachedLastReason)
+        assertEquals(true, viewModel.uiState.value.canShowOverview)
+        collector.cancel()
+    }
+
+    @Test
+    fun uiState_hidesCachedOverviewItemsFromOlderSessions() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val recentSent = SentEmailRecord(
+            id = "recent",
+            sentAt = 250L,
+            toEmail = "recent@example.com",
+            toName = "Recent",
+            certificateName = "Certificate Recent",
+            subject = "Subject",
+            attachmentName = "250.pdf",
+        )
+        val repository = PreviewEmailProgressRepository(
+            state = EmailProgressState(
+                total = 2,
+                current = 1,
+                startedAtMillis = 200L,
+                endedAtMillis = 300L,
+            ),
+            sentHistory = listOf(recentSent),
+            cachedBatch = CachedEmailBatch(
+                entries = listOf(
+                    CachedEmailEntry(
+                        id = "old-cached",
+                        request = EmailSendRequest(
+                            toEmail = "cached@example.com",
+                            toName = "Cached",
+                            certificateName = "Certificate Cached",
+                            subject = "Subject",
+                            body = "Body",
+                            attachmentName = "251.pdf",
+                        ),
+                        cachedAt = 150L,
+                    )
+                ),
+                lastReason = EmailStopReason.Cancelled,
+            ),
+        )
+        val viewModel = createViewModel(
+            repository = repository,
+            cachedCount = 1,
+            authenticated = true,
+            canSendEmails = true,
+            networkAvailable = true,
+        )
+        val collector = backgroundScope.launch { viewModel.uiState.collect {} }
+
+        advanceUntilIdle()
+
+        assertEquals(emptyList(), viewModel.uiState.value.currentSessionCachedEmails)
+        assertEquals(null, viewModel.uiState.value.currentSessionCachedLastReason)
+        assertEquals(true, viewModel.uiState.value.canShowOverview)
+        collector.cancel()
+    }
+
     private fun createViewModel(
         repository: PreviewEmailProgressRepository = PreviewEmailProgressRepository(cachedCount = 0),
         cachedCount: Int,
@@ -134,20 +250,29 @@ class EmailSenderViewModelTest {
     }
 }
 
-private class PreviewEmailProgressRepository(cachedCount: Int) : EmailProgressRepository {
-    override val state: StateFlow<EmailProgressState> = MutableStateFlow(EmailProgressState())
-    override val cachedEmails: Flow<CachedEmailBatch> = MutableStateFlow(
-        CachedEmailBatch(
-            entries = List(cachedCount) { index ->
-                CachedEmailEntry(
-                    id = index.toString(),
-                    request = EmailSendRequest("user$index@example.com", "User $index", "Certificate $index", "Subject", "Body"),
-                    cachedAt = index.toLong(),
-                )
-            }
-        )
-    )
-    override val sentHistory: Flow<List<SentEmailRecord>> = MutableStateFlow(emptyList())
+private class PreviewEmailProgressRepository(
+    cachedCount: Int = 0,
+    state: EmailProgressState = EmailProgressState(),
+    cachedBatch: CachedEmailBatch = CachedEmailBatch(
+        entries = List(cachedCount) { index ->
+            CachedEmailEntry(
+                id = index.toString(),
+                request = EmailSendRequest(
+                    "user$index@example.com",
+                    "User $index",
+                    "Certificate $index",
+                    "Subject",
+                    "Body"
+                ),
+                cachedAt = index.toLong(),
+            )
+        }
+    ),
+    sentHistory: List<SentEmailRecord> = emptyList(),
+) : EmailProgressRepository {
+    override val state: StateFlow<EmailProgressState> = MutableStateFlow(state)
+    override val cachedEmails: Flow<CachedEmailBatch> = MutableStateFlow(cachedBatch)
+    override val sentHistory: Flow<List<SentEmailRecord>> = MutableStateFlow(sentHistory)
     override val sentCountInLast24Hours: Flow<Int> = MutableStateFlow(0)
     var cancelRequested: Boolean = false
     var clearCalls: Int = 0

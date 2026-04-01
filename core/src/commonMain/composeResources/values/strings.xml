@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
+    <string name="common_action_cancel">Cancel</string>
     <string name="common_clear_text">Clear text</string>
     <string name="common_file_xlsx">XLSX</string>
     <string name="common_file_docx">DOCX</string>
@@ -31,6 +32,10 @@
     <string name="conversion_feedback_url_hint">Optional. Replaces {{feedback_url}} in the email body template.</string>
     <string name="conversion_validation_hint">Fix the highlighted fields to continue.</string>
     <string name="conversion_form_section_title">Certificate Details</string>
+    <string name="conversion_certificate_date_label">Certificate date</string>
+    <string name="conversion_certificate_date_hint">Use YYYY-MM-DD or choose a date from the calendar.</string>
+    <string name="conversion_certificate_date_not_selected">Date not selected</string>
+    <string name="conversion_pick_date_button">Choose date</string>
     <string name="conversion_accredited_id_label">Accredited ID</string>
     <string name="conversion_doc_id_label">Document ID start</string>
     <string name="conversion_accredited_type_label">Accredited type</string>
@@ -57,6 +62,8 @@
     <string name="conversion_error_load_template">Failed to load template.</string>
     <string name="conversion_error_create_output_dir">Failed to create output folder.</string>
     <string name="conversion_error_write_pdf">Failed to generate PDF file.</string>
+    <string name="conversion_error_certificate_date_required">Certificate date is required.</string>
+    <string name="conversion_error_certificate_date_invalid">Certificate date must use YYYY-MM-DD.</string>
     <string name="conversion_error_accredited_id_required">Accredited ID is required.</string>
     <string name="conversion_error_doc_id_required">Document ID start is required.</string>
     <string name="conversion_error_accredited_type_required">Accredited type is required.</string>
@@ -167,6 +174,13 @@ training</string>
     <string name="email_progress_success_title">%1$d emails sent\nsuccessfully</string>
     <string name="email_progress_cancel">Cancel</string>
     <string name="email_progress_finish">Finish</string>
+    <string name="email_progress_overview_button">Overview</string>
+    <string name="email_progress_overview_title">Send overview</string>
+    <string name="email_progress_overview_summary">Sent: %1$d / Not sent: %2$d</string>
+    <string name="email_progress_overview_sent_to">Sent to %1$s</string>
+    <string name="email_progress_overview_cached_to">Not sent to %1$s</string>
+    <string name="email_progress_overview_sent_empty">No emails were sent in this session.</string>
+    <string name="email_progress_overview_cached_empty">No unsent emails remain in this session.</string>
     <string name="email_progress_error_title">Failed to send emails</string>
     <string name="email_stop_reason_smtp_auth">SMTP authentication is required.</string>
     <string name="email_stop_reason_doc_id_missing">Document ID start is missing.</string>

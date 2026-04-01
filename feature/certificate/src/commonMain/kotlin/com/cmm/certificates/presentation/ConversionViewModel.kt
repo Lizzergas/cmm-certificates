@@ -14,7 +14,9 @@ import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.core.openFile
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.data.defaultLectorLabel
+import com.cmm.certificates.domain.formatCertificateDate
 import com.cmm.certificates.domain.GenerateCertificatesRequest
+import com.cmm.certificates.domain.parseCertificateDateInput
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
@@ -197,6 +199,11 @@ class ConversionViewModel(
         formState.update { it.copy(accreditedId = value) }
     }
 
+    fun setCertificateDate(value: String) {
+        val sanitized = value.filter { it.isDigit() || it == '-' }.take(10)
+        formState.update { it.copy(certificateDate = sanitized) }
+    }
+
     fun setDocIdStart(value: String) {
         val sanitized = value.filter { it in '0'..'9' }
         formState.update { it.copy(docIdStart = sanitized) }
@@ -372,9 +379,13 @@ class ConversionViewModel(
     }
 
     private fun buildGenerateRequest(snapshot: ConversionUiState): GenerateCertificatesRequest {
+        val certificateDate = parseCertificateDateInput(snapshot.form.certificateDate)
+            ?.let(::formatCertificateDate)
+            .orEmpty()
         return GenerateCertificatesRequest(
             templatePath = snapshot.files.templatePath,
             entries = snapshot.entries,
+            certificateDate = certificateDate,
             accreditedId = snapshot.form.accreditedId,
             docIdStart = snapshot.form.docIdStart,
             accreditedType = snapshot.form.accreditedType,
@@ -439,6 +450,7 @@ private fun String.toFileName(): String {
 }
 
 data class ConversionFormState(
+    val certificateDate: String = "",
     val accreditedId: String = "IVP-10",
     val docIdStart: String = "",
     val accreditedType: String = "",

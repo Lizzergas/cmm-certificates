@@ -17,7 +17,7 @@ class XlsxEntryMapperTest {
     )
 
     @Test
-    fun mapEntries_parsesTimestampAndFormatsLithuanianDate() {
+    fun mapEntries_mapsNonDateColumnsUsingExistingPositions() {
         val entries = XlsxEntryMapper.mapEntries(
             headers = headers,
             rows = listOf(
@@ -35,8 +35,10 @@ class XlsxEntryMapperTest {
         )
 
         assertEquals(1, entries.size)
-        assertEquals("2024 m. kovo 5 d.", entries.single().formattedDate)
         assertEquals("ada@example.com", entries.single().primaryEmail)
+        assertEquals("Ada", entries.single().name)
+        assertEquals("Lovelace", entries.single().surname)
+        assertEquals("CMM", entries.single().institution)
     }
 
     @Test
@@ -71,7 +73,7 @@ class XlsxEntryMapperTest {
     }
 
     @Test
-    fun mapEntries_parsesExcelSerialTimestampWithLeapYearAdjustment() {
+    fun mapEntries_keepsReadingRowsWithNumericFirstColumn() {
         val entries = XlsxEntryMapper.mapEntries(
             headers = headers,
             rows = listOf(
@@ -88,9 +90,6 @@ class XlsxEntryMapperTest {
             ),
         )
 
-        val entry = entries.single()
-        assertEquals("1900 m. kovo 1 d.", entry.formattedDate)
-        assertEquals(12, entry.date.hour)
-        assertEquals(0, entry.date.minute)
+        assertEquals(listOf("excel@example.com"), entries.map { it.primaryEmail })
     }
 }

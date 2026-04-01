@@ -1,7 +1,6 @@
 package com.cmm.certificates.feature.emailsending.domain.usecase
 
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
-import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -69,8 +68,6 @@ class BuildEmailRequestsUseCaseTest {
 
     private fun registrationEntry(email: String, name: String, surname: String): RegistrationEntry {
         return RegistrationEntry(
-            date = LocalDateTime(2026, 3, 26, 10, 0),
-            formattedDate = "2026-03-26",
             primaryEmail = email,
             name = name,
             surname = surname,

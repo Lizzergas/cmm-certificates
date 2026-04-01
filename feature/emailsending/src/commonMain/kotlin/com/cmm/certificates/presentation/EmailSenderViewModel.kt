@@ -6,8 +6,12 @@ import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailBatch
+import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailProgressRepository
+import com.cmm.certificates.feature.emailsending.domain.EmailProgressState
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
+import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
 import com.cmm.certificates.feature.emailsending.domain.usecase.RetryCachedEmailsUseCase
 import com.cmm.certificates.feature.emailsending.domain.usecase.SendGeneratedEmailsUseCase
 import com.cmm.certificates.feature.settings.domain.SettingsRepository
@@ -35,40 +39,66 @@ class EmailSenderViewModel(
     val uiState: StateFlow<EmailProgressUiState> = combine(
         emailProgressRepository.state,
         emailProgressRepository.cachedEmails,
-        emailProgressRepository.sentCountInLast24Hours,
-        settingsRepository.state,
-        connectivityMonitor.isNetworkAvailable,
-    ) { progressState, cachedEmails, sentCount, settings, networkAvailable ->
-        val total = progressState.total.coerceAtLeast(0)
-        val current = progressState.current.coerceAtLeast(0)
-        val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
-        val cachedCount = cachedEmails.entries.size
-        val isSmtpAuthenticated = settings.smtp.isAuthenticated
-        val stopReason = progressState.stopReason
-
-        val mode = when {
-            stopReason != null -> EmailProgress.Error(stopReason)
-            progressState.completed -> EmailProgress.Success(total)
-            else -> EmailProgress.Running(
-                current = current,
-                total = total,
-                progress = progress,
-                currentRecipient = progressState.currentRecipient,
-                isInProgress = progressState.inProgress,
-            )
-        }
-
-        EmailProgressUiState(
-            mode = mode,
-            cachedCount = cachedCount,
-            sentToday = sentCount,
-            dailyLimit = settings.email.dailyLimit,
-            isNetworkAvailable = networkAvailable,
-            isSmtpAuthenticated = isSmtpAuthenticated,
-            supportsEmailSending = capabilities.canSendEmails,
-            canRetryCachedEmails = cachedCount > 0 && capabilities.canSendEmails && networkAvailable && isSmtpAuthenticated,
+        emailProgressRepository.sentHistory,
+    ) { progressState, cachedEmails, sentHistory ->
+        SessionState(
+            progressState = progressState,
+            cachedEmails = cachedEmails,
+            sentHistory = sentHistory,
         )
-    }.stateIn(
+    }.combine(emailProgressRepository.sentCountInLast24Hours) { sessionState, sentCount ->
+        sessionState to sentCount
+    }.combine(settingsRepository.state) { (sessionState, sentCount), settings ->
+        Triple(sessionState, sentCount, settings)
+    }
+        .combine(connectivityMonitor.isNetworkAvailable) { (sessionState, sentCount, settings), networkAvailable ->
+            val progressState = sessionState.progressState
+            val cachedEmails = sessionState.cachedEmails
+            val sentHistory = sessionState.sentHistory
+            val total = progressState.total.coerceAtLeast(0)
+            val current = progressState.current.coerceAtLeast(0)
+            val progress = if (total > 0) current.toFloat() / total.toFloat() else 0f
+            val cachedCount = cachedEmails.entries.size
+            val isSmtpAuthenticated = settings.smtp.isAuthenticated
+            val stopReason = progressState.stopReason
+            val currentSessionStartedAt = progressState.startedAtMillis
+            val currentSessionSentHistory = currentSessionStartedAt?.let { startedAt ->
+                sentHistory.filter { it.sentAt >= startedAt }
+            }.orEmpty()
+            val currentSessionCachedEmails = currentSessionStartedAt?.let { startedAt ->
+                cachedEmails.entries.filter { it.cachedAt >= startedAt }
+            }.orEmpty()
+            val canShowOverview = !progressState.inProgress &&
+                    currentSessionStartedAt != null &&
+                    (currentSessionSentHistory.isNotEmpty() || currentSessionCachedEmails.isNotEmpty())
+
+            val mode = when {
+                stopReason != null -> EmailProgress.Error(stopReason)
+                progressState.completed -> EmailProgress.Success(total)
+                else -> EmailProgress.Running(
+                    current = current,
+                    total = total,
+                    progress = progress,
+                    currentRecipient = progressState.currentRecipient,
+                    isInProgress = progressState.inProgress,
+                )
+            }
+
+            EmailProgressUiState(
+                mode = mode,
+                cachedCount = cachedCount,
+                sentToday = sentCount,
+                dailyLimit = settings.email.dailyLimit,
+                isNetworkAvailable = networkAvailable,
+                isSmtpAuthenticated = isSmtpAuthenticated,
+                supportsEmailSending = capabilities.canSendEmails,
+                canRetryCachedEmails = cachedCount > 0 && capabilities.canSendEmails && networkAvailable && isSmtpAuthenticated,
+                currentSessionSentHistory = currentSessionSentHistory,
+                currentSessionCachedEmails = currentSessionCachedEmails,
+                currentSessionCachedLastReason = if (currentSessionCachedEmails.isNotEmpty()) cachedEmails.lastReason else null,
+                canShowOverview = canShowOverview,
+            )
+        }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
         EmailProgressUiState(),
@@ -154,6 +184,10 @@ data class EmailProgressUiState(
     val isSmtpAuthenticated: Boolean = false,
     val supportsEmailSending: Boolean = true,
     val canRetryCachedEmails: Boolean = false,
+    val currentSessionSentHistory: List<SentEmailRecord> = emptyList(),
+    val currentSessionCachedEmails: List<CachedEmailEntry> = emptyList(),
+    val currentSessionCachedLastReason: EmailStopReason? = null,
+    val canShowOverview: Boolean = false,
 )
 
 sealed interface EmailProgress {
@@ -169,3 +203,9 @@ sealed interface EmailProgress {
 
     data class Error(val reason: EmailStopReason) : EmailProgress
 }
+
+private data class SessionState(
+    val progressState: EmailProgressState,
+    val cachedEmails: CachedEmailBatch,
+    val sentHistory: List<SentEmailRecord>,
+)

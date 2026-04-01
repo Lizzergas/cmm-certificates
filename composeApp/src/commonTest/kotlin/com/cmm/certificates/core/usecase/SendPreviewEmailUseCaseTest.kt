@@ -24,7 +24,6 @@ import com.cmm.certificates.feature.settings.domain.SmtpTransport
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -161,8 +160,6 @@ class SendPreviewEmailUseCaseTest {
 
     private fun sampleEntry(): RegistrationEntry {
         return RegistrationEntry(
-            date = LocalDateTime(2026, 3, 26, 10, 0),
-            formattedDate = "2026-03-26",
             primaryEmail = "ada@example.com",
             name = "Ada",
             surname = "Lovelace",

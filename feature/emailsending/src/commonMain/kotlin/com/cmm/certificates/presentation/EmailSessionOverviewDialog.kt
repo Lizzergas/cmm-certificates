@@ -1,22 +1,21 @@
-package com.cmm.certificates.presentation.components
+package com.cmm.certificates.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,24 +33,25 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.Dialog
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_certificate_name_label
+import certificates.composeapp.generated.resources.email_progress_overview_cached_empty
+import certificates.composeapp.generated.resources.email_progress_overview_cached_to
+import certificates.composeapp.generated.resources.email_progress_overview_sent_empty
+import certificates.composeapp.generated.resources.email_progress_overview_sent_to
+import certificates.composeapp.generated.resources.email_progress_overview_summary
+import certificates.composeapp.generated.resources.email_progress_overview_title
 import certificates.composeapp.generated.resources.settings_history_cache_cached_tab
 import certificates.composeapp.generated.resources.settings_history_cache_close
 import certificates.composeapp.generated.resources.settings_history_cache_sent_tab
-import certificates.composeapp.generated.resources.settings_history_cache_title
 import certificates.composeapp.generated.resources.settings_history_cached_at_label
-import certificates.composeapp.generated.resources.settings_history_cached_empty
-import certificates.composeapp.generated.resources.settings_history_file_label
 import certificates.composeapp.generated.resources.settings_history_reason_label
-import certificates.composeapp.generated.resources.settings_history_remove_cached
 import certificates.composeapp.generated.resources.settings_history_results_summary
 import certificates.composeapp.generated.resources.settings_history_sent_at_label
-import certificates.composeapp.generated.resources.settings_history_sent_empty
-import certificates.composeapp.generated.resources.settings_history_sent_on_date_summary
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.ui.EmptyHistoryState
 import com.cmm.certificates.core.ui.HistoryCard
@@ -63,6 +63,7 @@ import com.cmm.certificates.core.ui.resolveEmailStopReason
 import com.cmm.certificates.feature.emailsending.domain.CachedEmailEntry
 import com.cmm.certificates.feature.emailsending.domain.EmailStopReason
 import com.cmm.certificates.feature.emailsending.domain.SentEmailRecord
+import com.composables.icons.lucide.Check
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import kotlinx.coroutines.launch
@@ -71,12 +72,11 @@ import org.jetbrains.compose.resources.stringResource
 private val DialogWidth = Grid.x240
 
 @Composable
-fun HistoryCacheDialog(
+fun EmailSessionOverviewDialog(
     isOpen: Boolean,
     sentHistory: List<SentEmailRecord>,
     cachedEmails: List<CachedEmailEntry>,
     cachedLastReason: EmailStopReason?,
-    onRemoveCachedEmail: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!isOpen) return
@@ -103,7 +103,7 @@ fun HistoryCacheDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(Res.string.settings_history_cache_title),
+                        text = stringResource(Res.string.email_progress_overview_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -114,6 +114,16 @@ fun HistoryCacheDialog(
                         )
                     }
                 }
+
+                Text(
+                    text = stringResource(
+                        Res.string.email_progress_overview_summary,
+                        sentHistory.size,
+                        cachedEmails.size,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 SecondaryTabRow(selectedTabIndex = pagerState.currentPage) {
                     val tabs = listOf(
@@ -136,11 +146,10 @@ fun HistoryCacheDialog(
                     modifier = Modifier.heightIn(min = Grid.x80, max = Grid.x240),
                 ) { page ->
                     when (page) {
-                        0 -> SentHistoryPage(sentHistory = sentHistory)
-                        else -> CachedEmailsPage(
+                        0 -> EmailSessionSentPage(sentHistory = sentHistory)
+                        else -> EmailSessionCachedPage(
                             cachedEmails = cachedEmails,
                             cachedLastReason = cachedLastReason,
-                            onRemoveCachedEmail = onRemoveCachedEmail,
                         )
                     }
                 }
@@ -159,7 +168,7 @@ fun HistoryCacheDialog(
 }
 
 @Composable
-private fun SentHistoryPage(sentHistory: List<SentEmailRecord>) {
+private fun EmailSessionSentPage(sentHistory: List<SentEmailRecord>) {
     var query by rememberSaveable { mutableStateOf("") }
     var dateQuery by rememberSaveable { mutableStateOf("") }
 
@@ -186,26 +195,15 @@ private fun SentHistoryPage(sentHistory: List<SentEmailRecord>) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (dateQuery.isNotBlank()) {
-            Text(
-                text = stringResource(
-                    Res.string.settings_history_sent_on_date_summary,
-                    filtered.size,
-                    dateQuery,
-                ),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
         if (filtered.isEmpty()) {
-            EmptyHistoryState(stringResource(Res.string.settings_history_sent_empty))
+            EmptyHistoryState(stringResource(Res.string.email_progress_overview_sent_empty))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(Grid.x4),
             ) {
                 items(filtered, key = SentEmailRecord::id) { record ->
-                    ExpandableHistoryRecordCard(record)
+                    EmailSessionSentCard(record = record)
                 }
             }
         }
@@ -213,10 +211,9 @@ private fun SentHistoryPage(sentHistory: List<SentEmailRecord>) {
 }
 
 @Composable
-private fun CachedEmailsPage(
+private fun EmailSessionCachedPage(
     cachedEmails: List<CachedEmailEntry>,
     cachedLastReason: EmailStopReason?,
-    onRemoveCachedEmail: (String) -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var dateQuery by rememberSaveable { mutableStateOf("") }
@@ -256,18 +253,14 @@ private fun CachedEmailsPage(
             )
         }
         if (filtered.isEmpty()) {
-            EmptyHistoryState(stringResource(Res.string.settings_history_cached_empty))
+            EmptyHistoryState(stringResource(Res.string.email_progress_overview_cached_empty))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(Grid.x4),
             ) {
                 items(filtered, key = CachedEmailEntry::id) { entry ->
-                    ExpandableCachedEmailCard(
-                        entry = entry,
-                        cachedLastReason = cachedLastReason,
-                        onRemove = { onRemoveCachedEmail(entry.id) },
-                    )
+                    EmailSessionCachedCard(entry = entry)
                 }
             }
         }
@@ -275,113 +268,114 @@ private fun CachedEmailsPage(
 }
 
 @Composable
-private fun ExpandableHistoryRecordCard(record: SentEmailRecord) {
-    var expanded by rememberSaveable(record.id) { mutableStateOf(false) }
-
-    HistoryCard(onClick = { expanded = !expanded }) {
-        HistoryHeader(
-            title = record.requestLabel(),
-            subtitle = stringResource(Res.string.settings_history_sent_at_label) + ": " + formatEmailHistoryTimestamp(
-                record.sentAt
-            ),
-        )
-        Text(
-            text = record.subject,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        AnimatedVisibility(
-            visible = expanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
-                Text(
-                    text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${record.certificateName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                record.attachmentName?.takeIf { it.isNotBlank() }?.let { attachmentName ->
-                    Text(
-                        text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExpandableCachedEmailCard(
-    entry: CachedEmailEntry,
-    cachedLastReason: EmailStopReason?,
-    onRemove: () -> Unit,
-) {
-    var expanded by rememberSaveable(entry.id) { mutableStateOf(false) }
-
-    HistoryCard(onClick = { expanded = !expanded }) {
+private fun EmailSessionSentCard(record: SentEmailRecord) {
+    HistoryCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(Grid.x4),
             verticalAlignment = Alignment.Top,
         ) {
+            StatusBadge(
+                isSuccess = true,
+                modifier = Modifier.padding(top = Grid.x1),
+            )
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(Grid.x2),
             ) {
                 HistoryHeader(
-                    title = entry.requestLabel(),
-                    subtitle = stringResource(Res.string.settings_history_cached_at_label) + ": " + formatEmailHistoryTimestamp(
-                        entry.cachedAt
-                    ),
+                    title = record.attachmentDisplayName(),
+                    subtitle = stringResource(Res.string.settings_history_sent_at_label) + ": " +
+                            formatEmailHistoryTimestamp(record.sentAt),
                 )
                 Text(
-                    text = entry.request.subject,
+                    text = stringResource(
+                        Res.string.email_progress_overview_sent_to,
+                        record.requestLabel()
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                AnimatedVisibility(
-                    visible = expanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
-                        Text(
-                            text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${entry.request.certificateName}",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        entry.request.attachmentName?.takeIf { it.isNotBlank() }
-                            ?.let { attachmentName ->
-                                Text(
-                                    text = "${stringResource(Res.string.settings_history_file_label)}: $attachmentName",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        cachedLastReason?.let { reason ->
-                            Text(
-                                text = "${stringResource(Res.string.settings_history_reason_label)}: ${
-                                    resolveEmailStopReason(
-                                        reason
-                                    )
-                                }",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                }
-            }
-            IconButton(onClick = onRemove) {
-                Icon(
-                    imageVector = Lucide.X,
-                    contentDescription = stringResource(Res.string.settings_history_remove_cached),
+                Text(
+                    text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${record.certificateName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EmailSessionCachedCard(entry: CachedEmailEntry) {
+    HistoryCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Grid.x4),
+            verticalAlignment = Alignment.Top,
+        ) {
+            StatusBadge(
+                isSuccess = false,
+                modifier = Modifier.padding(top = Grid.x1),
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(Grid.x2),
+            ) {
+                HistoryHeader(
+                    title = entry.attachmentDisplayName(),
+                    subtitle = stringResource(Res.string.settings_history_cached_at_label) + ": " +
+                            formatEmailHistoryTimestamp(entry.cachedAt),
+                )
+                Text(
+                    text = stringResource(
+                        Res.string.email_progress_overview_cached_to,
+                        entry.requestLabel()
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "${stringResource(Res.string.conversion_certificate_name_label)}: ${entry.request.certificateName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(
+    isSuccess: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val containerColor = if (isSuccess) {
+        MaterialTheme.colorScheme.tertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val contentColor = if (isSuccess) {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+
+    Box(
+        modifier = modifier
+            .size(Grid.x16)
+            .clip(CircleShape)
+            .background(containerColor),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (isSuccess) Lucide.Check else Lucide.X,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(Grid.x8),
+        )
     }
 }
 
@@ -420,3 +414,11 @@ private fun CachedEmailEntry.matches(query: String, dateQuery: String): Boolean 
 private fun SentEmailRecord.requestLabel(): String = "$toName <$toEmail>"
 
 private fun CachedEmailEntry.requestLabel(): String = "${request.toName} <${request.toEmail}>"
+
+private fun SentEmailRecord.attachmentDisplayName(): String =
+    attachmentName?.takeIf { it.isNotBlank() }
+        ?: certificateName
+
+private fun CachedEmailEntry.attachmentDisplayName(): String =
+    request.attachmentName?.takeIf { it.isNotBlank() }
+        ?: request.certificateName

@@ -14,7 +14,7 @@ class BuildCertificateReplacementsUseCase {
 
         return mapOf(
             "{{vardas_pavarde}}" to fullName,
-            "{{data}}" to entry.formattedDate,
+            "{{data}}" to request.certificateDate,
             "{{akreditacijos_id}}" to request.accreditedId,
             "{{dokumento_id}}" to docId.toString(),
             "{{akreditacijos_tipas}}" to request.accreditedType,

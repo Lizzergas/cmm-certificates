@@ -22,6 +22,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -31,6 +33,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,13 +48,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.cmm_logo
+import certificates.composeapp.generated.resources.common_action_cancel
+import certificates.composeapp.generated.resources.common_action_ok
 import certificates.composeapp.generated.resources.common_file_docx
 import certificates.composeapp.generated.resources.common_file_xlsx
-import certificates.composeapp.generated.resources.cmm_logo
-import certificates.composeapp.generated.resources.docx
 import certificates.composeapp.generated.resources.conversion_accredited_hours_label
 import certificates.composeapp.generated.resources.conversion_accredited_id_label
 import certificates.composeapp.generated.resources.conversion_accredited_type_label
+import certificates.composeapp.generated.resources.conversion_certificate_date_label
+import certificates.composeapp.generated.resources.conversion_certificate_date_not_selected
 import certificates.composeapp.generated.resources.conversion_certificate_name_label
 import certificates.composeapp.generated.resources.conversion_convert_button
 import certificates.composeapp.generated.resources.conversion_doc_id_label
@@ -61,30 +68,35 @@ import certificates.composeapp.generated.resources.conversion_form_section_title
 import certificates.composeapp.generated.resources.conversion_lector_gender_label
 import certificates.composeapp.generated.resources.conversion_lector_label
 import certificates.composeapp.generated.resources.conversion_offline_hint
+import certificates.composeapp.generated.resources.conversion_pick_date_button
 import certificates.composeapp.generated.resources.conversion_preview_button
-import certificates.composeapp.generated.resources.conversion_unsupported_hint
 import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
 import certificates.composeapp.generated.resources.conversion_tooltip_xlsx
+import certificates.composeapp.generated.resources.conversion_unsupported_hint
 import certificates.composeapp.generated.resources.conversion_validation_hint
+import certificates.composeapp.generated.resources.docx
 import certificates.composeapp.generated.resources.email_progress_cached_retry_requirements_hint
 import certificates.composeapp.generated.resources.email_progress_cached_status
-import certificates.composeapp.generated.resources.email_sending_unsupported_hint
 import certificates.composeapp.generated.resources.email_progress_retry_cached
+import certificates.composeapp.generated.resources.email_sending_unsupported_hint
 import certificates.composeapp.generated.resources.xlsx
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.core.presentation.asString
+import com.cmm.certificates.core.theme.AppTheme
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
+import com.cmm.certificates.core.ui.rememberFilePickerLauncher
+import com.cmm.certificates.domain.certificateDateInputToUtcMillis
+import com.cmm.certificates.domain.formatCertificateDate
+import com.cmm.certificates.domain.parseCertificateDateInput
+import com.cmm.certificates.domain.utcMillisToCertificateDateInput
+import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.presentation.components.PrimaryActionButton
 import com.cmm.certificates.presentation.components.SelectFileIcon
 import com.cmm.certificates.presentation.components.SelectFileIconState
-import com.cmm.certificates.core.theme.AppTheme
-import com.cmm.certificates.core.ui.rememberFilePickerLauncher
-import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
-import kotlinx.datetime.LocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -187,7 +199,10 @@ fun ConversionScreen(
                     SelectFileIcon(
                         icon = Res.drawable.xlsx,
                         label = stringResource(Res.string.common_file_xlsx),
-                        state = selectFileIconState(hasXlsx, state.validation.xlsxError?.asString()),
+                        state = selectFileIconState(
+                            hasXlsx,
+                            state.validation.xlsxError?.asString()
+                        ),
                         fileName = state.files.xlsxFileName,
                         errorText = state.validation.xlsxError?.asString(),
                         tooltipText = xlsxTooltip,
@@ -198,7 +213,10 @@ fun ConversionScreen(
                     SelectFileIcon(
                         icon = Res.drawable.docx,
                         label = stringResource(Res.string.common_file_docx),
-                        state = selectFileIconState(hasTemplate, state.validation.templateError?.asString()),
+                        state = selectFileIconState(
+                            hasTemplate,
+                            state.validation.templateError?.asString()
+                        ),
                         fileName = state.files.templateFileName,
                         errorText = state.validation.templateError?.asString(),
                         tooltipText = docxTooltip,
@@ -216,6 +234,7 @@ fun ConversionScreen(
                     accreditedTypeOptions = state.accreditedTypeOptions,
                     enabled = state.supportsConversion,
                     actions = ConversionFormActions(
+                        onCertificateDateChange = viewModel::setCertificateDate,
                         onAccreditedIdChange = viewModel::setAccreditedId,
                         onDocIdStartChange = viewModel::setDocIdStart,
                         onAccreditedTypeChange = viewModel::setAccreditedType,
@@ -251,8 +270,12 @@ private fun ConversionBottomBarPreview() {
     AppTheme(darkTheme = false) {
         ConversionBottomBar(
             state = ConversionUiState(
-                files = ConversionFilesState(xlsxPath = "participants.xlsx", templatePath = "template.docx"),
+                files = ConversionFilesState(
+                    xlsxPath = "participants.xlsx",
+                    templatePath = "template.docx"
+                ),
                 form = ConversionFormState(
+                    certificateDate = "2026-03-26",
                     docIdStart = "100",
                     accreditedHours = "4",
                     certificateName = "Certificate",
@@ -260,8 +283,6 @@ private fun ConversionBottomBarPreview() {
                 ),
                 entries = listOf(
                     RegistrationEntry(
-                        date = LocalDateTime(2026, 3, 26, 10, 0),
-                        formattedDate = "2026-03-26",
                         primaryEmail = "preview@example.com",
                         name = "Ada",
                         surname = "Lovelace",
@@ -290,6 +311,19 @@ private fun CertificateDetailsSection(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val inputsEnabled = enabled && !isTemplateInspectionInProgress
+    var isDatePickerVisible by remember { mutableStateOf(false) }
+    val certificateDateEnabled = inputsEnabled && templateSupport.certificateDate.isEnabled
+
+    if (isDatePickerVisible) {
+        CertificateDatePickerDialog(
+            value = form.certificateDate,
+            onDismissRequest = { isDatePickerVisible = false },
+            onDateSelected = {
+                actions.onCertificateDateChange(it)
+                isDatePickerVisible = false
+            },
+        )
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -454,11 +488,23 @@ private fun CertificateDetailsSection(
                     ),
                 )
             }
+            CertificateDateField(
+                value = form.certificateDate,
+                onOpenPicker = { isDatePickerVisible = true },
+                enabled = certificateDateEnabled,
+                isError = validation.certificateDateError != null,
+                tooltipText = templateSupport.certificateDate.disabledTooltip?.asString(),
+                supportingText = certificateDateSupportingText(
+                    error = validation.certificateDateError,
+                    helper = templateSupport.certificateDate.disabledSupportingText,
+                ),
+            )
         }
     }
 }
 
 private data class ConversionFormActions(
+    val onCertificateDateChange: (String) -> Unit,
     val onAccreditedIdChange: (String) -> Unit,
     val onDocIdStartChange: (String) -> Unit,
     val onAccreditedTypeChange: (String) -> Unit,
@@ -467,6 +513,106 @@ private data class ConversionFormActions(
     val onLectorChange: (String) -> Unit,
     val onLectorGenderChange: (String) -> Unit,
 )
+
+@Composable
+private fun CertificateDateField(
+    value: String,
+    onOpenPicker: () -> Unit,
+    enabled: Boolean,
+    isError: Boolean,
+    tooltipText: String?,
+    supportingText: (@Composable () -> Unit)?,
+) {
+    val parsedDate = parseCertificateDateInput(value)
+    val displayText = parsedDate?.let(::formatCertificateDate)
+        ?: stringResource(Res.string.conversion_certificate_date_not_selected)
+    val displayColor = when {
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        isError -> MaterialTheme.colorScheme.error
+        parsedDate == null -> MaterialTheme.colorScheme.onSurfaceVariant
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    val content: @Composable () -> Unit = {
+        Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (enabled) Modifier.clickable(onClick = onOpenPicker) else Modifier),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 1f else 0.5f),
+                border = BorderStroke(
+                    Stroke.thin,
+                    if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+                ),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Grid.x6, vertical = Grid.x5),
+                    verticalArrangement = Arrangement.spacedBy(Grid.x2),
+                ) {
+                    Text(
+                        text = stringResource(Res.string.conversion_certificate_date_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = displayText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = displayColor,
+                    )
+                }
+            }
+            supportingText?.invoke()
+        }
+    }
+
+    if (tooltipText.isNullOrBlank()) {
+        content()
+    } else {
+        com.cmm.certificates.core.ui.TooltipWrapper(
+            tooltipText = tooltipText,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            content()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CertificateDatePickerDialog(
+    value: String,
+    onDismissRequest: () -> Unit,
+    onDateSelected: (String) -> Unit,
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = certificateDateInputToUtcMillis(value),
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedDateMillis = datePickerState.selectedDateMillis ?: return@TextButton
+                    onDateSelected(utcMillisToCertificateDateInput(selectedDateMillis))
+                },
+                enabled = datePickerState.selectedDateMillis != null,
+            ) {
+                Text(stringResource(Res.string.common_action_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(Res.string.common_action_cancel))
+            }
+        },
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
 
 @Composable
 private fun EmailExtrasSection(
@@ -631,6 +777,26 @@ private fun supportingTextFor(
         }
         Text(
             text = (error ?: helper)?.asString().orEmpty(),
+            color = color,
+        )
+    }
+}
+
+@Composable
+private fun certificateDateSupportingText(
+    error: UiMessage?,
+    helper: UiMessage?,
+): (@Composable () -> Unit)? {
+    if (error == null && helper == null) return null
+    return {
+        val resolved = error ?: helper
+        val color = when {
+            error != null -> MaterialTheme.colorScheme.error
+            helper != null -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+        Text(
+            text = resolved?.asString().orEmpty(),
             color = color,
         )
     }
