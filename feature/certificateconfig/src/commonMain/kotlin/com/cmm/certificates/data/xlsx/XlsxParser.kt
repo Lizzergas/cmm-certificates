@@ -1,9 +1,14 @@
 package com.cmm.certificates.data.xlsx
 
+data class XlsxRowData(
+    val rowNumber: Int,
+    val cells: Map<String, String?>,
+)
+
 data class XlsxSheetData(
     val name: String,
     val headers: List<String>,
-    val rows: List<Map<String, String?>>,
+    val rows: List<XlsxRowData>,
 )
 
 expect object XlsxParser {

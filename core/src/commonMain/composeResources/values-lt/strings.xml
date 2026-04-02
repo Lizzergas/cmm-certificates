@@ -30,6 +30,7 @@
     <string name="conversion_preview_dialog_title">PDF peržiūra</string>
     <string name="conversion_preview_loading">Kraunama peržiūra...</string>
     <string name="conversion_preview_error">Nepavyko atvaizduoti PDF peržiūros.</string>
+    <string name="conversion_runtime_restart_required">Veiksmo nepavyko paleisti. Perkraukite programą ir bandykite dar kartą.</string>
     <string name="conversion_preview_unavailable_hint">Šioje platformoje PDF peržiūra programoje dar nepalaikoma.</string>
     <string name="conversion_convert_button">Konvertuoti į PDF</string>
     <string name="conversion_email_extras_section_title">El. pašto priedai</string>
@@ -61,6 +62,7 @@
     <string name="conversion_error_xlsx_required">Būtina pasirinkti XLSX failą.</string>
     <string name="conversion_error_xlsx_parse">Nepavyko perskaityti XLSX failo.</string>
     <string name="conversion_error_xlsx_missing_headers">Trūksta konfigūruotų XLSX antraščių: %1$s</string>
+    <string name="conversion_error_xlsx_missing_values">Trūksta privalomų XLSX reikšmių: %1$s</string>
     <string name="conversion_error_recipient_email_header_required">Pasirinkite XLSX stulpelį, kuris naudojamas gavėjo el. paštui.</string>
     <string name="conversion_refresh_xlsx_succeeded">XLSX failas atnaujintas.</string>
     <string name="conversion_refresh_xlsx_failed">Nepavyko atnaujinti XLSX failo.</string>

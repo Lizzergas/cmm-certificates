@@ -31,7 +31,7 @@ actual object XlsxParser {
 
     private data class ParsedSheet(
         val headers: List<String>,
-        val rows: List<Map<String, String?>>,
+        val rows: List<XlsxRowData>,
     )
 
     private fun readSharedStrings(zip: ZipFile): List<String> {
@@ -65,12 +65,15 @@ actual object XlsxParser {
 
     private fun parseSheet(input: InputStream, sharedStrings: List<String>): ParsedSheet {
         val xml = input.bufferedReader().readText()
-        val rowRegex = Regex("<row[^>]*>(.*?)</row>", RegexOption.DOT_MATCHES_ALL)
+        val rowRegex = Regex("<row([^>]*)>(.*?)</row>", RegexOption.DOT_MATCHES_ALL)
         val cellRegex = Regex("<c([^>]*)>(.*?)</c>", RegexOption.DOT_MATCHES_ALL)
-        val rows = mutableListOf<Map<String, String?>>()
+        val rows = mutableListOf<XlsxRowData>()
         val headers = linkedSetOf<String>()
         rowRegex.findAll(xml).forEachIndexed { index, rowMatch ->
-            val rowXml = rowMatch.groupValues[1]
+            val rowAttributes = rowMatch.groupValues[1]
+            val rowXml = rowMatch.groupValues[2]
+            val rowNumber = Regex("r=\"(\\d+)\"").find(rowAttributes)?.groupValues?.get(1)?.toIntOrNull()
+                ?: index + 1
             val rowMap = linkedMapOf<String, String?>()
             cellRegex.findAll(rowXml).forEach { cellMatch ->
                 val attrs = cellMatch.groupValues[1]
@@ -88,7 +91,12 @@ actual object XlsxParser {
                 headers += header
                 rowMap[header] = value
             }
-            if (index > 0) rows += rowMap
+            if (index > 0) {
+                rows += XlsxRowData(
+                    rowNumber = rowNumber,
+                    cells = rowMap,
+                )
+            }
         }
         return ParsedSheet(headers = headers.toList(), rows = rows)
     }

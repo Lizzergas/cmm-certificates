@@ -4,6 +4,7 @@ import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_docx_inspect
 import certificates.composeapp.generated.resources.conversion_error_dynamic_date_invalid
 import certificates.composeapp.generated.resources.conversion_error_dynamic_required
+import certificates.composeapp.generated.resources.conversion_error_xlsx_missing_values
 import certificates.composeapp.generated.resources.conversion_error_no_entries
 import certificates.composeapp.generated.resources.conversion_error_recipient_email_header_required
 import certificates.composeapp.generated.resources.conversion_error_template_required
@@ -160,6 +161,11 @@ fun xlsxParseErrorMessage(): UiMessage = UiMessage(Res.string.conversion_error_x
 
 fun xlsxMissingHeadersErrorMessage(details: String): UiMessage = UiMessage(
     Res.string.conversion_error_xlsx_missing_headers,
+    listOf(details),
+)
+
+fun xlsxMissingValuesErrorMessage(details: String): UiMessage = UiMessage(
+    Res.string.conversion_error_xlsx_missing_values,
     listOf(details),
 )
 

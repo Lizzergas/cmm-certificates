@@ -30,6 +30,7 @@
     <string name="conversion_preview_dialog_title">PDF preview</string>
     <string name="conversion_preview_loading">Loading preview...</string>
     <string name="conversion_preview_error">Failed to render the preview PDF.</string>
+    <string name="conversion_runtime_restart_required">The action could not start. Restart the app and try again.</string>
     <string name="conversion_preview_unavailable_hint">In-app PDF preview is not available on this platform yet.</string>
     <string name="conversion_convert_button">Convert to PDF</string>
     <string name="conversion_email_extras_section_title">Email extras</string>
@@ -61,6 +62,7 @@
     <string name="conversion_error_xlsx_required">XLSX file is required.</string>
     <string name="conversion_error_xlsx_parse">Failed to parse XLSX file.</string>
     <string name="conversion_error_xlsx_missing_headers">Configured XLSX headers are missing: %1$s</string>
+    <string name="conversion_error_xlsx_missing_values">Missing required XLSX values: %1$s</string>
     <string name="conversion_error_recipient_email_header_required">Select the XLSX column used for recipient emails.</string>
     <string name="conversion_refresh_xlsx_succeeded">XLSX file refreshed.</string>
     <string name="conversion_refresh_xlsx_failed">Failed to refresh XLSX file.</string>

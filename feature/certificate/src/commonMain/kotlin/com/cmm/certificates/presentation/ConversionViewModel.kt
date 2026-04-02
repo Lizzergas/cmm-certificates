@@ -2,10 +2,14 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import certificates.composeapp.generated.resources.Res
+import certificates.composeapp.generated.resources.conversion_runtime_restart_required
+import certificates.composeapp.generated.resources.conversion_validation_hint
 import com.cmm.certificates.AppInstallation
 import com.cmm.certificates.configeditor.ManualTagFieldDraft
 import com.cmm.certificates.configeditor.toDraft
 import com.cmm.certificates.core.domain.ConnectivityMonitor
+import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.core.openFile
@@ -241,12 +245,21 @@ class ConversionViewModel(
     fun generateDocuments(): Boolean {
         if (!capabilities.canRunConversion) return false
         hasAttemptedSubmitState.value = true
-        if (currentValidationState().hasBlockingErrors) return false
-        viewModelScope.launch {
-            generateDocumentsAction.execute(
-                snapshot = uiState.value,
-                settings = settingsRepository.state.value,
-            )
+        if (currentValidationState().hasBlockingErrors) {
+            postNotification(UiMessage(Res.string.conversion_validation_hint), true)
+            return false
+        }
+        try {
+            viewModelScope.launch {
+                generateDocumentsAction.execute(
+                    snapshot = uiState.value,
+                    settings = settingsRepository.state.value,
+                )
+            }
+        } catch (error: Exception) {
+            logError(logTag, "Failed to start conversion action", error)
+            postNotification(UiMessage(Res.string.conversion_runtime_restart_required), true)
+            return false
         }
         return true
     }
@@ -254,30 +267,38 @@ class ConversionViewModel(
     fun previewDocument() {
         if (!capabilities.canRunConversion || previewLoadingState.value) return
         hasAttemptedSubmitState.value = true
-        if (currentValidationState().hasBlockingErrors) return
-        viewModelScope.launch {
-            previewLoadingState.value = true
-            try {
-                previewPdfPathState.value = null
-                when (
-                    val result = previewDocumentAction.execute(
-                        snapshot = uiState.value,
-                        settings = settingsRepository.state.value,
-                        useInAppPdfPreview = settingsRepository.state.value.appearance.useInAppPdfPreview,
-                    )
-                ) {
-                    PreviewDocumentResult.NoPreview -> Unit
-                    is PreviewDocumentResult.ShowInApp -> {
-                        previewPdfPathState.value = result.path
-                    }
+        if (currentValidationState().hasBlockingErrors) {
+            postNotification(UiMessage(Res.string.conversion_validation_hint), true)
+            return
+        }
+        try {
+            viewModelScope.launch {
+                previewLoadingState.value = true
+                try {
+                    previewPdfPathState.value = null
+                    when (
+                        val result = previewDocumentAction.execute(
+                            snapshot = uiState.value,
+                            settings = settingsRepository.state.value,
+                            useInAppPdfPreview = settingsRepository.state.value.appearance.useInAppPdfPreview,
+                        )
+                    ) {
+                        PreviewDocumentResult.NoPreview -> Unit
+                        is PreviewDocumentResult.ShowInApp -> {
+                            previewPdfPathState.value = result.path
+                        }
 
-                    is PreviewDocumentResult.ExternalOpenFailed -> {
-                        logWarn(logTag, "Failed to open preview PDF: ${result.path}")
+                        is PreviewDocumentResult.ExternalOpenFailed -> {
+                            logWarn(logTag, "Failed to open preview PDF: ${result.path}")
+                        }
                     }
+                } finally {
+                    previewLoadingState.value = false
                 }
-            } finally {
-                previewLoadingState.value = false
             }
+        } catch (error: Exception) {
+            logError(logTag, "Failed to start preview action", error)
+            postNotification(UiMessage(Res.string.conversion_runtime_restart_required), true)
         }
     }
 

@@ -9,6 +9,7 @@ import certificates.composeapp.generated.resources.conversion_refresh_xlsx_succe
 import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.data.xlsx.XlsxMissingValuesException
 import com.cmm.certificates.domain.config.CertificateConfiguration
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.FileChangeObserver
@@ -18,6 +19,7 @@ import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistration
 import com.cmm.certificates.presentation.ConversionFilesState
 import com.cmm.certificates.presentation.docxInspectErrorMessage
 import com.cmm.certificates.presentation.xlsxMissingHeadersErrorMessage
+import com.cmm.certificates.presentation.xlsxMissingValuesErrorMessage
 import com.cmm.certificates.presentation.xlsxParseErrorMessage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -180,6 +182,12 @@ internal class ConversionRefreshCoordinator(
                         if (current.xlsxPath != path) return@updateFiles current
                         current.copy(
                             xlsxLoadError = when {
+                                parsed.exceptionOrNull() is XlsxMissingValuesException -> {
+                                    xlsxMissingValuesErrorMessage(
+                                        parsed.exceptionOrNull()?.message.orEmpty(),
+                                    )
+                                }
+
                                 parsed.isFailure -> xlsxParseErrorMessage()
                                 entries.isEmpty() -> UiMessage(Res.string.conversion_error_no_entries)
                                 else -> null

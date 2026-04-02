@@ -108,7 +108,7 @@ fun SelectFileIcon(
                         style = MaterialTheme.typography.labelSmall,
                         color = colors.error,
                         textAlign = TextAlign.Center,
-                        maxLines = 2,
+                        maxLines = 8,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
