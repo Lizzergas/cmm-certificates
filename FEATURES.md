@@ -2,11 +2,13 @@
 
 ## Current User Flow
 1. Select an XLSX file and a DOCX template on the Conversion screen.
-2. Fill certificate fields (date, IDs, hours, name, lecturer, etc.).
-3. Click **Preview PDF** or **Convert to PDF**.
-4. If required input is missing, the screen keeps the action visible, highlights the exact invalid fields/files, and shows inline error text.
-5. Watch progress on the PDF Conversion Progress screen after a valid conversion request.
-6. On success, optionally send a preview email or send emails to all recipients.
+2. Optionally open **Settings -> Certificate configuration** and define XLSX tags, manual fields, select options, and the document number tag.
+3. Fill the generated certificate fields on the Conversion screen.
+4. Optionally edit a manual field definition inline from the Conversion screen via the Edit action.
+5. Click **Preview PDF** or **Convert to PDF**.
+6. If required input is missing, the screen keeps the action visible, highlights the exact invalid fields/files, and shows inline error text.
+7. Watch progress on the PDF Conversion Progress screen after a valid conversion request.
+8. On success, optionally send a preview email or send emails to all recipients.
 
 PDF generation is local on JVM and no longer requires network access. Network access is still relevant for SMTP email delivery.
 
@@ -16,23 +18,22 @@ PDF generation is local on JVM and no longer requires network access. Network ac
 - The output folder and `docIdStart` are stored in `PdfConversionProgressStore` for email sending.
 
 ## Template Placeholders
-DOCX templates use placeholders like:
-- `{{vardas_pavarde}}`
-- `{{data}}`
-- `{{akreditacijos_id}}`
-- `{{dokumento_id}}`
-- `{{akreditacijos_tipas}}`
-- `{{akreditacijos_valandos}}`
-- `{{sertifikato_pavadinimas}}`
-- `{{destytojas}}`
-- `{{destytojo_tipas}}`
+DOCX templates now use whatever tags are defined in `config.json` / the certificate configuration editor.
 
-`{{data}}` now comes from a manual date field on the Conversion screen. Users can type it in `YYYY-MM-DD` format or choose it via the date picker, and the generated DOCX still receives the same Lithuanian certificate-date string as before.
+Examples:
+- `{{vardas}}`
+- `{{pavarde}}`
+- `{{data}}`
+- `{{dokumento_id}}`
+
+`{{data}}` comes from a manual date field on the Conversion screen. Users can type it in `YYYY-MM-DD` format or choose it via the date picker, and the generated DOCX still receives the same Lithuanian certificate-date string as before.
 
 Conversion-screen validation is now placeholder-aware:
 - The selected DOCX template is inspected on JVM to discover which placeholders are present.
 - Fields backed by missing template placeholders are disabled and shown with an explanatory tooltip/supporting text.
 - `{{dokumento_id}}` remains editable even if absent from the DOCX because it is still used for PDF filenames.
+
+Selected DOCX files are also watched on JVM. Saving the template on disk re-runs placeholder inspection automatically.
 
 ## PDF Generation (JVM)
 - Replaces placeholders using Apache POI.
@@ -44,9 +45,11 @@ See `PDF_GEN.md` for the detailed pipeline.
 
 ## XLSX Parsing (JVM)
 - Parses the first sheet without external XLSX libraries.
-- Column mapping is positional (A–H), not header-based.
-- Stops at first empty date cell or fully empty row.
-- The first column remains a row-boundary sentinel, but certificate output no longer reads the date value from XLSX.
+- Column mapping is config-driven by XLSX header name, not by fixed column position.
+- Stops at the first fully empty row.
+- Selected XLSX files are watched on JVM and auto-refresh after save.
+- Missing configured headers are shown as file-level validation errors.
+- Legacy positional spreadsheet field mapping has been removed from `XlsxMapping.kt`.
 
 ## Email Sending
 - SMTP configured in **Settings**.
@@ -57,6 +60,7 @@ See `PDF_GEN.md` for the detailed pipeline.
 - Cached retries require authenticated SMTP settings and verify that the original PDF attachments still exist.
 - Daily email limit `0` means unlimited sending.
 - **Clear all** resets SMTP settings, cached retries, and the persisted 24-hour send history.
+- With the config-driven XLSX system, recipient email is read from the XLSX tag `email` if that tag is configured.
 
 ## Email Signature Editor
 - The Settings screen provides an **Edit signature** dialog instead of a raw HTML text area.
@@ -74,6 +78,7 @@ See `PDF_GEN.md` for the detailed pipeline.
 - `androidApp`: Android app shell only.
 - `composeApp`: shared app shell, DI aggregation, navigation root, desktop/iOS entry points.
 - `core`: shared resources, theme, UI primitives, platform abstractions, expect/actual code.
+- `feature/certificateconfig`: certificate config schema, persistence, validation, sample XLSX inspection, config editor UI.
 - `feature/settings`: settings state, persistence, SMTP auth, signature editor.
 - `feature/certificate`: conversion form, XLSX parser integration, DOCX/PDF generation pipeline.
 - `feature/pdfconversion`: conversion progress and preview-email flow.
@@ -99,5 +104,6 @@ See `PDF_GEN.md` for the detailed pipeline.
 
 ## Known Gaps
 - Android/iOS PDF generation and SMTP sending are not implemented.
-- Limited placeholder set (see above).
+- File watching is JVM-only.
+- Email compatibility now depends on configuration tags instead of hardcoded spreadsheet columns.
 - Some repository defaults still rely on localized default content rather than user-selectable locale persistence.

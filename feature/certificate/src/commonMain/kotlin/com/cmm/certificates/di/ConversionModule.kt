@@ -8,8 +8,10 @@ import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
+import com.cmm.certificates.domain.port.FileChangeObserver
 import com.cmm.certificates.domain.port.OutputDirectoryResolver
 import com.cmm.certificates.domain.port.RegistrationParser
+import com.cmm.certificates.domain.port.createFileChangeObserver
 import com.cmm.certificates.presentation.ConversionViewModel
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
@@ -18,6 +20,7 @@ import org.koin.dsl.module
 val conversionModule = module {
     single<RegistrationParser> { XlsxRegistrationParser() }
     single<CertificateDocumentGenerator> { DocxCertificateDocumentGenerator() }
+    single<FileChangeObserver> { createFileChangeObserver() }
     single<OutputDirectoryResolver> { DefaultOutputDirectoryResolver() }
     singleOf(::ParseRegistrationsUseCase)
     singleOf(::BuildCertificateReplacementsUseCase)

@@ -61,6 +61,10 @@
     <string name="conversion_error_xlsx_required">XLSX file is required.</string>
     <string name="conversion_error_xlsx_parse">Failed to parse XLSX file.</string>
     <string name="conversion_error_xlsx_missing_headers">Configured XLSX headers are missing: %1$s</string>
+    <string name="conversion_refresh_xlsx_succeeded">XLSX file refreshed.</string>
+    <string name="conversion_refresh_xlsx_failed">Failed to refresh XLSX file.</string>
+    <string name="conversion_refresh_docx_succeeded">DOCX template refreshed.</string>
+    <string name="conversion_refresh_docx_failed">Failed to refresh DOCX template.</string>
     <string name="conversion_error_docx_inspect">Failed to inspect DOCX template.</string>
     <string name="conversion_error_no_entries">No XLSX entries to generate.</string>
     <string name="conversion_error_fields_required">All certificate fields are required.</string>

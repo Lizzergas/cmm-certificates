@@ -3,6 +3,7 @@ package com.cmm.certificates.presentation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.material3.SnackbarHostState
 import com.cmm.certificates.core.theme.AppTheme
 import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import org.junit.Rule
@@ -41,6 +42,7 @@ class ConversionContentTest {
                     onFieldValueChange = { _, _ -> },
                     onEditField = {},
                     onFeedbackUrlChange = {},
+                    snackbarHostState = SnackbarHostState(),
                 )
             }
         }

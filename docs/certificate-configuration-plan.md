@@ -4,17 +4,17 @@
 
 Move certificate generation from hardcoded XLSX/form/tag behavior to an app-managed configuration system while preserving the working JVM PDF generation flow.
 
-## Implemented Slice
+## Current Implementation
 
-1. Added a versioned certificate configuration model.
-2. Added validation for invalid config shape and unsupported references.
-3. Added an app-managed configuration repository that auto-loads installed `config.json` and falls back to the bundled default.
-4. Added DataStore-backed XLSX header mapping persistence.
-5. Refactored XLSX parsing to inspect headers first and map configured field IDs from remembered header selections.
-6. Replaced hardcoded certificate replacement building with config-driven manual/XLSX/computed field resolution.
-7. Replaced the hardcoded Conversion form with dynamic field rendering.
-8. Preserved missing-template-tag UX for dynamic manual fields.
-9. Added focused tests for config validation and XLSX header mapping persistence.
+1. Added a dedicated `feature:certificateconfig` module.
+2. Replaced the old schema with a smaller tag-based config model.
+3. Made `config.json` the startup source of truth, with fallback to `default.config.json` and then code defaults.
+4. Added config editing UI in Settings.
+5. Added inline manual-field config editing from the Conversion screen.
+6. Removed computed fields and positional XLSX column assumptions.
+7. Switched XLSX mapping to config-defined header names.
+8. Preserved placeholder-aware field disabling for missing DOCX tags.
+9. Added JVM file watching for selected XLSX and DOCX files, with automatic refresh and notifications.
 
 ## Architecture
 
@@ -23,22 +23,25 @@ Move certificate generation from hardcoded XLSX/form/tag behavior to an app-mana
 - `CertificateConfiguration`
 - `CertificateConfigurationValidator`
 - `CertificateConfigurationRepository`
+- `ActiveCertificateConfigStore`
 
 ### XLSX Mapping Layer
 
 - `XlsxParser.readFirstSheet(...)`
 - `XlsxEntryMapper.mapEntries(...)`
-- `XlsxHeaderSelectionStore`
+- config-defined `headerName` values inside `xlsxFields`
 
 ### Presentation Layer
 
 - `ConversionViewModel` now combines:
   - config state
   - dynamic manual values
-  - remembered XLSX header mappings
   - DOCX placeholder inspection
+  - inline manual-field editing state
+  - refresh notifications
   - existing preview/progress/cached-email state
-- `ConversionScreen` renders manual fields dynamically and shows an XLSX header-mapping dialog when needed.
+- `ConversionScreen` renders manual fields dynamically and allows inline config edits.
+- `CertificateConfigScreen` owns the full config editor.
 
 ### Generation Layer
 
@@ -49,19 +52,18 @@ Move certificate generation from hardcoded XLSX/form/tag behavior to an app-mana
 - `BuildCertificateReplacementsUseCase` resolves:
   - manual fields
   - XLSX-backed fields
-  - computed template fields
   - sequential document number tag
 
 ## Remaining Follow-up Work
 
-1. Expose config-load fallback status in the UI if operators need visibility when installed JSON is invalid.
-2. Add optional header auto-matching heuristics beyond exact field ID matches if users request it.
-3. Add docs/examples for replacing the packaged `config.json` in customer installations.
-4. Decide whether future email recipient mapping should also move into config or stay separate.
-5. Add more tests for custom field labels and select/multiline rendering if this area keeps expanding.
+1. Add more focused tests for watcher-driven refresh success/failure paths.
+2. Decide whether email-related tags should become first-class config concepts or stay convention-based.
+3. Add import/export UI only if real distribution needs appear.
+4. Polish the config editor copy and move more inline UI strings into resources if desired.
 
 ## Verification
 
-- `./gradlew :feature:certificate:compileKotlinJvm`
+- `./gradlew :feature:certificateconfig:jvmTest`
 - `./gradlew :feature:certificate:jvmTest`
 - `./gradlew :composeApp:jvmTest`
+- `./gradlew :composeApp:test`

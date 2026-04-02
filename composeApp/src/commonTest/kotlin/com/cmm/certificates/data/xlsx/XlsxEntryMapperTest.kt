@@ -1,5 +1,6 @@
 package com.cmm.certificates.data.xlsx
 
+import com.cmm.certificates.domain.config.EmailFieldId
 import com.cmm.certificates.domain.config.NameFieldId
 import com.cmm.certificates.domain.config.SurnameFieldId
 import com.cmm.certificates.domain.config.defaultCertificateConfiguration
@@ -26,6 +27,10 @@ class XlsxEntryMapperTest {
                 headerName = "Name",
             ),
             com.cmm.certificates.domain.config.XlsxTagField(
+                tag = EmailFieldId,
+                headerName = "Email",
+            ),
+            com.cmm.certificates.domain.config.XlsxTagField(
                 tag = SurnameFieldId,
                 headerName = "Surname",
             ),
@@ -33,7 +38,7 @@ class XlsxEntryMapperTest {
     )
 
     @Test
-    fun mapEntries_mapsConfiguredHeadersAndKeepsLegacyEmailFields() {
+    fun mapEntries_mapsOnlyConfiguredTags() {
         val entries = XlsxEntryMapper.mapEntries(
             sheet = XlsxSheetData(
                 name = "Sheet1",
@@ -58,7 +63,8 @@ class XlsxEntryMapperTest {
         assertEquals("ada@example.com", entries.single().primaryEmail)
         assertEquals("Ada", entries.single().name)
         assertEquals("Lovelace", entries.single().surname)
-        assertEquals("CMM", entries.single().institution)
+        assertEquals("", entries.single().institution)
+        assertEquals("ada@example.com", entries.single().fieldValues[EmailFieldId])
         assertEquals("Ada", entries.single().fieldValues[NameFieldId])
         assertEquals("Lovelace", entries.single().fieldValues[SurnameFieldId])
     }

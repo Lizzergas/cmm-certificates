@@ -32,11 +32,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -115,6 +118,16 @@ fun ConversionScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val launchFilePicker = rememberFilePickerLauncher()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val notification = state.notification
+    val notificationText = notification?.message?.asString()
+
+    LaunchedEffect(notification?.id) {
+        val currentNotification = notification ?: return@LaunchedEffect
+        val message = notificationText ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        viewModel.consumeNotification(currentNotification.id)
+    }
 
     state.previewPdfPath?.let { previewPdfPath ->
         PdfPreviewDialog(
@@ -149,6 +162,7 @@ fun ConversionScreen(
         onFieldValueChange = viewModel::setManualFieldValue,
         onEditField = viewModel::openManualFieldEditor,
         onFeedbackUrlChange = viewModel::setFeedbackUrl,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -164,11 +178,13 @@ internal fun ConversionContent(
     onFieldValueChange: (String, String) -> Unit,
     onEditField: (String) -> Unit,
     onFeedbackUrlChange: (String) -> Unit,
+    snackbarHostState: SnackbarHostState,
 ) {
     val scrollState = rememberScrollState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             ConversionBottomBar(
                 state = state,

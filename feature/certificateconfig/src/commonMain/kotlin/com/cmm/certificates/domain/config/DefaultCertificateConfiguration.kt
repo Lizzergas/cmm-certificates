@@ -10,6 +10,7 @@ const val LectorFieldId = "destytojas"
 const val LectorLabelFieldId = "destytojo_tipas"
 const val NameFieldId = "vardas"
 const val SurnameFieldId = "pavarde"
+const val EmailFieldId = "email"
 
 private val DefaultAccreditedTypeOptions = listOf(
     "paskaitoje",

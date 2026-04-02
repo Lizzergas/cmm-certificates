@@ -1,6 +1,7 @@
 package com.cmm.certificates.data.xlsx
 
 import com.cmm.certificates.domain.config.CertificateConfiguration
+import com.cmm.certificates.domain.config.EmailFieldId
 import com.cmm.certificates.domain.config.NameFieldId
 import com.cmm.certificates.domain.config.SurnameFieldId
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
@@ -26,41 +27,28 @@ object XlsxEntryMapper {
             }
             if (configuration.xlsxFields.isNotEmpty() && fieldValues.values.all { it.isBlank() }) continue
             entries.add(
-                mapLegacyEntry(
-                    row = row,
-                    headers = sheet.headers,
-                    fieldValues = fieldValues,
-                ),
+                mapEntry(fieldValues),
             )
         }
         return entries
     }
 
-    private fun mapLegacyEntry(
-        row: Map<String, String?>,
-        headers: List<String>,
+    private fun mapEntry(
         fieldValues: Map<String, String>,
     ): RegistrationEntry {
-        val mappedName = fieldValues[NameFieldId].orEmpty().ifBlank { row.valueAt(2, headers).orEmpty() }
-        val mappedSurname = fieldValues[SurnameFieldId].orEmpty().ifBlank { row.valueAt(3, headers).orEmpty() }
         return RegistrationEntry(
-            primaryEmail = row.valueAt(1, headers).orEmpty(),
-            name = mappedName,
-            surname = mappedSurname,
-            institution = row.valueAt(4, headers).orEmpty(),
-            paymentUrl = row.valueAt(6, headers).orEmpty(),
-            forEvent = row.valueAt(5, headers).orEmpty(),
-            publicityApproval = row.valueAt(7, headers).orEmpty(),
+            primaryEmail = fieldValues[EmailFieldId].orEmpty(),
+            name = fieldValues[NameFieldId].orEmpty(),
+            surname = fieldValues[SurnameFieldId].orEmpty(),
+            institution = "",
+            paymentUrl = "",
+            forEvent = "",
+            publicityApproval = "",
             fieldValues = fieldValues,
         )
     }
 
     private fun Map<String, String?>.isEmptyRow(): Boolean {
         return values.all { it.isNullOrBlank() }
-    }
-
-    private fun Map<String, String?>.valueAt(index: Int, headers: List<String>): String? {
-        val header = headers.getOrNull(index) ?: return null
-        return this[header]
     }
 }
