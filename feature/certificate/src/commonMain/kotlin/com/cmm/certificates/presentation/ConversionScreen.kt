@@ -42,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -118,7 +119,6 @@ fun ConversionScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val launchFilePicker = rememberFilePickerLauncher()
-    val scrollState = rememberScrollState()
 
     state.previewPdfPath?.let { previewPdfPath ->
         PdfPreviewDialog(
@@ -127,17 +127,53 @@ fun ConversionScreen(
         )
     }
 
+    ConversionContent(
+        state = state,
+        onProfileClick = onProfileClick,
+        onRetryCachedEmails = onRetryCachedEmails,
+        onPreviewClick = viewModel::previewDocument,
+        onConversionClick = {
+            if (viewModel.generateDocuments()) {
+                onStartConversion()
+            }
+        },
+        onSelectXlsx = { launchFilePicker("xlsx", viewModel::selectXlsx) },
+        onSelectTemplate = { launchFilePicker("docx", viewModel::setTemplatePath) },
+        actions = ConversionFormActions(
+            onCertificateDateChange = viewModel::setCertificateDate,
+            onAccreditedIdChange = viewModel::setAccreditedId,
+            onDocIdStartChange = viewModel::setDocIdStart,
+            onAccreditedTypeChange = viewModel::setAccreditedType,
+            onAccreditedHoursChange = viewModel::setAccreditedHours,
+            onCertificateNameChange = viewModel::setCertificateName,
+            onFeedbackUrlChange = viewModel::setFeedbackUrl,
+            onLectorChange = viewModel::setLector,
+            onLectorGenderChange = viewModel::setLectorGender,
+        ),
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ConversionContent(
+    state: ConversionUiState,
+    onProfileClick: () -> Unit,
+    onRetryCachedEmails: () -> Unit,
+    onPreviewClick: () -> Unit,
+    onConversionClick: () -> Unit,
+    onSelectXlsx: () -> Unit,
+    onSelectTemplate: () -> Unit,
+    actions: ConversionFormActions,
+) {
+    val scrollState = rememberScrollState()
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             ConversionBottomBar(
                 state = state,
-                onPreviewClick = viewModel::previewDocument,
-                onConversionClick = {
-                    if (viewModel.generateDocuments()) {
-                        onStartConversion()
-                    }
-                }
+                onPreviewClick = onPreviewClick,
+                onConversionClick = onConversionClick,
             )
         },
     ) { padding ->
@@ -212,8 +248,9 @@ fun ConversionScreen(
                         ),
                         fileName = state.files.xlsxFileName,
                         errorText = state.validation.xlsxError?.asString(),
+                        errorTextModifier = Modifier.testTag("conversion-xlsx-error"),
                         tooltipText = xlsxTooltip,
-                        onClick = { launchFilePicker("xlsx", viewModel::selectXlsx) },
+                        onClick = onSelectXlsx,
                         enabled = state.supportsConversion,
                         modifier = Modifier.weight(1f),
                     )
@@ -226,8 +263,9 @@ fun ConversionScreen(
                         ),
                         fileName = state.files.templateFileName,
                         errorText = state.validation.templateError?.asString(),
+                        errorTextModifier = Modifier.testTag("conversion-template-error"),
                         tooltipText = docxTooltip,
-                        onClick = { launchFilePicker("docx", viewModel::setTemplatePath) },
+                        onClick = onSelectTemplate,
                         enabled = state.supportsConversion,
                         modifier = Modifier.weight(1f),
                     )
@@ -240,22 +278,13 @@ fun ConversionScreen(
                     isTemplateInspectionInProgress = state.files.isTemplateInspectionInProgress,
                     accreditedTypeOptions = state.accreditedTypeOptions,
                     enabled = state.supportsConversion,
-                    actions = ConversionFormActions(
-                        onCertificateDateChange = viewModel::setCertificateDate,
-                        onAccreditedIdChange = viewModel::setAccreditedId,
-                        onDocIdStartChange = viewModel::setDocIdStart,
-                        onAccreditedTypeChange = viewModel::setAccreditedType,
-                        onAccreditedHoursChange = viewModel::setAccreditedHours,
-                        onCertificateNameChange = viewModel::setCertificateName,
-                        onLectorChange = viewModel::setLector,
-                        onLectorGenderChange = viewModel::setLectorGender,
-                    ),
+                    actions = actions,
                 )
 
                 EmailExtrasSection(
                     feedbackUrl = state.form.feedbackUrl,
                     enabled = state.supportsConversion,
-                    onFeedbackUrlChange = viewModel::setFeedbackUrl,
+                    onFeedbackUrlChange = actions.onFeedbackUrlChange,
                 )
 
                 Spacer(modifier = Modifier.height(Grid.x6))
@@ -510,13 +539,14 @@ private fun CertificateDetailsSection(
     }
 }
 
-private data class ConversionFormActions(
+internal data class ConversionFormActions(
     val onCertificateDateChange: (String) -> Unit,
     val onAccreditedIdChange: (String) -> Unit,
     val onDocIdStartChange: (String) -> Unit,
     val onAccreditedTypeChange: (String) -> Unit,
     val onAccreditedHoursChange: (String) -> Unit,
     val onCertificateNameChange: (String) -> Unit,
+    val onFeedbackUrlChange: (String) -> Unit,
     val onLectorChange: (String) -> Unit,
     val onLectorGenderChange: (String) -> Unit,
 )
@@ -702,6 +732,7 @@ private fun ConversionBottomBar(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
+                            .testTag("conversion-validation-hint")
                             .fillMaxWidth()
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
@@ -739,7 +770,9 @@ private fun ConversionBottomBar(
                     PrimaryActionButton(
                         text = stringResource(Res.string.conversion_convert_button),
                         onClick = onConversionClick,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("conversion-convert-button"),
                         enabled = state.supportsConversion,
                     )
                 }

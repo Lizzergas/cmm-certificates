@@ -44,6 +44,7 @@ fun SelectFileIcon(
     fileName: String?,
     onClick: () -> Unit,
     errorText: String? = null,
+    errorTextModifier: Modifier = Modifier,
     tooltipText: String? = null,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
@@ -103,6 +104,7 @@ fun SelectFileIcon(
                 if (state == SelectFileIconState.Error && !errorText.isNullOrBlank()) {
                     Text(
                         text = errorText,
+                        modifier = errorTextModifier,
                         style = MaterialTheme.typography.labelSmall,
                         color = colors.error,
                         textAlign = TextAlign.Center,

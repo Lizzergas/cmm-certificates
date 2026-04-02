@@ -44,5 +44,11 @@ kotlin {
             implementation(libs.pdfbox)
             implementation(libs.log4j.core)
         }
+
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation("org.jetbrains.compose.ui:ui-test-junit4:1.10.3")
+            implementation(compose.desktop.currentOs)
+        }
     }
 }

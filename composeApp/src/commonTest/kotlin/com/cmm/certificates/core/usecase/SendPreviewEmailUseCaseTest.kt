@@ -193,6 +193,7 @@ private class FakeSettingsRepository(
 
     override fun setDailyLimit(value: Int) {}
     override fun setThemeMode(value: AppThemeMode) {}
+    override fun setUseInAppPdfPreview(value: Boolean) {}
 
     override suspend fun save() {
         saved = true

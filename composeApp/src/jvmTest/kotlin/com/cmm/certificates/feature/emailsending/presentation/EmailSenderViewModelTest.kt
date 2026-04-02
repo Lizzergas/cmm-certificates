@@ -331,6 +331,7 @@ private class PreviewSettingsRepository(authenticated: Boolean) : SettingsReposi
     override fun setPreviewEmail(value: String) = Unit
     override fun setDailyLimit(value: Int) = Unit
     override fun setThemeMode(value: AppThemeMode) = Unit
+    override fun setUseInAppPdfPreview(value: Boolean) = Unit
     override suspend fun save() = Unit
     override suspend fun authenticate(): Boolean = true
     override suspend fun resetAndClear() = Unit
