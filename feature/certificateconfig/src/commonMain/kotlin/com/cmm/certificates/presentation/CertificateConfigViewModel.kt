@@ -73,12 +73,34 @@ class CertificateConfigViewModel(
     }
 
     fun updateXlsxField(index: Int, update: (XlsxTagFieldDraft) -> XlsxTagFieldDraft) = mutate {
-        it.copy(xlsxFields = it.xlsxFields.updateItem(index, update))
+        val currentField = it.xlsxFields.getOrNull(index) ?: return@mutate it
+        val updatedField = update(currentField)
+        val updatedRecipientEmailTag = if (it.recipientEmailTag == currentField.tag) {
+            updatedField.tag
+        } else {
+            it.recipientEmailTag
+        }
+        it.copy(
+            xlsxFields = it.xlsxFields.updateItem(index) { updatedField },
+            recipientEmailTag = updatedRecipientEmailTag,
+        )
     }
 
     fun removeXlsxField(index: Int) = mutate {
-        it.copy(xlsxFields = it.xlsxFields.removeItem(index))
+        val removed = it.xlsxFields.getOrNull(index)
+        val updatedFields = it.xlsxFields.removeItem(index)
+        val updatedRecipientEmailTag = when {
+            removed == null -> it.recipientEmailTag
+            removed.tag != it.recipientEmailTag -> it.recipientEmailTag
+            else -> ""
+        }
+        it.copy(
+            xlsxFields = updatedFields,
+            recipientEmailTag = updatedRecipientEmailTag,
+        )
     }
+
+    fun setRecipientEmailTag(tag: String) = mutate { it.copy(recipientEmailTag = tag) }
 
     fun addManualField() = mutate {
         it.copy(manualFields = it.manualFields + ManualTagFieldDraft())
@@ -159,6 +181,7 @@ private fun com.cmm.certificates.data.config.CertificateConfigurationState.toUiS
         sampleXlsxPath = "",
         sampleHeaders = emptyList(),
         documentNumberTag = configuration.documentNumberTag,
+        recipientEmailTag = configuration.recipientEmailTag.orEmpty(),
         xlsxFields = configuration.xlsxFields.map { it.toDraft() },
         manualFields = configuration.manualFields.map { it.toDraft() },
         message = message,

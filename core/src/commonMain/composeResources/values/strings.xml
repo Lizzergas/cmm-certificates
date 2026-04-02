@@ -61,6 +61,7 @@
     <string name="conversion_error_xlsx_required">XLSX file is required.</string>
     <string name="conversion_error_xlsx_parse">Failed to parse XLSX file.</string>
     <string name="conversion_error_xlsx_missing_headers">Configured XLSX headers are missing: %1$s</string>
+    <string name="conversion_error_recipient_email_header_required">Select the XLSX column used for recipient emails.</string>
     <string name="conversion_refresh_xlsx_succeeded">XLSX file refreshed.</string>
     <string name="conversion_refresh_xlsx_failed">Failed to refresh XLSX file.</string>
     <string name="conversion_refresh_docx_succeeded">DOCX template refreshed.</string>

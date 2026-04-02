@@ -1,9 +1,9 @@
 package com.cmm.certificates.data.xlsx
 
 import com.cmm.certificates.domain.config.CertificateConfiguration
-import com.cmm.certificates.domain.config.EmailFieldId
 import com.cmm.certificates.domain.config.NameFieldId
 import com.cmm.certificates.domain.config.SurnameFieldId
+import com.cmm.certificates.domain.config.recipientEmailField
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 
 object XlsxEntryMapper {
@@ -27,7 +27,10 @@ object XlsxEntryMapper {
             }
             if (configuration.xlsxFields.isNotEmpty() && fieldValues.values.all { it.isBlank() }) continue
             entries.add(
-                mapEntry(fieldValues),
+                mapEntry(
+                    fieldValues = fieldValues,
+                    configuration = configuration,
+                ),
             )
         }
         return entries
@@ -35,9 +38,10 @@ object XlsxEntryMapper {
 
     private fun mapEntry(
         fieldValues: Map<String, String>,
+        configuration: CertificateConfiguration,
     ): RegistrationEntry {
         return RegistrationEntry(
-            primaryEmail = fieldValues[EmailFieldId].orEmpty(),
+            primaryEmail = configuration.recipientEmailField()?.tag?.let(fieldValues::get).orEmpty(),
             name = fieldValues[NameFieldId].orEmpty(),
             surname = fieldValues[SurnameFieldId].orEmpty(),
             institution = "",

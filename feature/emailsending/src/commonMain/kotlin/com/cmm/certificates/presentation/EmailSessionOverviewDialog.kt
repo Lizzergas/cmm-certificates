@@ -342,6 +342,13 @@ private fun EmailSessionCachedCard(entry: CachedEmailEntry) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                entry.failureReason?.let { reason ->
+                    Text(
+                        text = "${stringResource(Res.string.settings_history_reason_label)}: ${resolveEmailStopReason(reason)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
     }

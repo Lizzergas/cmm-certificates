@@ -6,8 +6,17 @@ import com.cmm.certificates.domain.config.SurnameFieldId
 import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class XlsxEntryMapperTest {
+
+    @Test
+    fun defaultConfiguration_exposesRecipientEmailRole() {
+        val configuration = defaultCertificateConfiguration()
+
+        assertEquals(EmailFieldId, configuration.recipientEmailTag)
+        assertTrue(configuration.xlsxFields.any { it.tag == EmailFieldId })
+    }
 
     private val headers = listOf(
         "Timestamp",

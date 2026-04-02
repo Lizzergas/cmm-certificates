@@ -13,6 +13,7 @@ data class CertificateConfigUiState(
     val sampleXlsxPath: String = "",
     val sampleHeaders: List<String> = emptyList(),
     val documentNumberTag: String = "",
+    val recipientEmailTag: String = "",
     val xlsxFields: List<XlsxTagFieldDraft> = emptyList(),
     val manualFields: List<ManualTagFieldDraft> = emptyList(),
     val message: String? = null,
@@ -44,6 +45,7 @@ fun CertificateConfigUiState.toConfiguration(): CertificateConfiguration {
     return CertificateConfiguration(
         id = "default-certificate",
         documentNumberTag = documentNumberTag,
+        recipientEmailTag = recipientEmailTag.trim().ifBlank { null },
         xlsxFields = xlsxFields.map(XlsxTagFieldDraft::toField),
         manualFields = manualFields.map(ManualTagFieldDraft::toField),
     )

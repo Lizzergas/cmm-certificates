@@ -2,6 +2,7 @@ package com.cmm.certificates.feature.certificate.presentation
 
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_error_dynamic_required
+import certificates.composeapp.generated.resources.conversion_error_recipient_email_header_required
 import certificates.composeapp.generated.resources.conversion_error_xlsx_parse
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.domain.config.AccreditedHoursFieldId
@@ -68,6 +69,25 @@ class ConversionValidationTest {
         assertNull(validation.errorFor(LectorLabelFieldId))
         assertEquals(Res.string.conversion_error_dynamic_required, validation.errorFor(DocumentIdFieldId)?.resource)
         assertEquals(Res.string.conversion_error_dynamic_required, validation.errorFor(CertificateNameFieldId)?.resource)
+        assertTrue(validation.hasBlockingErrors)
+    }
+
+    @Test
+    fun submitValidation_requiresRecipientEmailColumnWhenMissing() {
+        val validation = buildConversionValidationState(
+            files = ConversionFilesState(
+                xlsxPath = "registrations.xlsx",
+                templatePath = "template.docx",
+            ),
+            configuration = configuration,
+            formValues = emptyMap(),
+            entriesCount = 1,
+            templateSupport = buildTemplateSupportState(configuration, emptySet()),
+            hasAttemptedSubmit = true,
+            requiresRecipientEmailSelection = true,
+        )
+
+        assertEquals(Res.string.conversion_error_recipient_email_header_required, validation.xlsxError?.resource)
         assertTrue(validation.hasBlockingErrors)
     }
 }

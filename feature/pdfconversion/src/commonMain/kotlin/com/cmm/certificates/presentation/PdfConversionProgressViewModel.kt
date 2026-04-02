@@ -57,7 +57,10 @@ class PdfConversionProgressViewModel(
             isSmtpAuthenticated = settingsState.smtp.isAuthenticated,
             supportsEmailSending = capabilities.canSendEmails,
             canOpenGeneratedFolders = capabilities.canOpenGeneratedFolders,
-            isSendEmailsEnabled = capabilities.canSendEmails && settingsState.smtp.isAuthenticated && networkAvailable,
+            isSendPreviewEnabled = capabilities.canSendEmails && settingsState.smtp.isAuthenticated && networkAvailable,
+            isSendEmailsEnabled = capabilities.canSendEmails &&
+                settingsState.smtp.isAuthenticated &&
+                networkAvailable,
             preview = preview,
         )
     }.stateIn(
@@ -140,6 +143,7 @@ data class PdfConversionProgressUiState(
     val isSmtpAuthenticated: Boolean = false,
     val supportsEmailSending: Boolean = true,
     val canOpenGeneratedFolders: Boolean = true,
+    val isSendPreviewEnabled: Boolean = false,
     val isSendEmailsEnabled: Boolean = false,
     val preview: PdfPreviewUiState = PdfPreviewUiState(),
 )

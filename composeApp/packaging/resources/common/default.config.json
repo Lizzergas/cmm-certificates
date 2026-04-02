@@ -2,6 +2,7 @@
   "version": 1,
   "id": "default-certificate",
   "documentNumberTag": "dokumento_id",
+  "recipientEmailTag": "email",
   "xlsxFields": [
     {
       "tag": "vardas",
@@ -12,6 +13,11 @@
       "tag": "pavarde",
       "label": "Pavardė",
       "headerName": "Pavardė"
+    },
+    {
+      "tag": "email",
+      "label": "El. paštas",
+      "headerName": "El. paštas"
     }
   ],
   "manualFields": [

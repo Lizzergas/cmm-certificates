@@ -126,6 +126,7 @@ fun PdfConversionProgressScreen(
             ProgressBottomBar(
                 isCompleted = uiState.completed,
                 outputDir = uiState.outputDir,
+                isSendPreviewEnabled = uiState.isSendPreviewEnabled,
                 isSendEmailsEnabled = uiState.isSendEmailsEnabled,
                 isNetworkAvailable = uiState.isNetworkAvailable,
                 isSmtpAuthenticated = uiState.isSmtpAuthenticated,
@@ -206,6 +207,7 @@ fun PdfConversionProgressScreen(
 private fun ProgressBottomBar(
     isCompleted: Boolean,
     outputDir: String,
+    isSendPreviewEnabled: Boolean,
     isSendEmailsEnabled: Boolean,
     isNetworkAvailable: Boolean,
     isSmtpAuthenticated: Boolean,
@@ -237,7 +239,7 @@ private fun ProgressBottomBar(
                     OutlinedButton(
                         onClick = onSendPreview,
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isPreviewSending && isSendEmailsEnabled,
+                        enabled = !isPreviewSending && isSendPreviewEnabled,
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.onSurface,
                         ),

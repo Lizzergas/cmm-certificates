@@ -23,9 +23,11 @@ fun defaultCertificateConfiguration(): CertificateConfiguration {
     return CertificateConfiguration(
         id = "default-certificate",
         documentNumberTag = DocumentIdFieldId,
+        recipientEmailTag = EmailFieldId,
         xlsxFields = listOf(
             XlsxTagField(tag = NameFieldId, label = "Vardas", headerName = "Vardas"),
             XlsxTagField(tag = SurnameFieldId, label = "Pavardė", headerName = "Pavardė"),
+            XlsxTagField(tag = EmailFieldId, label = "El. paštas", headerName = "El. paštas"),
         ),
         manualFields = listOf(
             ManualTagField(tag = CertificateDateFieldId, type = CertificateFieldType.DATE),

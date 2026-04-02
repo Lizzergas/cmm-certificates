@@ -362,7 +362,7 @@ private fun ExpandableCachedEmailCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                        cachedLastReason?.let { reason ->
+                        (entry.failureReason ?: cachedLastReason)?.let { reason ->
                             Text(
                                 text = "${stringResource(Res.string.settings_history_reason_label)}: ${
                                     resolveEmailStopReason(

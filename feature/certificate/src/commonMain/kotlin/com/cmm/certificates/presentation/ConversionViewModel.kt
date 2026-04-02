@@ -14,6 +14,8 @@ import com.cmm.certificates.data.config.CertificateConfigurationRepository
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
 import com.cmm.certificates.domain.config.CertificateFieldType
+import com.cmm.certificates.domain.config.CertificateConfiguration
+import com.cmm.certificates.domain.config.withRecipientEmailMapping
 import com.cmm.certificates.domain.config.manualField
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.FileChangeObserver
@@ -82,6 +84,7 @@ class ConversionViewModel(
     private val manualFieldEditorService = ConversionManualFieldEditorService()
 
     private val formState = MutableStateFlow(ConversionFormState())
+    private val runtimeMappingsState = MutableStateFlow(ConversionRuntimeMappingsState())
     private val filesState = MutableStateFlow(ConversionFilesState())
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
     private val hasAttemptedSubmitState = MutableStateFlow(false)
@@ -97,7 +100,7 @@ class ConversionViewModel(
         documentGenerator = documentGenerator,
         ioDispatcher = Dispatchers.IO,
         refreshDebounceMillis = refreshDebounceMillis,
-        currentConfiguration = { configurationRepository.state.value.configuration },
+        currentConfiguration = { currentParsingConfiguration() },
         currentFiles = { filesState.value },
         currentEntries = { entriesState.value },
         updateFiles = filesState::update,
@@ -117,6 +120,7 @@ class ConversionViewModel(
         filesState,
         entriesState,
         hasAttemptedSubmitState,
+        runtimeMappingsState,
         ::ConversionInputSnapshot,
     )
 
@@ -133,9 +137,13 @@ class ConversionViewModel(
         configurationRepository.state,
         overlayState,
     ) { snapshot, settings, networkAvailable, configState, overlay ->
+        val effectiveConfiguration = applyRuntimeMappings(
+            configuration = configState.configuration,
+            runtimeMappings = snapshot.runtimeMappings,
+        )
         buildConversionBaseUiState(
             snapshot = snapshot,
-            configuration = configState.configuration,
+            configuration = effectiveConfiguration,
             configSource = configState.source,
             configLoadFailureMessage = configState.loadFailureMessage,
             overlay = overlay,
@@ -184,6 +192,24 @@ class ConversionViewModel(
 
     fun setFeedbackUrl(value: String) {
         formState.update { it.copy(feedbackUrl = value) }
+    }
+
+    fun setRecipientEmailHeaderOverride(value: String) {
+        runtimeMappingsState.update { it.copy(recipientEmailHeaderOverride = value) }
+        refreshCurrentXlsxIfSelected()
+    }
+
+    fun saveRecipientEmailHeaderAsDefault() {
+        val selectedHeader = uiState.value.recipientEmailMapping.selectedHeader.trim()
+        if (selectedHeader.isBlank()) return
+        val updatedConfiguration = configurationRepository.state.value.configuration
+            .withRecipientEmailMapping(selectedHeader)
+        viewModelScope.launch {
+            configurationRepository.save(updatedConfiguration)
+                .onSuccess {
+                    runtimeMappingsState.value = ConversionRuntimeMappingsState()
+                }
+        }
     }
 
     fun selectXlsx(path: String) {
@@ -324,7 +350,7 @@ class ConversionViewModel(
     }
 
     private fun currentValidationState(): ConversionValidationState {
-        val configuration = configurationRepository.state.value.configuration
+        val configuration = currentParsingConfiguration()
         val resolvedForm = resolveConversionFormState(formState.value, configuration)
         return buildConversionValidationState(
             files = filesState.value,
@@ -351,5 +377,31 @@ class ConversionViewModel(
     override fun onCleared() {
         refreshCoordinator.cancel()
         super.onCleared()
+    }
+
+    private fun refreshCurrentXlsxIfSelected() {
+        val selectedXlsx = filesState.value.xlsxPath
+        if (selectedXlsx.isNotBlank()) {
+            refreshCoordinator.refreshXlsx(selectedXlsx, isAutoRefresh = false)
+        }
+    }
+
+    private fun currentParsingConfiguration(): CertificateConfiguration {
+        return applyRuntimeMappings(
+            configuration = configurationRepository.state.value.configuration,
+            runtimeMappings = runtimeMappingsState.value,
+        )
+    }
+
+    private fun applyRuntimeMappings(
+        configuration: CertificateConfiguration,
+        runtimeMappings: ConversionRuntimeMappingsState,
+    ): CertificateConfiguration {
+        val recipientHeaderOverride = runtimeMappings.recipientEmailHeaderOverride.trim()
+        return if (recipientHeaderOverride.isBlank()) {
+            configuration
+        } else {
+            configuration.withRecipientEmailMapping(recipientHeaderOverride)
+        }
     }
 }

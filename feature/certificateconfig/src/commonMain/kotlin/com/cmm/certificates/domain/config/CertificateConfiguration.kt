@@ -9,6 +9,7 @@ data class CertificateConfiguration(
     val version: Int = CurrentCertificateConfigurationVersion,
     val id: String,
     val documentNumberTag: String,
+    val recipientEmailTag: String? = null,
     val xlsxFields: List<XlsxTagField> = emptyList(),
     val manualFields: List<ManualTagField> = emptyList(),
 )
@@ -47,6 +48,38 @@ fun CertificateConfiguration.manualField(tag: String): ManualTagField? {
 
 fun CertificateConfiguration.xlsxField(tag: String): XlsxTagField? {
     return xlsxFields.firstOrNull { it.tag == tag }
+}
+
+fun CertificateConfiguration.recipientEmailField(): XlsxTagField? {
+    val tag = recipientEmailTag?.trim().takeUnless { it.isNullOrBlank() } ?: return null
+    return xlsxField(tag)
+}
+
+fun CertificateConfiguration.withRecipientEmailMapping(
+    headerName: String,
+    recipientTag: String = recipientEmailTag?.trim().takeUnless { it.isNullOrBlank() } ?: EmailFieldId,
+): CertificateConfiguration {
+    val normalizedHeader = headerName.trim()
+    require(normalizedHeader.isNotBlank()) { "Recipient email header must not be blank" }
+
+    val updatedField = (xlsxField(recipientTag) ?: XlsxTagField(tag = recipientTag, label = "Email"))
+        .copy(headerName = normalizedHeader)
+    val updatedFields = if (xlsxFields.any { it.tag == recipientTag }) {
+        xlsxFields.map { existing ->
+            if (existing.tag == recipientTag) {
+                updatedField
+            } else {
+                existing
+            }
+        }
+    } else {
+        xlsxFields + updatedField
+    }
+
+    return copy(
+        recipientEmailTag = recipientTag,
+        xlsxFields = updatedFields,
+    )
 }
 
 fun CertificateConfiguration.tagForField(tag: String): String = "{{$tag}}"

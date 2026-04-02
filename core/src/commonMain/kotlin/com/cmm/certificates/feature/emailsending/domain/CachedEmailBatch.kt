@@ -7,6 +7,7 @@ data class CachedEmailEntry(
     val id: String,
     val request: EmailSendRequest,
     val cachedAt: Long,
+    val failureReason: EmailStopReason? = null,
 )
 
 @Serializable

@@ -38,17 +38,6 @@ class SendGeneratedEmailsUseCase(
             return
         }
 
-        val missingEmailIndexes = conversionState.entries.mapIndexedNotNull { index, entry ->
-            if (entry.primaryEmail.isBlank()) index + 1 else null
-        }
-        if (missingEmailIndexes.isNotEmpty()) {
-            val preview = missingEmailIndexes.take(3).joinToString(", ")
-            val suffix = if (missingEmailIndexes.size > 3) "..." else ""
-            logWarn(logTag, "Email send aborted: missing recipient emails at rows $preview$suffix")
-            emailProgressRepository.fail(EmailStopReason.MissingEmailAddresses("$preview$suffix"))
-            return
-        }
-
         val settingsState = settingsRepository.state.value
         val templateVariables = EmailTemplateVariables(
             feedbackUrl = conversionState.feedbackUrl,

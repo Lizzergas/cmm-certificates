@@ -7,6 +7,7 @@ import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.data.xlsx.XlsxParser
 import com.cmm.certificates.domain.config.CertificateConfiguration
 import com.cmm.certificates.domain.config.CertificateFieldType
+import com.cmm.certificates.domain.config.EmailFieldId
 import com.cmm.certificates.domain.config.ManualTagField
 import com.cmm.certificates.domain.config.XlsxTagField
 import com.cmm.certificates.domain.config.defaultCertificateConfiguration
@@ -208,6 +209,7 @@ private fun LegacyCertificateConfiguration.toCurrentConfiguration(): Certificate
         version = version,
         id = id,
         documentNumberTag = documentNumberTag,
+        recipientEmailTag = xlsxFields.firstOrNull { it.id == EmailFieldId }?.id,
         manualFields = manualFields.map {
             ManualTagField(
                 tag = it.id,

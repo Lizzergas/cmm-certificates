@@ -22,15 +22,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -136,6 +144,8 @@ fun ConversionScreen(
         onFieldValueChange = viewModel::setManualFieldValue,
         onEditField = viewModel::openManualFieldEditor,
         onFeedbackUrlChange = viewModel::setFeedbackUrl,
+        onRecipientEmailHeaderChange = viewModel::setRecipientEmailHeaderOverride,
+        onSaveRecipientEmailHeaderAsDefault = viewModel::saveRecipientEmailHeaderAsDefault,
         snackbarHostState = snackbarHostState,
     )
 }
@@ -152,6 +162,8 @@ internal fun ConversionContent(
     onFieldValueChange: (String, String) -> Unit,
     onEditField: (String) -> Unit,
     onFeedbackUrlChange: (String) -> Unit,
+    onRecipientEmailHeaderChange: (String) -> Unit,
+    onSaveRecipientEmailHeaderAsDefault: () -> Unit,
     snackbarHostState: SnackbarHostState,
 ) {
     val scrollState = rememberScrollState()
@@ -261,8 +273,11 @@ internal fun ConversionContent(
                 )
 
                 EmailExtrasSection(
+                    recipientEmailMapping = state.recipientEmailMapping,
                     feedbackUrl = state.form.feedbackUrl,
                     enabled = state.supportsConversion,
+                    onRecipientEmailHeaderChange = onRecipientEmailHeaderChange,
+                    onSaveRecipientEmailHeaderAsDefault = onSaveRecipientEmailHeaderAsDefault,
                     onFeedbackUrlChange = onFeedbackUrlChange,
                 )
 
@@ -280,8 +295,11 @@ internal fun ConversionContent(
 
 @Composable
 private fun EmailExtrasSection(
+    recipientEmailMapping: RecipientEmailMappingUiState,
     feedbackUrl: String,
     enabled: Boolean,
+    onRecipientEmailHeaderChange: (String) -> Unit,
+    onSaveRecipientEmailHeaderAsDefault: () -> Unit,
     onFeedbackUrlChange: (String) -> Unit,
 ) {
     Surface(
@@ -294,6 +312,14 @@ private fun EmailExtrasSection(
             modifier = Modifier.fillMaxWidth().padding(CardPadding),
             verticalArrangement = Arrangement.spacedBy(Grid.x4),
         ) {
+            if (recipientEmailMapping.isVisible) {
+                RecipientEmailMappingSection(
+                    state = recipientEmailMapping,
+                    enabled = enabled,
+                    onHeaderChange = onRecipientEmailHeaderChange,
+                    onSaveAsDefault = onSaveRecipientEmailHeaderAsDefault,
+                )
+            }
             Text(
                 text = stringResource(Res.string.conversion_email_extras_section_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -310,6 +336,64 @@ private fun EmailExtrasSection(
                 textStyle = MaterialTheme.typography.bodySmall,
                 supportingText = { Text(stringResource(Res.string.conversion_feedback_url_hint)) },
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RecipientEmailMappingSection(
+    state: RecipientEmailMappingUiState,
+    enabled: Boolean,
+    onHeaderChange: (String) -> Unit,
+    onSaveAsDefault: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
+        Text(
+            text = "Recipient email column",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { if (enabled) expanded = !expanded },
+        ) {
+            ClearableOutlinedTextField(
+                value = state.selectedHeader,
+                onValueChange = {},
+                label = { Text("XLSX header") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                readOnly = true,
+                enabled = enabled,
+                showClearIcon = false,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                supportingText = {
+                    if (state.isMissingSelection) {
+                        Text("Select the XLSX column used for recipient emails.")
+                    }
+                },
+            )
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                state.availableHeaders.forEach { header ->
+                    DropdownMenuItem(
+                        text = { Text(header) },
+                        onClick = {
+                            onHeaderChange(header)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+        if (state.canSaveAsDefault) {
+            TextButton(onClick = onSaveAsDefault, modifier = Modifier.align(Alignment.End)) {
+                Text("Save as default")
+            }
         }
     }
 }

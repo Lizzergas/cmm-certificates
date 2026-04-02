@@ -42,14 +42,9 @@ class SendEmailRequestsUseCase(
 
         val settings = authenticatedSmtpSettingsOrFail() ?: return
         val settingsState = settingsRepository.state.value
-        val missingAttachments = requests.findMissingAttachments()
-        if (missingAttachments.isNotEmpty()) {
-            val preview = missingAttachments.take(3).joinToString(", ")
-            val suffix = if (missingAttachments.size > 3) "..." else ""
-            logWarn(logTag, "Email send aborted: missing attachments $preview$suffix")
-            emailProgressRepository.fail(EmailStopReason.MissingAttachments("$preview$suffix"))
-            return
-        }
+        val preparedRequests = requests.prepareForSending()
+        val skippedEntries = preparedRequests.skippedEntries
+        val sendableRequests = preparedRequests.sendableRequests
 
         val dailyLimit = settingsState.email.dailyLimit.takeIf { it > 0 }
         var sentInWindow = emailProgressRepository.getSentCountInLast24Hours()
@@ -58,16 +53,33 @@ class SendEmailRequestsUseCase(
         var shouldStopDueToErrors = false
         var stopReason: EmailStopReason? = null
         val sentIndices = mutableSetOf<Int>()
+        val skippedCount = skippedEntries.size
 
         logInfo(logTag, "Starting send for ${requests.size} email requests")
         emailProgressRepository.start(requests.size)
+        if (skippedCount > 0) {
+            emailProgressRepository.update(skippedCount)
+        }
+
+        if (sendableRequests.isEmpty()) {
+            val skippedSummary = preparedRequests.skippedSummaryReason ?: EmailStopReason.NoEmailsToSend
+            emailProgressRepository.cacheEmails(
+                CachedEmailBatch(
+                    entries = skippedEntries,
+                    lastReason = skippedSummary,
+                )
+            )
+            emailProgressRepository.fail(EmailStopReason.Cached(skippedSummary, skippedEntries.size))
+            return
+        }
+
         val parentContext = currentCoroutineContext()
 
         try {
             withContext(Dispatchers.IO) {
                 emailGateway.sendBatch(
                     settings = settings,
-                    requests = requests,
+                    requests = sendableRequests,
                     onSending = { request ->
                         val recipient = "${request.toName} <${request.toEmail}>"
                         logInfo(logTag, "Sending email to $recipient")
@@ -76,7 +88,7 @@ class SendEmailRequestsUseCase(
                     onSuccess = { index ->
                         consecutiveErrors = 0
                         sentIndices.add(index)
-                        emailProgressRepository.update(sentIndices.size)
+                        emailProgressRepository.update(skippedCount + sentIndices.size)
                         sentInWindow++
                         logInfo(
                             logTag,
@@ -115,31 +127,36 @@ class SendEmailRequestsUseCase(
                     },
                 )
             }
-            persistSuccessfulSends(requests, sentIndices)
+            persistSuccessfulSends(sendableRequests, sentIndices)
             currentCoroutineContext().ensureActive()
 
-            val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
-            if (unsentRequests.isNotEmpty()) {
-                val reason = stopReason
+            val unsentRequests = sendableRequests.filterIndexed { index, _ -> index !in sentIndices }
+            val cachedEntries = skippedEntries + unsentRequests.toCachedEntries()
+            if (cachedEntries.isNotEmpty()) {
+                val sendStopReason = stopReason
                     ?: if (emailProgressRepository.isCancelRequested()) {
                         EmailStopReason.Cancelled
                     } else {
                         EmailStopReason.GenericFailure
                     }
+                val reason = buildFinalFailureReason(
+                    skippedSummary = preparedRequests.skippedSummaryReason,
+                    sendStopReason = sendStopReason.takeIf { unsentRequests.isNotEmpty() },
+                )
 
-                logWarn(logTag, "Caching ${unsentRequests.size} unsent emails because of $reason")
+                logWarn(logTag, "Caching ${cachedEntries.size} unsent emails because of $reason")
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        entries = unsentRequests.toCachedEntries(),
+                        entries = cachedEntries,
                         lastReason = reason,
                     )
                 )
 
-                if (shouldStopDueToErrors || stopReason != null || !emailProgressRepository.isCancelRequested()) {
+                if (shouldStopDueToErrors || stopReason != null || !emailProgressRepository.isCancelRequested() || skippedEntries.isNotEmpty()) {
                     emailProgressRepository.fail(
                         EmailStopReason.Cached(
                             reason,
-                            unsentRequests.size
+                            cachedEntries.size
                         )
                     )
                 }
@@ -151,31 +168,40 @@ class SendEmailRequestsUseCase(
                 }
             }
         } catch (e: CancellationException) {
-            persistSuccessfulSends(requests, sentIndices)
-            val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
-            if (unsentRequests.isNotEmpty()) {
-                logWarn(logTag, "Send job cancelled; caching ${unsentRequests.size} unsent emails")
+            persistSuccessfulSends(sendableRequests, sentIndices)
+            val unsentRequests = sendableRequests.filterIndexed { index, _ -> index !in sentIndices }
+            val cachedEntries = skippedEntries + unsentRequests.toCachedEntries()
+            if (cachedEntries.isNotEmpty()) {
+                val reason = buildFinalFailureReason(
+                    skippedSummary = preparedRequests.skippedSummaryReason,
+                    sendStopReason = EmailStopReason.Cancelled,
+                )
+                logWarn(logTag, "Send job cancelled; caching ${cachedEntries.size} unsent emails")
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        entries = unsentRequests.toCachedEntries(),
-                        lastReason = EmailStopReason.Cancelled,
+                        entries = cachedEntries,
+                        lastReason = reason,
                     )
                 )
             }
             emailProgressRepository.requestCancel()
         } catch (e: Exception) {
             logError(logTag, "Unexpected email send failure", e)
-            persistSuccessfulSends(requests, sentIndices)
-            val unsentRequests = requests.filterIndexed { index, _ -> index !in sentIndices }
-            val reason = EmailStopReason.Raw(e.message ?: "Unknown error")
-            if (unsentRequests.isNotEmpty()) {
+            persistSuccessfulSends(sendableRequests, sentIndices)
+            val unsentRequests = sendableRequests.filterIndexed { index, _ -> index !in sentIndices }
+            val reason = buildFinalFailureReason(
+                skippedSummary = preparedRequests.skippedSummaryReason,
+                sendStopReason = EmailStopReason.Raw(e.message ?: "Unknown error"),
+            )
+            val cachedEntries = skippedEntries + unsentRequests.toCachedEntries()
+            if (cachedEntries.isNotEmpty()) {
                 logWarn(
                     logTag,
-                    "Caching ${unsentRequests.size} unsent emails after unexpected failure"
+                    "Caching ${cachedEntries.size} unsent emails after unexpected failure"
                 )
                 emailProgressRepository.cacheEmails(
                     CachedEmailBatch(
-                        entries = unsentRequests.toCachedEntries(),
+                        entries = cachedEntries,
                         lastReason = reason,
                     )
                 )
@@ -225,6 +251,109 @@ class SendEmailRequestsUseCase(
         }
     }
 
+    private fun List<EmailSendRequest>.prepareForSending(): PreparedRequests {
+        val cachedAt = Clock.System.now().toEpochMilliseconds()
+        val sendableRequests = mutableListOf<EmailSendRequest>()
+        val skippedEntries = mutableListOf<CachedEmailEntry>()
+        val missingEmailRows = mutableListOf<Int>()
+        val missingAttachments = mutableListOf<String>()
+
+        forEachIndexed { index, request ->
+            val attachmentPath = request.attachmentPath?.takeIf { it.isNotBlank() }
+            when {
+                request.toEmail.isBlank() -> {
+                    val rowNumber = index + 1
+                    missingEmailRows += rowNumber
+                    skippedEntries += CachedEmailEntry(
+                        id = buildCachedEntryId(request, cachedAt, index),
+                        request = request,
+                        cachedAt = cachedAt,
+                        failureReason = EmailStopReason.MissingEmailAddresses(rowNumber.toString()),
+                    )
+                }
+
+                attachmentPath != null && !FileSystem.SYSTEM.exists(attachmentPath.toPath()) -> {
+                    val attachmentName = request.attachmentName ?: attachmentPath
+                    missingAttachments += attachmentName
+                    skippedEntries += CachedEmailEntry(
+                        id = buildCachedEntryId(request, cachedAt, index),
+                        request = request,
+                        cachedAt = cachedAt,
+                        failureReason = EmailStopReason.MissingAttachments(attachmentName),
+                    )
+                }
+
+                else -> sendableRequests += request
+            }
+        }
+
+        return PreparedRequests(
+            sendableRequests = sendableRequests,
+            skippedEntries = skippedEntries,
+            skippedSummaryReason = buildSkippedSummaryReason(missingEmailRows, missingAttachments),
+        )
+    }
+
+    private fun buildSkippedSummaryReason(
+        missingEmailRows: List<Int>,
+        missingAttachments: List<String>,
+    ): EmailStopReason? {
+        val emailPreview = missingEmailRows.preview()
+        val attachmentPreview = missingAttachments.preview()
+        return when {
+            emailPreview != null && attachmentPreview != null -> {
+                EmailStopReason.Raw(
+                    "Missing recipient emails for entries: $emailPreview. Missing PDF attachments: $attachmentPreview.",
+                )
+            }
+
+            emailPreview != null -> EmailStopReason.MissingEmailAddresses(emailPreview)
+            attachmentPreview != null -> EmailStopReason.MissingAttachments(attachmentPreview)
+            else -> null
+        }
+    }
+
+    private fun buildFinalFailureReason(
+        skippedSummary: EmailStopReason?,
+        sendStopReason: EmailStopReason?,
+    ): EmailStopReason {
+        return when {
+            skippedSummary == null && sendStopReason != null -> sendStopReason
+            skippedSummary != null && sendStopReason == null -> skippedSummary
+            skippedSummary != null && sendStopReason != null -> {
+                EmailStopReason.Raw("${reasonText(skippedSummary)} ${reasonText(sendStopReason)}")
+            }
+
+            else -> EmailStopReason.GenericFailure
+        }
+    }
+
+    private fun reasonText(reason: EmailStopReason): String {
+        return when (reason) {
+            is EmailStopReason.Raw -> reason.message
+            is EmailStopReason.MissingEmailAddresses ->
+                "Missing recipient emails for entries: ${reason.preview}."
+            is EmailStopReason.MissingAttachments ->
+                "Missing PDF attachments: ${reason.preview}."
+            EmailStopReason.Cancelled -> "Sending cancelled."
+            EmailStopReason.GenericFailure -> "Some emails failed to send."
+            EmailStopReason.GmailQuotaExceeded -> "Gmail daily sending limit reached or account blocked."
+            EmailStopReason.NetworkUnavailable -> "No network connection."
+            is EmailStopReason.ConsecutiveErrors ->
+                "Stopped after ${reason.threshold} consecutive errors."
+            is EmailStopReason.DailyLimitReached ->
+                "Daily limit of ${reason.limit} emails reached."
+            EmailStopReason.SmtpAuthRequired -> "SMTP authentication is required."
+            EmailStopReason.SmtpSettingsMissing -> "SMTP settings are missing."
+            EmailStopReason.DocumentIdMissing -> "Document ID start is missing."
+            EmailStopReason.OutputDirMissing -> "Output folder is missing."
+            EmailStopReason.NoEntries -> "No entries to send."
+            EmailStopReason.NoEmailsToSend -> "No emails to send."
+            EmailStopReason.NoCachedEmails -> "No cached emails found."
+            is EmailStopReason.Cached -> reasonText(reason.reason)
+        }
+    }
+
     private fun List<EmailSendRequest>.toCachedEntries(): List<CachedEmailEntry> {
         val cachedAt = Clock.System.now().toEpochMilliseconds()
         return mapIndexed { index, request ->
@@ -254,4 +383,17 @@ class SendEmailRequestsUseCase(
             }
         }
     }
+
+    private fun <T> List<T>.preview(): String? {
+        if (isEmpty()) return null
+        val preview = take(3).joinToString(", ")
+        val suffix = if (size > 3) "..." else ""
+        return "$preview$suffix"
+    }
+
+    private data class PreparedRequests(
+        val sendableRequests: List<EmailSendRequest>,
+        val skippedEntries: List<CachedEmailEntry>,
+        val skippedSummaryReason: EmailStopReason?,
+    )
 }

@@ -61,6 +61,7 @@
     <string name="conversion_error_xlsx_required">Būtina pasirinkti XLSX failą.</string>
     <string name="conversion_error_xlsx_parse">Nepavyko perskaityti XLSX failo.</string>
     <string name="conversion_error_xlsx_missing_headers">Trūksta konfigūruotų XLSX antraščių: %1$s</string>
+    <string name="conversion_error_recipient_email_header_required">Pasirinkite XLSX stulpelį, kuris naudojamas gavėjo el. paštui.</string>
     <string name="conversion_refresh_xlsx_succeeded">XLSX failas atnaujintas.</string>
     <string name="conversion_refresh_xlsx_failed">Nepavyko atnaujinti XLSX failo.</string>
     <string name="conversion_refresh_docx_succeeded">DOCX šablonas atnaujintas.</string>

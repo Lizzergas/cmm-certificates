@@ -83,7 +83,7 @@ fun CertificateConfigScreen(
                     .align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.spacedBy(Grid.x8),
             ) {
-                ConfigCard() {
+                ConfigCard {
                     Text("DOCX šablone naudokite žymes formatu {{tag}}.")
                     state.externalPath?.let { path ->
                         Text(
@@ -108,7 +108,7 @@ fun CertificateConfigScreen(
                     }
                 }
 
-                ConfigCard() {
+                ConfigCard {
                     OutlinedButton(
                         onClick = launchSampleXlsxPicker,
                         modifier = Modifier.fillMaxWidth(),
@@ -131,7 +131,7 @@ fun CertificateConfigScreen(
                     }
                 }
 
-                ConfigCard() {
+                ConfigCard {
                     state.manualFields.forEachIndexed { index, field ->
                         ManualFieldEditor(
                             field = field,
@@ -147,12 +147,21 @@ fun CertificateConfigScreen(
                     }
                 }
 
-                ConfigCard() {
+                ConfigCard {
                     TagDropdown(
                         label = "Dokumento numerio žymė",
                         value = state.documentNumberTag,
                         options = state.manualFields.map { it.tag }.filter { it.isNotBlank() },
                         onSelect = viewModel::setDocumentNumberTag,
+                    )
+                }
+
+                ConfigCard {
+                    TagDropdown(
+                        label = "Gavėjo el. pašto žymė",
+                        value = state.recipientEmailTag,
+                        options = state.xlsxFields.map { it.tag }.filter { it.isNotBlank() },
+                        onSelect = viewModel::setRecipientEmailTag,
                     )
                 }
 

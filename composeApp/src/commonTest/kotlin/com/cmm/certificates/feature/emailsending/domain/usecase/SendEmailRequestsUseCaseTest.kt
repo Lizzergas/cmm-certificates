@@ -108,7 +108,36 @@ class SendEmailRequestsUseCaseTest {
 
         useCase(listOf(sampleRequest().copy(attachmentPath = missingPath, attachmentName = "missing.pdf")))
 
-        assertEquals(EmailStopReason.MissingAttachments("missing.pdf"), repository.failedReason)
+        val failed = assertIs<EmailStopReason.Cached>(repository.failedReason)
+        assertEquals(EmailStopReason.MissingAttachments("missing.pdf"), failed.reason)
+        assertEquals("missing.pdf", repository.cachedBatch?.entries?.single()?.request?.attachmentName)
+    }
+
+    @Test
+    fun skipsRequestsWithMissingEmailAndSendsRemainingOnes() = runBlocking {
+        val repository = FakeEmailProgressRepository()
+        val useCase = SendEmailRequestsUseCase(
+            emailProgressRepository = repository,
+            settingsRepository = FakeSettingsRepository(),
+            connectivityMonitor = FakeConnectivityMonitor(true),
+            emailGateway = FakeSendGateway(),
+        )
+
+        useCase(
+            listOf(
+                sampleRequest("1").copy(toEmail = ""),
+                sampleRequest("2"),
+            )
+        )
+
+        val failed = assertIs<EmailStopReason.Cached>(repository.failedReason)
+        assertEquals(EmailStopReason.MissingEmailAddresses("1"), failed.reason)
+        assertEquals(1, repository.recordedSends)
+        assertEquals(1, repository.cachedBatch?.entries?.size)
+        assertEquals(
+            EmailStopReason.MissingEmailAddresses("1"),
+            repository.cachedBatch?.entries?.single()?.failureReason,
+        )
     }
 
     @Test

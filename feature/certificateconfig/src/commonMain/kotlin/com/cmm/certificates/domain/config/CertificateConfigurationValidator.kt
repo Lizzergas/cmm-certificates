@@ -36,6 +36,11 @@ object CertificateConfigurationValidator {
             }
         }
 
+        val recipientEmailTag = configuration.recipientEmailTag?.trim().takeUnless { it.isNullOrBlank() }
+        require(recipientEmailTag == null || recipientEmailTag in xlsxTags) {
+            "recipientEmailTag '$recipientEmailTag' must reference an XLSX field"
+        }
+
         require(configuration.documentNumberTag in manualTags) {
             "documentNumberTag '${configuration.documentNumberTag}' must reference a manual field"
         }
