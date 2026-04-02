@@ -135,8 +135,6 @@ class SettingsViewModel(
     fun setBody(value: String) = settingsRepository.setBody(value)
 
 
-    fun setAccreditedTypeOptions(value: String) = settingsRepository.setAccreditedTypeOptions(value)
-
     fun setDailyLimit(value: String) {
         val limit = value.filter { it in '0'..'9' }.toIntOrNull() ?: 0
         settingsRepository.setDailyLimit(limit)

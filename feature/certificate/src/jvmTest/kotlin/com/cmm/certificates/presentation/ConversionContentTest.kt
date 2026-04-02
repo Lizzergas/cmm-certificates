@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import com.cmm.certificates.core.theme.AppTheme
+import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import org.junit.Rule
 import org.junit.Test
 
@@ -14,14 +15,17 @@ class ConversionContentTest {
 
     @Test
     fun showsValidationHintAndInlineFileErrors_whenValidationIsBlocking() {
+        val configuration = defaultCertificateConfiguration()
         val state = ConversionUiState(
+            configuration = configuration,
             validation = buildConversionValidationState(
                 files = ConversionFilesState(),
-                form = ConversionFormState(),
+                configuration = configuration,
+                formValues = emptyMap(),
                 entriesCount = 0,
-                templateSupport = buildTemplateSupportState(templateAvailableTags = null),
+                templateSupport = buildTemplateSupportState(configuration, templateAvailableTags = null),
                 hasAttemptedSubmit = true,
-            )
+            ),
         )
 
         composeRule.setContent {
@@ -34,17 +38,9 @@ class ConversionContentTest {
                     onConversionClick = {},
                     onSelectXlsx = {},
                     onSelectTemplate = {},
-                    actions = ConversionFormActions(
-                        onCertificateDateChange = {},
-                        onAccreditedIdChange = {},
-                        onDocIdStartChange = {},
-                        onAccreditedTypeChange = {},
-                        onAccreditedHoursChange = {},
-                        onCertificateNameChange = {},
-                        onFeedbackUrlChange = {},
-                        onLectorChange = {},
-                        onLectorGenderChange = {},
-                    ),
+                    onFieldValueChange = { _, _ -> },
+                    onEditField = {},
+                    onFeedbackUrlChange = {},
                 )
             }
         }

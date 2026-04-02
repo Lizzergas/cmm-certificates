@@ -11,6 +11,7 @@ import com.cmm.certificates.core.logging.logError
 import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.domain.config.CertificateConfiguration
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.domain.port.OutputDirectoryResolver
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
@@ -23,17 +24,13 @@ import kotlinx.coroutines.withContext
 private const val DEFAULT_OUTPUT_PATH = "pdf/"
 
 data class GenerateCertificatesRequest(
+    val configuration: CertificateConfiguration,
     val templatePath: String,
     val entries: List<RegistrationEntry>,
-    val certificateDate: String,
-    val accreditedId: String,
+    val manualValues: Map<String, String>,
     val docIdStart: String,
-    val accreditedType: String,
-    val accreditedHours: String,
     val certificateName: String,
     val feedbackUrl: String,
-    val lector: String,
-    val lectorGender: String,
     val outputDirectory: String,
 )
 

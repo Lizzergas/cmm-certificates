@@ -2,6 +2,7 @@
     <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
     <string name="common_action_cancel">Cancel</string>
+    <string name="common_action_edit">Edit</string>
     <string name="common_clear_text">Clear text</string>
     <string name="common_file_xlsx">XLSX</string>
     <string name="common_file_docx">DOCX</string>
@@ -59,6 +60,7 @@
     <string name="conversion_error_template_required">Template is required.</string>
     <string name="conversion_error_xlsx_required">XLSX file is required.</string>
     <string name="conversion_error_xlsx_parse">Failed to parse XLSX file.</string>
+    <string name="conversion_error_xlsx_missing_headers">Configured XLSX headers are missing: %1$s</string>
     <string name="conversion_error_docx_inspect">Failed to inspect DOCX template.</string>
     <string name="conversion_error_no_entries">No XLSX entries to generate.</string>
     <string name="conversion_error_fields_required">All certificate fields are required.</string>
@@ -75,8 +77,13 @@
     <string name="conversion_error_certificate_name_required">Certificate name is required.</string>
     <string name="conversion_error_lector_required">Lector is required.</string>
     <string name="conversion_error_lector_gender_required">Lector label is required.</string>
+    <string name="conversion_error_dynamic_required">Field "%1$s" is required.</string>
+    <string name="conversion_error_dynamic_date_invalid">Field "%1$s" must use YYYY-MM-DD.</string>
+    <string name="conversion_error_xlsx_header_mapping_required">XLSX columns must be mapped to the configured fields.</string>
     <string name="conversion_missing_template_tag_tooltip">%1$s tag is missing</string>
     <string name="conversion_missing_template_tag_supporting">This field is unavailable because %1$s is missing in the DOCX template.</string>
+    <string name="conversion_xlsx_header_mapping_title">Map XLSX columns</string>
+    <string name="conversion_xlsx_header_mapping_description">Select which XLSX column matches each required field. The app will remember this choice for the same file.</string>
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Email templates and app preferences</string>
     <string name="settings_section_title">Email and app settings</string>
@@ -122,6 +129,7 @@ training</string>
     <string name="settings_pdf_preview_toggle">Use in-app PDF preview</string>
     <string name="settings_pdf_preview_hint">Disable this if you prefer opening preview PDFs in your system viewer.</string>
     <string name="settings_history_cache_button">History / Cache</string>
+    <string name="settings_certificate_config_button">Certificate configuration</string>
     <string name="settings_legal_title">About and legal</string>
     <string name="settings_legal_summary">This installation includes the customer EULA, ownership notice, and third-party notices in the packaged legal files folder.</string>
     <string name="settings_ownership_notice">This software is licensed, not sold. Ownership of the source code, product, and related intellectual property remains with the Licensor unless a separate written assignment explicitly says otherwise.</string>

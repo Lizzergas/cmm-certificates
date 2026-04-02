@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "id": "default-certificate",
+  "documentNumberTag": "dokumento_id",
+  "xlsxFields": [
+    {
+      "tag": "vardas",
+      "label": "Vardas",
+      "headerName": "Vardas"
+    },
+    {
+      "tag": "pavarde",
+      "label": "Pavardė",
+      "headerName": "Pavardė"
+    }
+  ],
+  "manualFields": [
+    {
+      "tag": "akreditacijos_id",
+      "type": "TEXT",
+      "defaultValue": "IVP-10"
+    },
+    {
+      "tag": "dokumento_id",
+      "type": "NUMBER"
+    },
+    {
+      "tag": "akreditacijos_tipas",
+      "type": "SELECT",
+      "options": [
+        "paskaitoje",
+        "seminare",
+        "konferencijoje",
+        "mokymuose"
+      ]
+    },
+    {
+      "tag": "akreditacijos_valandos",
+      "type": "NUMBER"
+    },
+    {
+      "tag": "sertifikato_pavadinimas",
+      "type": "TEXT"
+    },
+    {
+      "tag": "destytojas",
+      "type": "TEXT"
+    },
+    {
+      "tag": "destytojo_tipas",
+      "type": "TEXT",
+      "defaultValue": "Lektorius:"
+    },
+    {
+      "tag": "data",
+      "type": "DATE"
+    }
+  ]
+}

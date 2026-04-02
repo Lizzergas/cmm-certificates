@@ -97,15 +97,6 @@ class SettingsRepositoryImpl(
         }
     }
 
-    override fun setAccreditedTypeOptions(value: String) {
-        _state.update { current ->
-            current.copy(
-                smtp = current.smtp.copy(errorMessage = null),
-                certificate = current.certificate.copy(accreditedTypeOptions = value),
-            )
-        }
-    }
-
     override fun setOutputDirectory(value: String) {
         _state.update { current ->
             current.copy(
@@ -213,7 +204,6 @@ class SettingsRepositoryImpl(
                     dailyLimit = stored.dailyLimit,
                 ),
                 certificate = current.certificate.copy(
-                    accreditedTypeOptions = stored.accreditedTypeOptions,
                     outputDirectory = stored.outputDirectory,
                 ),
                 appearance = current.appearance.copy(
@@ -244,7 +234,6 @@ private fun SettingsState.toStoredSettings(): SettingsStore.StoredSettings {
         transport = smtp.transport,
         subject = email.subject,
         body = email.body,
-        accreditedTypeOptions = certificate.accreditedTypeOptions,
         outputDirectory = certificate.outputDirectory,
         signatureHtml = email.signatureHtml,
         previewEmail = email.previewEmail,

@@ -34,6 +34,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.core)
+            implementation(projects.feature.certificateconfig)
             implementation(projects.feature.settings)
         }
 

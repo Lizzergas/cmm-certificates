@@ -2,7 +2,6 @@ package com.cmm.certificates.data
 
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_default_lector_label
-import certificates.composeapp.generated.resources.settings_default_accredited_type_options
 import certificates.composeapp.generated.resources.settings_default_email_body
 import certificates.composeapp.generated.resources.settings_default_email_subject
 import certificates.composeapp.generated.resources.settings_default_signature_html
@@ -20,8 +19,6 @@ fun defaultEmailSubject(): String = localizedString(Res.string.settings_default_
 
 fun defaultEmailBody(): String = localizedString(Res.string.settings_default_email_body)
 
-fun defaultAccreditedTypeOptions(): String = localizedString(Res.string.settings_default_accredited_type_options)
-
 fun defaultSignatureHtml(): String = localizedString(Res.string.settings_default_signature_html)
 
 fun defaultLectorLabel(): String = localizedString(Res.string.conversion_default_lector_label)
@@ -36,9 +33,7 @@ fun defaultSettingsState(): SettingsState {
             previewEmail = DEFAULT_PREVIEW_EMAIL,
             dailyLimit = DEFAULT_DAILY_LIMIT,
         ),
-        certificate = CertificateSettingsState(
-            accreditedTypeOptions = defaultAccreditedTypeOptions(),
-        ),
+        certificate = CertificateSettingsState(),
         appearance = AppearanceSettingsState(),
     )
 }

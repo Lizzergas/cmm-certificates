@@ -282,7 +282,6 @@ private class FakeSettingsRepository(
     override fun setSubject(value: String) = Unit
     override fun setBody(value: String) = Unit
     override fun setSignatureHtml(value: String) = Unit
-    override fun setAccreditedTypeOptions(value: String) = Unit
     override fun setOutputDirectory(value: String) = Unit
     override fun setPreviewEmail(value: String) = Unit
     override fun setDailyLimit(value: Int) = Unit

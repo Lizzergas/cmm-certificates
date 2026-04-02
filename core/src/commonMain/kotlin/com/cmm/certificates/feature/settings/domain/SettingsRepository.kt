@@ -12,7 +12,6 @@ interface SettingsRepository {
     fun setSubject(value: String)
     fun setBody(value: String)
     fun setSignatureHtml(value: String)
-    fun setAccreditedTypeOptions(value: String)
     fun setOutputDirectory(value: String)
     fun setPreviewEmail(value: String)
     fun setDailyLimit(value: Int)

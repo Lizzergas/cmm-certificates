@@ -185,7 +185,6 @@ private class FakeSettingsRepository(
     override fun setSubject(value: String) {}
     override fun setBody(value: String) {}
     override fun setSignatureHtml(value: String) {}
-    override fun setAccreditedTypeOptions(value: String) {}
     override fun setOutputDirectory(value: String) {}
     override fun setPreviewEmail(value: String) {
         _state.value = _state.value.copy(email = _state.value.email.copy(previewEmail = value))

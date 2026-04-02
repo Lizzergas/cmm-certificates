@@ -66,7 +66,6 @@ class SettingsRepositoryImplTest {
         repository.setHost("smtp.saved.example.com")
         repository.setSubject("Saved Subject")
         repository.setBody("Saved Body")
-        repository.setAccreditedTypeOptions("lecture\nseminar")
         repository.setOutputDirectory("C:/Users/tester/Documents/Certificates")
         repository.setSignatureHtml("<div>Saved signature</div>")
         repository.setThemeMode(AppThemeMode.DARK)

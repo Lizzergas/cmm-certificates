@@ -1,5 +1,8 @@
 package com.cmm.certificates.data.xlsx
 
+import com.cmm.certificates.domain.config.NameFieldId
+import com.cmm.certificates.domain.config.SurnameFieldId
+import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,11 +19,26 @@ class XlsxEntryMapperTest {
         "Publicity",
     )
 
+    private val configuration = defaultCertificateConfiguration().copy(
+        xlsxFields = listOf(
+            com.cmm.certificates.domain.config.XlsxTagField(
+                tag = NameFieldId,
+                headerName = "Name",
+            ),
+            com.cmm.certificates.domain.config.XlsxTagField(
+                tag = SurnameFieldId,
+                headerName = "Surname",
+            ),
+        ),
+    )
+
     @Test
-    fun mapEntries_mapsNonDateColumnsUsingExistingPositions() {
+    fun mapEntries_mapsConfiguredHeadersAndKeepsLegacyEmailFields() {
         val entries = XlsxEntryMapper.mapEntries(
-            headers = headers,
-            rows = listOf(
+            sheet = XlsxSheetData(
+                name = "Sheet1",
+                headers = headers,
+                rows = listOf(
                 mapOf(
                     "Timestamp" to "03/05/2024 10:15:30",
                     "Email" to "ada@example.com",
@@ -32,6 +50,8 @@ class XlsxEntryMapperTest {
                     "Publicity" to "yes",
                 )
             ),
+            ),
+            configuration = configuration,
         )
 
         assertEquals(1, entries.size)
@@ -39,13 +59,17 @@ class XlsxEntryMapperTest {
         assertEquals("Ada", entries.single().name)
         assertEquals("Lovelace", entries.single().surname)
         assertEquals("CMM", entries.single().institution)
+        assertEquals("Ada", entries.single().fieldValues[NameFieldId])
+        assertEquals("Lovelace", entries.single().fieldValues[SurnameFieldId])
     }
 
     @Test
-    fun mapEntries_stopsAtFirstBlankTimestamp() {
+    fun mapEntries_stopsAtFirstFullyEmptyRow() {
         val entries = XlsxEntryMapper.mapEntries(
-            headers = headers,
-            rows = listOf(
+            sheet = XlsxSheetData(
+                name = "Sheet1",
+                headers = headers,
+                rows = listOf(
                 mapOf(
                     "Timestamp" to "03/05/2024 10:15:30",
                     "Email" to "first@example.com",
@@ -58,25 +82,29 @@ class XlsxEntryMapperTest {
                 ),
                 mapOf(
                     "Timestamp" to "",
-                    "Email" to "second@example.com",
-                    "Name" to "Second",
-                    "Surname" to "Person",
-                    "Institution" to "CMM",
-                    "Event" to "Workshop",
+                    "Email" to "",
+                    "Name" to "",
+                    "Surname" to "",
+                    "Institution" to "",
+                    "Event" to "",
                     "Payment" to "",
-                    "Publicity" to "yes",
+                    "Publicity" to "",
                 ),
             ),
+            ),
+            configuration = configuration,
         )
 
         assertEquals(listOf("first@example.com"), entries.map { it.primaryEmail })
     }
 
     @Test
-    fun mapEntries_keepsReadingRowsWithNumericFirstColumn() {
+    fun mapEntries_noLongerDependsOnLegacyTimestampSentinel() {
         val entries = XlsxEntryMapper.mapEntries(
-            headers = headers,
-            rows = listOf(
+            sheet = XlsxSheetData(
+                name = "Sheet1",
+                headers = headers,
+                rows = listOf(
                 mapOf(
                     "Timestamp" to "61.5",
                     "Email" to "excel@example.com",
@@ -86,10 +114,22 @@ class XlsxEntryMapperTest {
                     "Event" to "Workshop",
                     "Payment" to "",
                     "Publicity" to "yes",
+                ),
+                mapOf(
+                    "Timestamp" to "",
+                    "Email" to "next@example.com",
+                    "Name" to "Next",
+                    "Surname" to "Person",
+                    "Institution" to "CMM",
+                    "Event" to "Workshop",
+                    "Payment" to "",
+                    "Publicity" to "yes",
                 )
             ),
+            ),
+            configuration = configuration,
         )
 
-        assertEquals(listOf("excel@example.com"), entries.map { it.primaryEmail })
+        assertEquals(listOf("excel@example.com", "next@example.com"), entries.map { it.primaryEmail })
     }
 }

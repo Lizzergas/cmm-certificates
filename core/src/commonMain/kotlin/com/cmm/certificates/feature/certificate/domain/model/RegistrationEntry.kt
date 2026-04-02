@@ -8,4 +8,5 @@ data class RegistrationEntry(
     val forEvent: String,
     val paymentUrl: String = "",
     val publicityApproval: String,
+    val fieldValues: Map<String, String> = emptyMap(),
 )

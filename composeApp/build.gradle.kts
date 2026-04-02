@@ -77,6 +77,7 @@ kotlin {
             implementation(projects.core)
             implementation(projects.feature.settings)
             implementation(projects.feature.certificate)
+            implementation(projects.feature.certificateconfig)
             implementation(projects.feature.emailsending)
             implementation(projects.feature.pdfconversion)
         }

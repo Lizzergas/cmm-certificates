@@ -15,6 +15,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import certificates.composeapp.generated.resources.Res
@@ -23,6 +24,15 @@ import com.cmm.certificates.core.theme.Grid
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.X
 import org.jetbrains.compose.resources.stringResource
+
+data class TextFieldTrailingAction(
+    val key: String,
+    val icon: ImageVector,
+    val contentDescription: String,
+    val onClick: () -> Unit,
+    val enabled: Boolean = true,
+    val visible: Boolean = true,
+)
 
 @Composable
 fun ClearableOutlinedTextField(
@@ -43,6 +53,7 @@ fun ClearableOutlinedTextField(
     isError: Boolean = false,
     tooltipText: String? = null,
     trailingIcon: @Composable (() -> Unit)? = {},
+    trailingActions: List<TextFieldTrailingAction> = emptyList(),
     showClearIcon: Boolean = value.isNotBlank(),
     onClear: (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
@@ -57,6 +68,20 @@ fun ClearableOutlinedTextField(
                 horizontalArrangement = Arrangement.spacedBy(Grid.x2),
             ) {
                 trailingIcon?.invoke()
+                trailingActions.filter(TextFieldTrailingAction::visible).forEach { action ->
+                    IconButton(
+                        onClick = action.onClick,
+                        enabled = action.enabled,
+                        modifier = Modifier.size(Grid.x16),
+                    ) {
+                        Icon(
+                            imageVector = action.icon,
+                            contentDescription = action.contentDescription,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(Grid.x8),
+                        )
+                    }
+                }
                 if (canClear) {
                     IconButton(
                         onClick = { (onClear ?: { onValueChange("") })() },

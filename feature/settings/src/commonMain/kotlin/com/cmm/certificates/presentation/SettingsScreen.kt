@@ -52,12 +52,12 @@ import certificates.composeapp.generated.resources.email_progress_daily_limit_st
 import certificates.composeapp.generated.resources.email_progress_daily_limit_unlimited_status
 import certificates.composeapp.generated.resources.email_sending_unsupported_hint
 import certificates.composeapp.generated.resources.network_unavailable_message
-import certificates.composeapp.generated.resources.settings_accredited_type_options_label
 import certificates.composeapp.generated.resources.settings_authenticate
 import certificates.composeapp.generated.resources.settings_authenticated
 import certificates.composeapp.generated.resources.settings_back
 import certificates.composeapp.generated.resources.settings_body_label
 import certificates.composeapp.generated.resources.settings_body_placeholder_hint
+import certificates.composeapp.generated.resources.settings_certificate_config_button
 import certificates.composeapp.generated.resources.settings_clear_all
 import certificates.composeapp.generated.resources.settings_clear_all_cancel
 import certificates.composeapp.generated.resources.settings_clear_all_confirm
@@ -129,6 +129,7 @@ private val CardGap = Grid.x6
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenCertificateConfig: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -148,7 +149,6 @@ fun SettingsScreen(
         onDailyLimitChange = viewModel::setDailyLimit,
         onThemeModeChange = viewModel::setThemeMode,
         onUseInAppPdfPreviewChange = viewModel::setUseInAppPdfPreview,
-        onAccreditedTypeOptionsChange = viewModel::setAccreditedTypeOptions,
         onOutputDirectoryReset = viewModel::resetOutputDirectory,
         onChooseOutputDirectory = {
             launchDirectoryPicker(state.resolvedOutputDirectory, viewModel::setOutputDirectory)
@@ -235,6 +235,7 @@ fun SettingsScreen(
             SettingsContent(
                 state = state,
                 actions = actions,
+                onOpenCertificateConfig = onOpenCertificateConfig,
             )
         }
     }
@@ -266,6 +267,7 @@ fun SettingsScreen(
 private fun BoxScope.SettingsContent(
     state: SettingsUiState,
     actions: SettingsActions,
+    onOpenCertificateConfig: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
     val themeOptions = remember {
@@ -382,14 +384,12 @@ private fun BoxScope.SettingsContent(
                     )
                 }
             }
-            SettingsField(
-                label = Res.string.settings_accredited_type_options_label,
-                value = state.certificate.accreditedTypeOptions,
-                onValueChange = actions.onAccreditedTypeOptionsChange,
-                minLines = 4,
-                maxLines = 10,
-                showClearIcon = false,
-            )
+            OutlinedButton(
+                onClick = onOpenCertificateConfig,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(Res.string.settings_certificate_config_button))
+            }
             OutlinedButton(
                 onClick = actions.onEditSignature,
                 modifier = Modifier.fillMaxWidth(),
@@ -889,7 +889,6 @@ private data class SettingsActions(
     val onDailyLimitChange: (String) -> Unit,
     val onThemeModeChange: (AppThemeMode) -> Unit,
     val onUseInAppPdfPreviewChange: (Boolean) -> Unit,
-    val onAccreditedTypeOptionsChange: (String) -> Unit,
     val onOutputDirectoryReset: () -> Unit,
     val onChooseOutputDirectory: () -> Unit,
     val onOpenHistoryCache: () -> Unit,
@@ -927,7 +926,6 @@ private fun SettingsContentPreview() {
                         dailyLimit = 120,
                     ),
                     certificate = CertificateSettingsState(
-                        accreditedTypeOptions = "lecture\nseminar\nconference",
                         outputDirectory = "/Users/tester/pdf",
                     ),
                     appearance = AppearanceSettingsState(
@@ -950,7 +948,6 @@ private fun SettingsContentPreview() {
                     onDailyLimitChange = {},
                     onThemeModeChange = {},
                     onUseInAppPdfPreviewChange = {},
-                    onAccreditedTypeOptionsChange = {},
                     onOutputDirectoryReset = {},
                     onChooseOutputDirectory = {},
                     onOpenHistoryCache = {},
@@ -961,6 +958,7 @@ private fun SettingsContentPreview() {
                     onOpenEmailConfiguration = {},
                     onSendLogs = {},
                 ),
+                onOpenCertificateConfig = {},
             )
         }
     }

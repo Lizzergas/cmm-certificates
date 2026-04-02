@@ -28,7 +28,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -51,25 +52,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.cmm_logo
 import certificates.composeapp.generated.resources.common_action_cancel
+import certificates.composeapp.generated.resources.common_action_edit
 import certificates.composeapp.generated.resources.common_action_ok
 import certificates.composeapp.generated.resources.common_file_docx
 import certificates.composeapp.generated.resources.common_file_xlsx
-import certificates.composeapp.generated.resources.conversion_accredited_hours_label
-import certificates.composeapp.generated.resources.conversion_accredited_id_label
-import certificates.composeapp.generated.resources.conversion_accredited_type_label
-import certificates.composeapp.generated.resources.conversion_certificate_date_label
 import certificates.composeapp.generated.resources.conversion_certificate_date_not_selected
-import certificates.composeapp.generated.resources.conversion_certificate_name_label
 import certificates.composeapp.generated.resources.conversion_convert_button
-import certificates.composeapp.generated.resources.conversion_doc_id_label
 import certificates.composeapp.generated.resources.conversion_email_extras_section_title
 import certificates.composeapp.generated.resources.conversion_feedback_url_hint
 import certificates.composeapp.generated.resources.conversion_feedback_url_label
 import certificates.composeapp.generated.resources.conversion_form_section_title
-import certificates.composeapp.generated.resources.conversion_lector_gender_label
-import certificates.composeapp.generated.resources.conversion_lector_label
 import certificates.composeapp.generated.resources.conversion_offline_hint
-import certificates.composeapp.generated.resources.conversion_pick_date_button
 import certificates.composeapp.generated.resources.conversion_preview_button
 import certificates.composeapp.generated.resources.conversion_title
 import certificates.composeapp.generated.resources.conversion_tooltip_docx
@@ -89,15 +82,19 @@ import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
+import com.cmm.certificates.core.ui.TextFieldTrailingAction
 import com.cmm.certificates.core.ui.rememberFilePickerLauncher
 import com.cmm.certificates.domain.certificateDateInputToUtcMillis
 import com.cmm.certificates.domain.formatCertificateDate
 import com.cmm.certificates.domain.parseCertificateDateInput
 import com.cmm.certificates.domain.utcMillisToCertificateDateInput
-import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
+import com.cmm.certificates.domain.config.CertificateFieldType
 import com.cmm.certificates.presentation.components.PrimaryActionButton
 import com.cmm.certificates.presentation.components.SelectFileIcon
 import com.cmm.certificates.presentation.components.SelectFileIconState
+import com.cmm.certificates.presentation.components.ManualFieldConfigDialog
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Pencil
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -109,13 +106,12 @@ private val ContentSpacing = Grid.x10
 private val CardPadding = Grid.x8
 private val BottomBarPadding = Grid.x6
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversionScreen(
     onProfileClick: () -> Unit,
     onStartConversion: () -> Unit,
     onRetryCachedEmails: () -> Unit,
-    viewModel: ConversionViewModel = koinViewModel<ConversionViewModel>(),
+    viewModel: ConversionViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val launchFilePicker = rememberFilePickerLauncher()
@@ -124,6 +120,17 @@ fun ConversionScreen(
         PdfPreviewDialog(
             pdfPath = previewPdfPath,
             onDismiss = viewModel::dismissPreview,
+        )
+    }
+
+    state.editingManualField?.let { editorState ->
+        ManualFieldConfigDialog(
+            title = editorState.draft.label.ifBlank { editorState.draft.tag.ifBlank { "Redaguoti lauką" } },
+            draft = editorState.draft,
+            message = editorState.message,
+            onDraftChange = { updated -> viewModel.updateEditingManualField { updated } },
+            onDismiss = viewModel::dismissManualFieldEditor,
+            onSave = viewModel::saveEditingManualField,
         )
     }
 
@@ -139,21 +146,12 @@ fun ConversionScreen(
         },
         onSelectXlsx = { launchFilePicker("xlsx", viewModel::selectXlsx) },
         onSelectTemplate = { launchFilePicker("docx", viewModel::setTemplatePath) },
-        actions = ConversionFormActions(
-            onCertificateDateChange = viewModel::setCertificateDate,
-            onAccreditedIdChange = viewModel::setAccreditedId,
-            onDocIdStartChange = viewModel::setDocIdStart,
-            onAccreditedTypeChange = viewModel::setAccreditedType,
-            onAccreditedHoursChange = viewModel::setAccreditedHours,
-            onCertificateNameChange = viewModel::setCertificateName,
-            onFeedbackUrlChange = viewModel::setFeedbackUrl,
-            onLectorChange = viewModel::setLector,
-            onLectorGenderChange = viewModel::setLectorGender,
-        ),
+        onFieldValueChange = viewModel::setManualFieldValue,
+        onEditField = viewModel::openManualFieldEditor,
+        onFeedbackUrlChange = viewModel::setFeedbackUrl,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ConversionContent(
     state: ConversionUiState,
@@ -163,7 +161,9 @@ internal fun ConversionContent(
     onConversionClick: () -> Unit,
     onSelectXlsx: () -> Unit,
     onSelectTemplate: () -> Unit,
-    actions: ConversionFormActions,
+    onFieldValueChange: (String, String) -> Unit,
+    onEditField: (String) -> Unit,
+    onFeedbackUrlChange: (String) -> Unit,
 ) {
     val scrollState = rememberScrollState()
 
@@ -185,15 +185,8 @@ internal fun ConversionContent(
         ) {
             val hasXlsx = state.files.hasXlsx
             val hasTemplate = state.files.hasTemplate
-            val xlsxTooltip = buildPathTooltip(
-                Res.string.conversion_tooltip_xlsx,
-                state.files.xlsxPath,
-            )
-
-            val docxTooltip = buildPathTooltip(
-                Res.string.conversion_tooltip_docx,
-                state.files.templatePath,
-            )
+            val xlsxTooltip = buildPathTooltip(Res.string.conversion_tooltip_xlsx, state.files.xlsxPath)
+            val docxTooltip = buildPathTooltip(Res.string.conversion_tooltip_docx, state.files.templatePath)
 
             Column(
                 modifier = Modifier
@@ -214,9 +207,7 @@ internal fun ConversionContent(
                 }
 
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onProfileClick),
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onProfileClick),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -242,10 +233,7 @@ internal fun ConversionContent(
                     SelectFileIcon(
                         icon = Res.drawable.xlsx,
                         label = stringResource(Res.string.common_file_xlsx),
-                        state = selectFileIconState(
-                            hasXlsx,
-                            state.validation.xlsxError?.asString()
-                        ),
+                        state = selectFileIconState(hasXlsx, state.validation.xlsxError?.asString()),
                         fileName = state.files.xlsxFileName,
                         errorText = state.validation.xlsxError?.asString(),
                         errorTextModifier = Modifier.testTag("conversion-xlsx-error"),
@@ -257,10 +245,7 @@ internal fun ConversionContent(
                     SelectFileIcon(
                         icon = Res.drawable.docx,
                         label = stringResource(Res.string.common_file_docx),
-                        state = selectFileIconState(
-                            hasTemplate,
-                            state.validation.templateError?.asString()
-                        ),
+                        state = selectFileIconState(hasTemplate, state.validation.templateError?.asString()),
                         fileName = state.files.templateFileName,
                         errorText = state.validation.templateError?.asString(),
                         errorTextModifier = Modifier.testTag("conversion-template-error"),
@@ -272,95 +257,34 @@ internal fun ConversionContent(
                 }
 
                 CertificateDetailsSection(
-                    form = state.form,
-                    templateSupport = state.templateSupport,
-                    validation = state.validation,
-                    isTemplateInspectionInProgress = state.files.isTemplateInspectionInProgress,
-                    accreditedTypeOptions = state.accreditedTypeOptions,
-                    enabled = state.supportsConversion,
-                    actions = actions,
+                    fields = state.manualFields,
+                    onFieldValueChange = onFieldValueChange,
+                    onEditField = onEditField,
                 )
 
                 EmailExtrasSection(
                     feedbackUrl = state.form.feedbackUrl,
                     enabled = state.supportsConversion,
-                    onFeedbackUrlChange = actions.onFeedbackUrlChange,
+                    onFeedbackUrlChange = onFeedbackUrlChange,
                 )
 
                 Spacer(modifier = Modifier.height(Grid.x6))
             }
+
             AppVerticalScrollbar(
                 scrollState = scrollState,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight()
-                    .padding(end = Grid.x2),
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight().padding(end = Grid.x2),
             )
         }
     }
 }
 
-@Preview
-@Composable
-private fun ConversionBottomBarPreview() {
-    AppTheme(darkTheme = false) {
-        ConversionBottomBar(
-            state = ConversionUiState(
-                files = ConversionFilesState(
-                    xlsxPath = "participants.xlsx",
-                    templatePath = "template.docx"
-                ),
-                form = ConversionFormState(
-                    certificateDate = "2026-03-26",
-                    docIdStart = "100",
-                    accreditedHours = "4",
-                    certificateName = "Certificate",
-                    lector = "Lecturer",
-                ),
-                entries = listOf(
-                    RegistrationEntry(
-                        primaryEmail = "preview@example.com",
-                        name = "Ada",
-                        surname = "Lovelace",
-                        institution = "CMM",
-                        forEvent = "Workshop",
-                        publicityApproval = "yes",
-                    )
-                ),
-            ),
-            onPreviewClick = {},
-            onConversionClick = {},
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CertificateDetailsSection(
-    form: ConversionFormState,
-    templateSupport: ConversionTemplateSupportState,
-    validation: ConversionValidationState,
-    isTemplateInspectionInProgress: Boolean,
-    accreditedTypeOptions: List<String>,
-    enabled: Boolean,
-    actions: ConversionFormActions,
+    fields: List<ConversionManualFieldUiState>,
+    onFieldValueChange: (String, String) -> Unit,
+    onEditField: (String) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val inputsEnabled = enabled && !isTemplateInspectionInProgress
-    var isDatePickerVisible by remember { mutableStateOf(false) }
-    val certificateDateEnabled = inputsEnabled && templateSupport.certificateDate.isEnabled
-
-    if (isDatePickerVisible) {
-        CertificateDatePickerDialog(
-            value = form.certificateDate,
-            onDismissRequest = { isDatePickerVisible = false },
-            onDateSelected = {
-                actions.onCertificateDateChange(it)
-                isDatePickerVisible = false
-            },
-        )
-    }
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -368,9 +292,7 @@ private fun CertificateDetailsSection(
         tonalElevation = Grid.x1,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(CardPadding),
+            modifier = Modifier.fillMaxWidth().padding(CardPadding),
             verticalArrangement = Arrangement.spacedBy(Grid.x6),
         ) {
             Text(
@@ -379,237 +301,202 @@ private fun CertificateDetailsSection(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
-            ) {
-                ClearableOutlinedTextField(
-                    value = form.accreditedId,
-                    onValueChange = actions.onAccreditedIdChange,
-                    label = { Text(stringResource(Res.string.conversion_accredited_id_label)) },
-                    modifier = Modifier.weight(1f),
-                    enabled = enabled && templateSupport.accreditedId.isEnabled,
-                    isError = validation.accreditedIdError != null,
-                    tooltipText = templateSupport.accreditedId.disabledTooltip?.asString(),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    supportingText = supportingTextFor(
-                        error = validation.accreditedIdError,
-                        helper = templateSupport.accreditedId.disabledSupportingText,
-                    ),
-                )
-                ClearableOutlinedTextField(
-                    value = form.docIdStart,
-                    onValueChange = actions.onDocIdStartChange,
-                    label = { Text(stringResource(Res.string.conversion_doc_id_label)) },
-                    modifier = Modifier.weight(1f),
-                    enabled = enabled && templateSupport.docIdStart.isEnabled,
-                    isError = validation.docIdStartError != null,
-                    tooltipText = templateSupport.docIdStart.disabledTooltip?.asString(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    supportingText = supportingTextFor(
-                        error = validation.docIdStartError,
-                        helper = templateSupport.docIdStart.disabledSupportingText,
-                    ),
+            fields.forEach { field ->
+                ManualFieldInput(
+                    field = field,
+                    onValueChange = { onFieldValueChange(field.tag, it) },
+                    onEditDefinition = { onEditField(field.tag) },
                 )
             }
-            val accreditedTypeEnabled = enabled && templateSupport.accreditedType.isEnabled
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ManualFieldInput(
+    field: ConversionManualFieldUiState,
+    onValueChange: (String) -> Unit,
+    onEditDefinition: () -> Unit,
+) {
+    val editAction = TextFieldTrailingAction(
+        key = "edit-${field.tag}",
+        icon = Lucide.Pencil,
+        contentDescription = stringResource(Res.string.common_action_edit),
+        onClick = onEditDefinition,
+        enabled = true,
+    )
+    when (field.type) {
+        CertificateFieldType.DATE -> ConfigDateField(
+            field = field,
+            onValueChange = onValueChange,
+            onEditDefinition = onEditDefinition,
+        )
+        CertificateFieldType.SELECT -> {
+            var expanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { if (accreditedTypeEnabled) expanded = !expanded },
+                onExpandedChange = { if (field.enabled) expanded = !expanded },
             ) {
-                val fillMaxWidth = Modifier.fillMaxWidth()
-                ClearableOutlinedTextField(
-                    value = form.accreditedType,
-                    onValueChange = {},
-                    label = { Text(stringResource(Res.string.conversion_accredited_type_label)) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = fillMaxWidth.menuAnchor(
-                        ExposedDropdownMenuAnchorType.PrimaryNotEditable,
-                        true
-                    ),
-                    enabled = accreditedTypeEnabled,
-                    isError = validation.accreditedTypeError != null,
-                    tooltipText = templateSupport.accreditedType.disabledTooltip?.asString(),
-                    readOnly = true,
-                    singleLine = true,
-                    showClearIcon = false,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    onClear = { actions.onAccreditedTypeChange("") },
-                    supportingText = supportingTextFor(
-                        error = validation.accreditedTypeError,
-                        helper = templateSupport.accreditedType.disabledSupportingText,
-                    ),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    ClearableOutlinedTextField(
+                        value = field.value,
+                        onValueChange = {},
+                        label = { Text(fieldLabelText(field.tag, field.label)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+                        enabled = field.enabled,
+                        isError = field.error != null,
+                        tooltipText = field.tooltip?.asString(),
+                        readOnly = true,
+                        singleLine = true,
+                        showClearIcon = false,
+                        trailingIcon = null,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        onClear = {},
+                        supportingText = supportingTextFor(field.error, field.helper),
+                    )
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = Grid.x4),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(
+                            onClick = onEditDefinition,
+                            modifier = Modifier.size(Grid.x16),
+                        ) {
+                            Icon(
+                                imageVector = Lucide.Pencil,
+                                contentDescription = stringResource(Res.string.common_action_edit),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(Grid.x8),
+                            )
+                        }
+                    }
+                }
                 ExposedDropdownMenu(
-                    expanded = accreditedTypeEnabled && expanded,
+                    expanded = field.enabled && expanded,
                     onDismissRequest = { expanded = false },
                 ) {
-                    accreditedTypeOptions.forEach { option ->
+                    field.options.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option) },
                             onClick = {
-                                actions.onAccreditedTypeChange(option)
+                                onValueChange(option)
                                 expanded = false
                             },
                         )
                     }
                 }
             }
+        }
+
+        else -> {
             ClearableOutlinedTextField(
-                value = form.accreditedHours,
-                onValueChange = actions.onAccreditedHoursChange,
-                label = { Text(stringResource(Res.string.conversion_accredited_hours_label)) },
+                value = field.value,
+                onValueChange = onValueChange,
+                label = { Text(fieldLabelText(field.tag, field.label)) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = enabled && templateSupport.accreditedHours.isEnabled,
-                isError = validation.accreditedHoursError != null,
-                tooltipText = templateSupport.accreditedHours.disabledTooltip?.asString(),
-                singleLine = true,
+                enabled = field.enabled,
+                isError = field.error != null,
+                tooltipText = field.tooltip?.asString(),
+                singleLine = field.type != CertificateFieldType.MULTILINE,
+                keyboardOptions = when (field.type) {
+                    CertificateFieldType.NUMBER -> KeyboardOptions(keyboardType = KeyboardType.Number)
+                    else -> KeyboardOptions.Default
+                },
+                showClearIcon = false,
+                trailingActions = listOf(editAction),
                 textStyle = MaterialTheme.typography.bodySmall,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                supportingText = supportingTextFor(
-                    error = validation.accreditedHoursError,
-                    helper = templateSupport.accreditedHours.disabledSupportingText,
-                ),
-            )
-            ClearableOutlinedTextField(
-                value = form.certificateName,
-                onValueChange = actions.onCertificateNameChange,
-                label = { Text(stringResource(Res.string.conversion_certificate_name_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled && templateSupport.certificateName.isEnabled,
-                isError = validation.certificateNameError != null,
-                tooltipText = templateSupport.certificateName.disabledTooltip?.asString(),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
-                supportingText = supportingTextFor(
-                    error = validation.certificateNameError,
-                    helper = templateSupport.certificateName.disabledSupportingText,
-                ),
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Grid.x5),
-            ) {
-                ClearableOutlinedTextField(
-                    value = form.lectorGender,
-                    onValueChange = actions.onLectorGenderChange,
-                    label = { Text(stringResource(Res.string.conversion_lector_gender_label)) },
-                    modifier = Modifier.weight(1f),
-                    enabled = enabled && templateSupport.lectorGender.isEnabled,
-                    isError = validation.lectorGenderError != null,
-                    tooltipText = templateSupport.lectorGender.disabledTooltip?.asString(),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    supportingText = supportingTextFor(
-                        error = validation.lectorGenderError,
-                        helper = templateSupport.lectorGender.disabledSupportingText,
-                    ),
-                )
-                ClearableOutlinedTextField(
-                    value = form.lector,
-                    onValueChange = actions.onLectorChange,
-                    label = { Text(stringResource(Res.string.conversion_lector_label)) },
-                    modifier = Modifier.weight(1f),
-                    enabled = enabled && templateSupport.lector.isEnabled,
-                    isError = validation.lectorError != null,
-                    tooltipText = templateSupport.lector.disabledTooltip?.asString(),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall,
-                    supportingText = supportingTextFor(
-                        error = validation.lectorError,
-                        helper = templateSupport.lector.disabledSupportingText,
-                    ),
-                )
-            }
-            CertificateDateField(
-                value = form.certificateDate,
-                onOpenPicker = { isDatePickerVisible = true },
-                enabled = certificateDateEnabled,
-                isError = validation.certificateDateError != null,
-                tooltipText = templateSupport.certificateDate.disabledTooltip?.asString(),
-                supportingText = certificateDateSupportingText(
-                    error = validation.certificateDateError,
-                    helper = templateSupport.certificateDate.disabledSupportingText,
-                ),
+                supportingText = supportingTextFor(field.error, field.helper),
             )
         }
     }
 }
 
-internal data class ConversionFormActions(
-    val onCertificateDateChange: (String) -> Unit,
-    val onAccreditedIdChange: (String) -> Unit,
-    val onDocIdStartChange: (String) -> Unit,
-    val onAccreditedTypeChange: (String) -> Unit,
-    val onAccreditedHoursChange: (String) -> Unit,
-    val onCertificateNameChange: (String) -> Unit,
-    val onFeedbackUrlChange: (String) -> Unit,
-    val onLectorChange: (String) -> Unit,
-    val onLectorGenderChange: (String) -> Unit,
-)
-
 @Composable
-private fun CertificateDateField(
-    value: String,
-    onOpenPicker: () -> Unit,
-    enabled: Boolean,
-    isError: Boolean,
-    tooltipText: String?,
-    supportingText: (@Composable () -> Unit)?,
+private fun ConfigDateField(
+    field: ConversionManualFieldUiState,
+    onValueChange: (String) -> Unit,
+    onEditDefinition: () -> Unit,
 ) {
-    val parsedDate = parseCertificateDateInput(value)
+    var isDatePickerVisible by remember { mutableStateOf(false) }
+    val parsedDate = parseCertificateDateInput(field.value)
     val displayText = parsedDate?.let(::formatCertificateDate)
         ?: stringResource(Res.string.conversion_certificate_date_not_selected)
     val displayColor = when {
-        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        isError -> MaterialTheme.colorScheme.error
+        !field.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        field.error != null -> MaterialTheme.colorScheme.error
         parsedDate == null -> MaterialTheme.colorScheme.onSurfaceVariant
         else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    if (isDatePickerVisible) {
+        CertificateDatePickerDialog(
+            value = field.value,
+            onDismissRequest = { isDatePickerVisible = false },
+            onDateSelected = {
+                onValueChange(it)
+                isDatePickerVisible = false
+            },
+        )
     }
 
     val content: @Composable () -> Unit = {
         Column(verticalArrangement = Arrangement.spacedBy(Grid.x3)) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (enabled) Modifier.clickable(onClick = onOpenPicker) else Modifier),
+                modifier = Modifier.fillMaxWidth().then(if (field.enabled) Modifier.clickable { isDatePickerVisible = true } else Modifier),
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 1f else 0.5f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (field.enabled) 1f else 0.5f),
                 border = BorderStroke(
                     Stroke.thin,
-                    if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+                    if (field.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
                 ),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Grid.x6, vertical = Grid.x5),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Grid.x6, vertical = Grid.x5),
                     verticalArrangement = Arrangement.spacedBy(Grid.x2),
                 ) {
                     Text(
-                        text = stringResource(Res.string.conversion_certificate_date_label),
+                        text = fieldLabelText(field.tag, field.label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        text = displayText,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = displayColor,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = displayColor,
+                        )
+                        IconButton(
+                            onClick = onEditDefinition,
+                            modifier = Modifier.size(Grid.x16),
+                        ) {
+                            Icon(
+                                imageVector = Lucide.Pencil,
+                                contentDescription = stringResource(Res.string.common_action_edit),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(Grid.x8),
+                            )
+                        }
+                    }
                 }
             }
-            supportingText?.invoke()
+            supportingTextFor(field.error, field.helper)?.invoke()
         }
     }
 
-    if (tooltipText.isNullOrBlank()) {
+    if (field.tooltip == null) {
         content()
     } else {
         com.cmm.certificates.core.ui.TooltipWrapper(
-            tooltipText = tooltipText,
+            tooltipText = field.tooltip.asString(),
             modifier = Modifier.fillMaxWidth(),
         ) {
             content()
@@ -624,10 +511,7 @@ private fun CertificateDatePickerDialog(
     onDismissRequest: () -> Unit,
     onDateSelected: (String) -> Unit,
 ) {
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = certificateDateInputToUtcMillis(value),
-    )
-
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = certificateDateInputToUtcMillis(value))
     DatePickerDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -637,14 +521,10 @@ private fun CertificateDatePickerDialog(
                     onDateSelected(utcMillisToCertificateDateInput(selectedDateMillis))
                 },
                 enabled = datePickerState.selectedDateMillis != null,
-            ) {
-                Text(stringResource(Res.string.common_action_ok))
-            }
+            ) { Text(stringResource(Res.string.common_action_ok)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(Res.string.common_action_cancel))
-            }
+            TextButton(onClick = onDismissRequest) { Text(stringResource(Res.string.common_action_cancel)) }
         },
     ) {
         DatePicker(state = datePickerState)
@@ -664,9 +544,7 @@ private fun EmailExtrasSection(
         tonalElevation = Grid.x1,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(CardPadding),
+            modifier = Modifier.fillMaxWidth().padding(CardPadding),
             verticalArrangement = Arrangement.spacedBy(Grid.x4),
         ) {
             Text(
@@ -683,9 +561,7 @@ private fun EmailExtrasSection(
                 enabled = enabled,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodySmall,
-                supportingText = {
-                    Text(stringResource(Res.string.conversion_feedback_url_hint))
-                },
+                supportingText = { Text(stringResource(Res.string.conversion_feedback_url_hint)) },
             )
         }
     }
@@ -703,27 +579,14 @@ private fun ConversionBottomBar(
         shadowElevation = Grid.x3,
         border = BorderStroke(Stroke.thin, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = ContentPadding, vertical = BottomBarPadding),
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Grid.x4),
-            ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = ContentPadding, vertical = BottomBarPadding)) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Grid.x4)) {
                 if (!state.supportsConversion) {
                     Text(
                         text = stringResource(Res.string.conversion_unsupported_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                MaterialTheme.shapes.small,
-                            )
-                            .padding(horizontal = Grid.x6, vertical = Grid.x3),
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small).padding(horizontal = Grid.x6, vertical = Grid.x3),
                         textAlign = TextAlign.Center,
                     )
                 } else if (state.validation.hasBlockingErrors) {
@@ -731,14 +594,7 @@ private fun ConversionBottomBar(
                         text = stringResource(Res.string.conversion_validation_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .testTag("conversion-validation-hint")
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                MaterialTheme.shapes.small
-                            )
-                            .padding(horizontal = Grid.x6, vertical = Grid.x3),
+                        modifier = Modifier.testTag("conversion-validation-hint").fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small).padding(horizontal = Grid.x6, vertical = Grid.x3),
                         textAlign = TextAlign.Center,
                     )
                 } else if (!state.isNetworkAvailable) {
@@ -746,20 +602,11 @@ private fun ConversionBottomBar(
                         text = stringResource(Res.string.conversion_offline_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                MaterialTheme.shapes.small,
-                            )
-                            .padding(horizontal = Grid.x6, vertical = Grid.x3),
+                        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small).padding(horizontal = Grid.x6, vertical = Grid.x3),
                         textAlign = TextAlign.Center,
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Grid.x4),
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Grid.x4)) {
                     PrimaryActionButton(
                         text = stringResource(Res.string.conversion_preview_button),
                         onClick = onPreviewClick,
@@ -770,14 +617,24 @@ private fun ConversionBottomBar(
                     PrimaryActionButton(
                         text = stringResource(Res.string.conversion_convert_button),
                         onClick = onConversionClick,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("conversion-convert-button"),
+                        modifier = Modifier.weight(1f).testTag("conversion-convert-button"),
                         enabled = state.supportsConversion,
                     )
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun ConversionBottomBarPreview() {
+    AppTheme(darkTheme = false) {
+        ConversionBottomBar(
+            state = ConversionUiState(),
+            onPreviewClick = {},
+            onConversionClick = {},
+        )
     }
 }
 
@@ -796,12 +653,15 @@ private fun buildPathTooltip(
 private fun selectFileIconState(
     selected: Boolean,
     errorText: String?,
-): SelectFileIconState {
-    return when {
-        !errorText.isNullOrBlank() -> SelectFileIconState.Error
-        selected -> SelectFileIconState.Selected
-        else -> SelectFileIconState.NotSelected
-    }
+): SelectFileIconState = when {
+    !errorText.isNullOrBlank() -> SelectFileIconState.Error
+    selected -> SelectFileIconState.Selected
+    else -> SelectFileIconState.NotSelected
+}
+
+@Composable
+private fun fieldLabelText(fieldTag: String, explicitLabel: String?): String {
+    return explicitLabel?.trim().takeUnless { it.isNullOrBlank() } ?: fieldTag
 }
 
 private fun supportingTextFor(
@@ -810,35 +670,8 @@ private fun supportingTextFor(
 ): (@Composable () -> Unit)? {
     if (error == null && helper == null) return null
     return {
-        val color = if (error != null) {
-            MaterialTheme.colorScheme.error
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        }
-        Text(
-            text = (error ?: helper)?.asString().orEmpty(),
-            color = color,
-        )
-    }
-}
-
-@Composable
-private fun certificateDateSupportingText(
-    error: UiMessage?,
-    helper: UiMessage?,
-): (@Composable () -> Unit)? {
-    if (error == null && helper == null) return null
-    return {
-        val resolved = error ?: helper
-        val color = when {
-            error != null -> MaterialTheme.colorScheme.error
-            helper != null -> MaterialTheme.colorScheme.onSurfaceVariant
-            else -> MaterialTheme.colorScheme.onSurfaceVariant
-        }
-        Text(
-            text = resolved?.asString().orEmpty(),
-            color = color,
-        )
+        val color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+        Text(text = (error ?: helper)?.asString().orEmpty(), color = color)
     }
 }
 
@@ -850,59 +683,40 @@ private fun CachedEmailsCard(
     onClick: () -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
+        modifier = Modifier.fillMaxWidth().then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
         shape = MaterialTheme.shapes.large,
-        color = if (enabled) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(
-            alpha = 0.5f
-        ),
-        contentColor = if (enabled) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-            alpha = 0.5f
-        ),
-        border = BorderStroke(
-            Stroke.thin,
-            if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant
-        ),
+        color = if (enabled) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        contentColor = if (enabled) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(Stroke.thin, if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier.padding(Grid.x6),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Grid.x4)
-        ) {
+        Row(modifier = Modifier.padding(Grid.x6), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Grid.x4)) {
             Box(
-                modifier = Modifier
-                    .size(Grid.x10)
-                    .background(
-                        if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.size(Grid.x10).background(
+                    if (enabled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant,
+                    CircleShape,
+                ),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "!",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (enabled) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.surface
+                    color = if (enabled) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.surface,
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(Res.string.email_progress_retry_cached),
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = stringResource(Res.string.email_progress_cached_status, count),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 if (!enabled) {
                     Text(
-                        text = if (!supportsEmailSending) {
-                            stringResource(Res.string.email_sending_unsupported_hint)
-                        } else {
-                            stringResource(Res.string.email_progress_cached_retry_requirements_hint)
-                        },
+                        text = if (!supportsEmailSending) stringResource(Res.string.email_sending_unsupported_hint) else stringResource(Res.string.email_progress_cached_retry_requirements_hint),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

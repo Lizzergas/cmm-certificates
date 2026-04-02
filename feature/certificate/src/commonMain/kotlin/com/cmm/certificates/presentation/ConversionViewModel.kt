@@ -9,16 +9,19 @@ import com.cmm.certificates.OutputDirectory
 import com.cmm.certificates.core.domain.ConnectivityMonitor
 import com.cmm.certificates.core.domain.PlatformCapabilityProvider
 import com.cmm.certificates.core.logging.logError
-import com.cmm.certificates.core.logging.logInfo
 import com.cmm.certificates.core.logging.logWarn
 import com.cmm.certificates.core.openFile
 import com.cmm.certificates.core.presentation.UiMessage
-import com.cmm.certificates.data.defaultLectorLabel
-import com.cmm.certificates.domain.formatCertificateDate
+import com.cmm.certificates.data.config.CertificateConfigurationRepository
+import com.cmm.certificates.data.config.CertificateConfigurationSource
 import com.cmm.certificates.domain.GenerateCertificatesRequest
-import com.cmm.certificates.domain.parseCertificateDateInput
 import com.cmm.certificates.domain.GenerateCertificatesUseCase
 import com.cmm.certificates.domain.PreviewCertificateUseCase
+import com.cmm.certificates.domain.config.CertificateConfiguration
+import com.cmm.certificates.domain.config.CertificateFieldType
+import com.cmm.certificates.domain.config.CertificateNameFieldId
+import com.cmm.certificates.domain.config.defaultCertificateConfiguration
+import com.cmm.certificates.domain.config.manualField
 import com.cmm.certificates.domain.port.CertificateDocumentGenerator
 import com.cmm.certificates.feature.certificate.domain.model.RegistrationEntry
 import com.cmm.certificates.feature.certificate.domain.usecase.ParseRegistrationsUseCase
@@ -46,6 +49,7 @@ class ConversionViewModel(
     private val generateCertificates: GenerateCertificatesUseCase,
     private val previewCertificate: PreviewCertificateUseCase,
     private val documentGenerator: CertificateDocumentGenerator,
+    private val configurationRepository: CertificateConfigurationRepository,
 ) : ViewModel() {
     private val logTag = "ConversionVM"
     private val installedTemplateFileName = "bazinis_šablonas.docx"
@@ -60,22 +64,18 @@ class ConversionViewModel(
     } else {
         ""
     }
-    private val defaultAccreditedTypeOptions = parseAccreditedTypeOptions(
-        settingsRepository.state.value.certificate.accreditedTypeOptions,
-    )
-    private val formState = MutableStateFlow(
-        ConversionFormState(
-            accreditedType = defaultAccreditedTypeOptions.firstOrNull().orEmpty(),
-        )
-    )
+
+    private val formState = MutableStateFlow(ConversionFormState())
     private val filesState = MutableStateFlow(ConversionFilesState())
     private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
     private val hasAttemptedSubmitState = MutableStateFlow(false)
     private val previewLoadingState = MutableStateFlow(false)
     private val previewPdfPathState = MutableStateFlow<String?>(null)
+    private val editingManualFieldState = MutableStateFlow<ConversionManualFieldEditorState?>(null)
 
     init {
         selectInstalledTemplateIfAvailable()
+        observeConfigurationChanges()
     }
 
     private val baseUiState = combine(
@@ -84,82 +84,262 @@ class ConversionViewModel(
                 formState,
                 filesState,
                 entriesState,
-                hasAttemptedSubmitState,
+                hasAttemptedSubmitState
             ) { form, files, entries, hasAttemptedSubmit ->
-                ConversionInputSnapshot(
-                    form = form,
-                    files = files,
-                    entries = entries,
-                    hasAttemptedSubmit = hasAttemptedSubmit,
-                )
+                ConversionInputSnapshot(form, files, entries, hasAttemptedSubmit)
             },
             settingsRepository.state,
             connectivityMonitor.isNetworkAvailable,
-        ) { snapshot, settings, networkAvailable ->
-            val options = parseAccreditedTypeOptions(settings.certificate.accreditedTypeOptions)
-                .ifEmpty { defaultAccreditedTypeOptions }
-            val resolvedType =
-                if (snapshot.form.accreditedType.isNotBlank() && snapshot.form.accreditedType in options) {
-                    snapshot.form.accreditedType
-                } else {
-                    options.firstOrNull().orEmpty()
-                }
-            val resolvedForm = if (resolvedType == snapshot.form.accreditedType) {
-                snapshot.form
-            } else {
-                snapshot.form.copy(accreditedType = resolvedType)
-            }
-            val templateSupport = buildTemplateSupportState(snapshot.files.templateAvailableTags)
+            configurationRepository.state,
+            editingManualFieldState,
+        ) { snapshot, settings, networkAvailable, configState, editingManualField ->
+            val configuration = configState.configuration
+            val resolvedForm = resolveFormState(snapshot.form, configuration)
+            val templateSupport =
+                buildTemplateSupportState(configuration, snapshot.files.templateAvailableTags)
             val validation = buildConversionValidationState(
                 files = snapshot.files,
-                form = resolvedForm,
+                configuration = configuration,
+                formValues = resolvedForm.manualValues,
                 entriesCount = snapshot.entries.size,
                 templateSupport = templateSupport,
                 hasAttemptedSubmit = snapshot.hasAttemptedSubmit,
             )
             ConversionUiState(
+                configuration = configuration,
+                configSource = configState.source,
+                configLoadFailureMessage = configState.loadFailureMessage,
                 files = snapshot.files,
                 form = resolvedForm,
+                manualFields = buildManualFieldUiState(
+                    configuration = configuration,
+                    resolvedForm = resolvedForm,
+                    templateSupport = templateSupport,
+                    validation = validation,
+                    enabled = capabilities.canRunConversion,
+                    isTemplateInspectionInProgress = snapshot.files.isTemplateInspectionInProgress,
+                ),
                 templateSupport = templateSupport,
                 validation = validation,
-                accreditedTypeOptions = options,
                 isNetworkAvailable = networkAvailable,
                 isSmtpAuthenticated = settings.smtp.isAuthenticated,
                 supportsConversion = capabilities.canRunConversion,
                 supportsEmailSending = capabilities.canSendEmails,
                 entries = snapshot.entries,
+                editingManualField = editingManualField,
             )
         },
         previewLoadingState,
+        previewPdfPathState,
         emailProgressRepository.cachedEmails,
-    ) { baseState, isPreviewLoading, cachedEmails ->
+    ) { baseState, isPreviewLoading, previewPdfPath, cachedEmails ->
         baseState.copy(
             isPreviewLoading = isPreviewLoading,
+            previewPdfPath = previewPdfPath,
             cachedEmailsCount = cachedEmails.entries.size,
         )
     }
 
-    val uiState: StateFlow<ConversionUiState> = combine(
-        baseUiState,
-        previewPdfPathState,
-    ) { baseState, previewPdfPath ->
-        baseState.copy(previewPdfPath = previewPdfPath)
-    }.stateIn(
+    val uiState: StateFlow<ConversionUiState> = baseUiState.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        ConversionUiState(
-            files = ConversionFilesState(),
-            form = ConversionFormState(
-                accreditedType = defaultAccreditedTypeOptions.firstOrNull().orEmpty(),
-            ),
-            accreditedTypeOptions = defaultAccreditedTypeOptions,
-        ),
+        ConversionUiState(),
     )
 
     fun setTemplatePath(path: String) {
         if (!capabilities.canRunConversion) return
-        logInfo(logTag, "Template selected: ${path.ifBlank { "<empty>" }}")
         updateTemplateSelection(path)
+    }
+
+    fun setManualFieldValue(fieldTag: String, value: String) {
+        val field =
+            configurationRepository.state.value.configuration.manualField(fieldTag) ?: return
+        val sanitized = when (field.type) {
+            CertificateFieldType.NUMBER -> value.filter { it in '0'..'9' }
+            CertificateFieldType.DATE -> value.filter { it.isDigit() || it == '-' }.take(10)
+            else -> value
+        }
+        formState.update { it.copy(manualValues = it.manualValues + (fieldTag to sanitized)) }
+    }
+
+    fun setFeedbackUrl(value: String) {
+        formState.update { it.copy(feedbackUrl = value) }
+    }
+
+    fun selectXlsx(path: String) {
+        if (!capabilities.canRunConversion) {
+            entriesState.value = emptyList()
+            return
+        }
+        filesState.update {
+            it.copy(
+                xlsxPath = path,
+                xlsxLoadError = null,
+                xlsxHeaders = emptyList(),
+            )
+        }
+        if (path.isBlank()) {
+            entriesState.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            val inspected = runCatching {
+                withContext(Dispatchers.IO) { parseRegistrations.inspect(path).getOrThrow() }
+            }
+            inspected.fold(
+                onSuccess = { sheet ->
+                    val configuration = configurationRepository.state.value.configuration
+                    val missingHeaders = configuration.xlsxFields.mapNotNull { field ->
+                        val expectedHeader =
+                            field.headerName?.trim().takeUnless { it.isNullOrBlank() }
+                        if (expectedHeader == null || expectedHeader !in sheet.headers) {
+                            val descriptor = field.label?.takeIf { it.isNotBlank() } ?: field.tag
+                            "$descriptor -> ${expectedHeader ?: "?"}"
+                        } else {
+                            null
+                        }
+                    }
+                    filesState.update { current ->
+                        if (current.xlsxPath != path) return@update current
+                        current.copy(
+                            xlsxHeaders = sheet.headers,
+                            xlsxLoadError = if (missingHeaders.isNotEmpty()) {
+                                xlsxMissingHeadersErrorMessage(missingHeaders.joinToString(", "))
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                    if (missingHeaders.isEmpty()) {
+                        parseXlsx(path, configuration)
+                    } else {
+                        entriesState.value = emptyList()
+                    }
+                },
+                onFailure = { error ->
+                    logError(logTag, "Failed to inspect XLSX: $path", error)
+                    entriesState.value = emptyList()
+                    filesState.update { current ->
+                        if (current.xlsxPath != path) return@update current
+                        current.copy(
+                            xlsxLoadError = xlsxParseErrorMessage(),
+                            xlsxHeaders = emptyList(),
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    fun generateDocuments(): Boolean {
+        if (!capabilities.canRunConversion) return false
+        hasAttemptedSubmitState.value = true
+        if (currentValidationState().hasBlockingErrors) return false
+        viewModelScope.launch {
+            generateCertificates(buildGenerateRequest(uiState.value))
+        }
+        return true
+    }
+
+    fun previewDocument() {
+        if (!capabilities.canRunConversion || previewLoadingState.value) return
+        hasAttemptedSubmitState.value = true
+        if (currentValidationState().hasBlockingErrors) return
+        viewModelScope.launch {
+            previewLoadingState.value = true
+            try {
+                previewPdfPathState.value = null
+                val previewPath = previewCertificate(buildGenerateRequest(uiState.value))
+                if (previewPath.isNullOrBlank()) return@launch
+                if (settingsRepository.state.value.appearance.useInAppPdfPreview) {
+                    previewPdfPathState.value = previewPath
+                } else if (!openFile(previewPath)) {
+                    logWarn(logTag, "Failed to open preview PDF: $previewPath")
+                }
+            } finally {
+                previewLoadingState.value = false
+            }
+        }
+    }
+
+    fun dismissPreview() {
+        previewPdfPathState.value = null
+    }
+
+    fun openManualFieldEditor(fieldTag: String) {
+        val field =
+            configurationRepository.state.value.configuration.manualField(fieldTag) ?: return
+        editingManualFieldState.value = ConversionManualFieldEditorState(
+            originalTag = fieldTag,
+            draft = field.toDraft(),
+            message = null,
+        )
+    }
+
+    fun updateEditingManualField(update: (ManualTagFieldDraft) -> ManualTagFieldDraft) {
+        editingManualFieldState.update { current ->
+            current?.copy(
+                draft = update(current.draft),
+                message = null,
+            )
+        }
+    }
+
+    fun dismissManualFieldEditor() {
+        editingManualFieldState.value = null
+    }
+
+    fun saveEditingManualField() {
+        val editorState = editingManualFieldState.value ?: return
+        val currentConfiguration = configurationRepository.state.value.configuration
+        val fieldIndex =
+            currentConfiguration.manualFields.indexOfFirst { it.tag == editorState.originalTag }
+        if (fieldIndex < 0) {
+            editingManualFieldState.update { it?.copy(message = "Nepavyko rasti redaguojamo lauko.") }
+            return
+        }
+        val updatedField = editorState.draft.toField()
+        val updatedDocumentNumberTag =
+            if (currentConfiguration.documentNumberTag == editorState.originalTag) {
+                updatedField.tag
+            } else {
+                currentConfiguration.documentNumberTag
+            }
+        val updatedConfiguration = currentConfiguration.copy(
+            documentNumberTag = updatedDocumentNumberTag,
+            manualFields = currentConfiguration.manualFields.updateItem(fieldIndex) { updatedField },
+        )
+        viewModelScope.launch {
+            configurationRepository.save(updatedConfiguration)
+                .onSuccess {
+                    migrateManualFieldValue(editorState.originalTag, updatedField.tag)
+                    editingManualFieldState.value = null
+                }
+                .onFailure { error ->
+                    editingManualFieldState.update {
+                        it?.copy(message = error.message ?: "Nepavyko išsaugoti lauko.")
+                    }
+                }
+        }
+    }
+
+    private fun observeConfigurationChanges() {
+        viewModelScope.launch {
+            var previousConfiguration: CertificateConfiguration? = null
+            configurationRepository.state.collect { state ->
+                val newConfiguration = state.configuration
+                if (previousConfiguration == null) {
+                    previousConfiguration = newConfiguration
+                    return@collect
+                }
+                if (previousConfiguration == newConfiguration) return@collect
+                previousConfiguration = newConfiguration
+                val selectedXlsx = filesState.value.xlsxPath
+                if (selectedXlsx.isNotBlank()) {
+                    selectXlsx(selectedXlsx)
+                }
+            }
+        }
     }
 
     private fun updateTemplateSelection(path: String) {
@@ -174,15 +354,15 @@ class ConversionViewModel(
         if (path.isBlank()) return
         viewModelScope.launch {
             val placeholders = runCatching {
-                withContext(Dispatchers.IO) { documentGeneratorPlaceholders(path) }
+                withContext(Dispatchers.IO) { documentGenerator.inspectTemplatePlaceholders(path) }
             }
             filesState.update { current ->
                 if (current.templatePath != path) return@update current
                 placeholders.fold(
-                    onSuccess = { tags ->
+                    onSuccess = {
                         current.copy(
                             templateLoadError = null,
-                            templateAvailableTags = tags,
+                            templateAvailableTags = it,
                             isTemplateInspectionInProgress = false,
                         )
                     },
@@ -203,173 +383,51 @@ class ConversionViewModel(
         }
     }
 
-    fun setAccreditedId(value: String) {
-        formState.update { it.copy(accreditedId = value) }
-    }
-
-    fun setCertificateDate(value: String) {
-        val sanitized = value.filter { it.isDigit() || it == '-' }.take(10)
-        formState.update { it.copy(certificateDate = sanitized) }
-    }
-
-    fun setDocIdStart(value: String) {
-        val sanitized = value.filter { it in '0'..'9' }
-        formState.update { it.copy(docIdStart = sanitized) }
-    }
-
-    fun setAccreditedType(value: String) {
-        formState.update { it.copy(accreditedType = value) }
-    }
-
-    fun setAccreditedHours(value: String) {
-        val sanitized = value.filter { it in '0'..'9' }
-        formState.update { it.copy(accreditedHours = sanitized) }
-    }
-
-    fun setCertificateName(value: String) {
-        formState.update { it.copy(certificateName = value) }
-    }
-
-    fun setFeedbackUrl(value: String) {
-        formState.update { it.copy(feedbackUrl = value) }
-    }
-
-    fun setLector(value: String) {
-        formState.update { it.copy(lector = value) }
-    }
-
-    fun setLectorGender(value: String) {
-        formState.update { it.copy(lectorGender = value) }
-    }
-
-    fun selectXlsx(path: String) {
-        if (!capabilities.canRunConversion) {
-            entriesState.value = emptyList()
-            logWarn(logTag, "Ignored XLSX selection because conversion is unsupported")
-            return
+    private suspend fun parseXlsx(
+        path: String,
+        configuration: CertificateConfiguration,
+    ) {
+        val parsed = runCatching {
+            withContext(Dispatchers.IO) { parseRegistrations(path, configuration).getOrThrow() }
         }
-        filesState.update {
-            it.copy(
-                xlsxPath = path,
-                xlsxLoadError = null,
+        val entries = parsed.getOrElse {
+            logError(logTag, "Failed to parse XLSX: $path", it)
+            emptyList()
+        }
+        entriesState.value = entries
+        filesState.update { current ->
+            if (current.xlsxPath != path) return@update current
+            current.copy(
+                xlsxLoadError = when {
+                    parsed.isFailure -> xlsxParseErrorMessage()
+                    entries.isEmpty() -> UiMessage(Res.string.conversion_error_no_entries)
+                    else -> null
+                },
             )
         }
-        if (path.isBlank()) {
-            entriesState.value = emptyList()
-            logWarn(logTag, "Cleared XLSX selection")
-            return
-        }
-        viewModelScope.launch {
-            logInfo(logTag, "Parsing XLSX: $path")
-            val parsed = runCatching {
-                withContext(Dispatchers.IO) { parseRegistrations(path).getOrThrow() }
-            }
-            val entries = parsed.getOrElse {
-                logError(logTag, "Failed to parse XLSX: $path", it)
-                emptyList()
-            }
-            entriesState.value = entries
-            filesState.update { current ->
-                if (current.xlsxPath != path) return@update current
-                current.copy(
-                    xlsxLoadError = when {
-                        parsed.isFailure -> xlsxParseErrorMessage()
-                        entries.isEmpty() -> UiMessage(Res.string.conversion_error_no_entries)
-                        else -> null
-                    },
-                )
-            }
-            logInfo(logTag, "Parsed ${entriesState.value.size} XLSX entries")
-        }
-    }
-
-    fun generateDocuments(): Boolean {
-        if (!capabilities.canRunConversion) {
-            logWarn(logTag, "Ignored conversion request because conversion is unsupported")
-            return false
-        }
-        hasAttemptedSubmitState.value = true
-        val validation = currentValidationState()
-        if (validation.hasBlockingErrors) {
-            logWarn(logTag, "Ignored conversion request because validation failed")
-            return false
-        }
-        viewModelScope.launch {
-            logInfo(logTag, "Starting conversion request")
-            generateDocumentsInternal()
-        }
-        return true
-    }
-
-    fun previewDocument() {
-        if (!capabilities.canRunConversion) {
-            logWarn(logTag, "Ignored preview request because conversion is unsupported")
-            return
-        }
-        if (previewLoadingState.value) return
-        hasAttemptedSubmitState.value = true
-        val validation = currentValidationState()
-        if (validation.hasBlockingErrors) {
-            logWarn(logTag, "Ignored preview request because validation failed")
-            return
-        }
-        viewModelScope.launch {
-            previewLoadingState.value = true
-            try {
-                logInfo(logTag, "Starting preview request")
-                previewPdfPathState.value = null
-                val previewPath = previewCertificate(buildGenerateRequest(uiState.value))
-                if (previewPath.isNullOrBlank()) {
-                    logWarn(logTag, "Preview PDF was not generated")
-                    return@launch
-                }
-                if (settingsRepository.state.value.appearance.useInAppPdfPreview) {
-                    previewPdfPathState.value = previewPath
-                } else if (!openFile(previewPath)) {
-                    logWarn(logTag, "Failed to open preview PDF: $previewPath")
-                }
-            } finally {
-                previewLoadingState.value = false
-            }
-        }
-    }
-
-    fun dismissPreview() {
-        previewPdfPathState.value = null
-    }
-
-    private suspend fun generateDocumentsInternal() {
-        generateCertificates(buildGenerateRequest(uiState.value))
     }
 
     private fun selectInstalledTemplateIfAvailable() {
-        if (!capabilities.canRunConversion) return
-        if (filesState.value.templatePath.isNotBlank()) return
-
-        val installedTemplatePath = AppInstallation.installedResourcePath(installedTemplateFileName)
-        if (installedTemplatePath.isNullOrBlank()) {
-            logInfo(logTag, "No installed template found: $installedTemplateFileName")
-            return
-        }
-
-        logInfo(logTag, "Auto-selected installed template: $installedTemplatePath")
-        if (filesState.value.templatePath.isBlank()) {
-            updateTemplateSelection(installedTemplatePath)
-        }
+        if (!capabilities.canRunConversion || filesState.value.templatePath.isNotBlank()) return
+        val installedTemplatePath =
+            AppInstallation.installedResourcePath(installedTemplateFileName) ?: return
+        updateTemplateSelection(installedTemplatePath)
     }
 
     private fun currentValidationState(): ConversionValidationState {
+        val configuration = configurationRepository.state.value.configuration
+        val resolvedForm = resolveFormState(formState.value, configuration)
         return buildConversionValidationState(
             files = filesState.value,
-            form = formState.value,
+            configuration = configuration,
+            formValues = resolvedForm.manualValues,
             entriesCount = entriesState.value.size,
-            templateSupport = buildTemplateSupportState(filesState.value.templateAvailableTags),
+            templateSupport = buildTemplateSupportState(
+                configuration,
+                filesState.value.templateAvailableTags
+            ),
             hasAttemptedSubmit = true,
         )
-    }
-
-    private fun documentGeneratorPlaceholders(path: String): Set<String> {
-        return documentGenerator.inspectTemplatePlaceholders(path)
     }
 
     private fun effectiveOutputDirectory(): String {
@@ -380,13 +438,7 @@ class ConversionViewModel(
             shouldResetLegacyInstallOutputDirectory(
                 configuredOutputDirectory,
                 installationDirectoryPath
-            ) -> {
-                logWarn(
-                    logTag,
-                    "Legacy installation output directory is not writable, falling back to default output directory"
-                )
-                defaultOutputDirectory
-            }
+            ) -> defaultOutputDirectory
 
             OutputDirectory.canWrite(configuredOutputDirectory) -> configuredOutputDirectory
             else -> configuredOutputDirectory
@@ -394,24 +446,50 @@ class ConversionViewModel(
     }
 
     private fun buildGenerateRequest(snapshot: ConversionUiState): GenerateCertificatesRequest {
-        val certificateDate = parseCertificateDateInput(snapshot.form.certificateDate)
-            ?.let(::formatCertificateDate)
-            .orEmpty()
         return GenerateCertificatesRequest(
+            configuration = snapshot.configuration,
             templatePath = snapshot.files.templatePath,
             entries = snapshot.entries,
-            certificateDate = certificateDate,
-            accreditedId = snapshot.form.accreditedId,
-            docIdStart = snapshot.form.docIdStart,
-            accreditedType = snapshot.form.accreditedType,
-            accreditedHours = snapshot.form.accreditedHours,
-            certificateName = snapshot.form.certificateName,
+            manualValues = snapshot.form.manualValues,
+            docIdStart = snapshot.form.valueFor(snapshot.configuration.documentNumberTag),
+            certificateName = snapshot.form.valueFor(CertificateNameFieldId),
             feedbackUrl = snapshot.form.feedbackUrl,
-            lector = snapshot.form.lector,
-            lectorGender = snapshot.form.lectorGender,
             outputDirectory = effectiveOutputDirectory(),
         )
     }
+
+    private fun migrateManualFieldValue(oldTag: String, newTag: String) {
+        if (oldTag == newTag) return
+        formState.update { current ->
+            val currentValue = current.manualValues[oldTag] ?: return@update current
+            current.copy(
+                manualValues = (current.manualValues - oldTag) + (newTag to currentValue),
+            )
+        }
+    }
+}
+
+data class ConversionUiState(
+    val configuration: CertificateConfiguration = defaultCertificateConfiguration(),
+    val configSource: CertificateConfigurationSource = CertificateConfigurationSource.CodeDefault,
+    val configLoadFailureMessage: String? = null,
+    val files: ConversionFilesState = ConversionFilesState(),
+    val form: ConversionFormState = ConversionFormState(),
+    val manualFields: List<ConversionManualFieldUiState> = emptyList(),
+    val templateSupport: ConversionTemplateSupportState = ConversionTemplateSupportState(),
+    val validation: ConversionValidationState = ConversionValidationState(),
+    val isNetworkAvailable: Boolean = true,
+    val isSmtpAuthenticated: Boolean = false,
+    val supportsConversion: Boolean = true,
+    val supportsEmailSending: Boolean = true,
+    val isPreviewLoading: Boolean = false,
+    val previewPdfPath: String? = null,
+    val entries: List<RegistrationEntry> = emptyList(),
+    val cachedEmailsCount: Int = 0,
+    val editingManualField: ConversionManualFieldEditorState? = null,
+) {
+    val canRetryCachedEmails: Boolean
+        get() = cachedEmailsCount > 0 && supportsEmailSending && isNetworkAvailable && isSmtpAuthenticated
 }
 
 private data class ConversionInputSnapshot(
@@ -421,25 +499,6 @@ private data class ConversionInputSnapshot(
     val hasAttemptedSubmit: Boolean,
 )
 
-data class ConversionUiState(
-    val files: ConversionFilesState = ConversionFilesState(),
-    val form: ConversionFormState = ConversionFormState(),
-    val templateSupport: ConversionTemplateSupportState = ConversionTemplateSupportState(),
-    val validation: ConversionValidationState = ConversionValidationState(),
-    val accreditedTypeOptions: List<String> = emptyList(),
-    val isNetworkAvailable: Boolean = true,
-    val isSmtpAuthenticated: Boolean = false,
-    val supportsConversion: Boolean = true,
-    val supportsEmailSending: Boolean = true,
-    val isPreviewLoading: Boolean = false,
-    val previewPdfPath: String? = null,
-    val entries: List<RegistrationEntry> = emptyList(),
-    val cachedEmailsCount: Int = 0,
-) {
-    val canRetryCachedEmails: Boolean
-        get() = cachedEmailsCount > 0 && supportsEmailSending && isNetworkAvailable && isSmtpAuthenticated
-}
-
 data class ConversionFilesState(
     val xlsxPath: String = "",
     val templatePath: String = "",
@@ -447,6 +506,7 @@ data class ConversionFilesState(
     val templateLoadError: UiMessage? = null,
     val templateAvailableTags: Set<String>? = null,
     val isTemplateInspectionInProgress: Boolean = false,
+    val xlsxHeaders: List<String> = emptyList(),
 ) {
     val hasXlsx: Boolean
         get() = xlsxPath.isNotBlank()
@@ -461,26 +521,76 @@ data class ConversionFilesState(
         get() = templatePath.takeIf { it.isNotBlank() }?.toFileName()
 }
 
-private fun String.toFileName(): String {
-    return substringAfterLast('/').substringAfterLast('\\')
-}
+private fun String.toFileName(): String = substringAfterLast('/').substringAfterLast('\\')
 
 data class ConversionFormState(
-    val certificateDate: String = "",
-    val accreditedId: String = "IVP-10",
-    val docIdStart: String = "",
-    val accreditedType: String = "",
-    val accreditedHours: String = "",
-    val certificateName: String = "",
+    val manualValues: Map<String, String> = emptyMap(),
     val feedbackUrl: String = "",
-    val lector: String = "",
-    val lectorGender: String = defaultLectorLabel(),
+) {
+    fun valueFor(fieldTag: String): String = manualValues[fieldTag].orEmpty()
+}
+
+data class ConversionManualFieldUiState(
+    val tag: String,
+    val type: CertificateFieldType,
+    val label: String? = null,
+    val value: String = "",
+    val options: List<String> = emptyList(),
+    val enabled: Boolean = true,
+    val error: UiMessage? = null,
+    val helper: UiMessage? = null,
+    val tooltip: UiMessage? = null,
 )
 
-private fun parseAccreditedTypeOptions(raw: String): List<String> {
-    return raw.lineSequence()
-        .map { it.trim() }
-        .filter { it.isNotBlank() }
-        .distinct()
-        .toList()
+data class ConversionManualFieldEditorState(
+    val originalTag: String,
+    val draft: ManualTagFieldDraft,
+    val message: String? = null,
+)
+
+private fun resolveFormState(
+    current: ConversionFormState,
+    configuration: CertificateConfiguration,
+): ConversionFormState {
+    val resolvedValues = buildMap {
+        configuration.manualFields.forEach { field ->
+            val currentValue = current.manualValues[field.tag].orEmpty()
+            val resolvedValue: String = when {
+                field.type == CertificateFieldType.SELECT && currentValue.isNotBlank() && currentValue !in field.options -> {
+                    field.options.firstOrNull().orEmpty()
+                }
+
+                currentValue.isNotBlank() -> currentValue
+                field.defaultValue != null -> field.defaultValue.orEmpty()
+                field.type == CertificateFieldType.SELECT -> field.options.firstOrNull().orEmpty()
+                else -> ""
+            }
+            put(field.tag, resolvedValue)
+        }
+    }
+    return current.copy(manualValues = resolvedValues)
+}
+
+private fun buildManualFieldUiState(
+    configuration: CertificateConfiguration,
+    resolvedForm: ConversionFormState,
+    templateSupport: ConversionTemplateSupportState,
+    validation: ConversionValidationState,
+    enabled: Boolean,
+    isTemplateInspectionInProgress: Boolean,
+): List<ConversionManualFieldUiState> {
+    return configuration.manualFields.map { field ->
+        val availability = templateSupport.field(field.tag)
+        ConversionManualFieldUiState(
+            tag = field.tag,
+            type = field.type,
+            label = field.label,
+            value = resolvedForm.valueFor(field.tag),
+            options = field.options,
+            enabled = enabled && !isTemplateInspectionInProgress && availability.isEnabled,
+            error = validation.errorFor(field.tag),
+            helper = availability.disabledSupportingText,
+            tooltip = availability.disabledTooltip,
+        )
+    }
 }

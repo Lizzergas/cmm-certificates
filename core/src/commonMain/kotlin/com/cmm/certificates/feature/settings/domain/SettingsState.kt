@@ -44,7 +44,6 @@ data class EmailTemplateSettingsState(
 )
 
 data class CertificateSettingsState(
-    val accreditedTypeOptions: String = "",
     val outputDirectory: String = "",
 )
 

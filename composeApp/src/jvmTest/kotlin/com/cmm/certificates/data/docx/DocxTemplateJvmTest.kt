@@ -1,6 +1,8 @@
 package com.cmm.certificates.data.docx
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument
+import com.cmm.certificates.domain.config.AccreditedHoursFieldId
+import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import com.cmm.certificates.presentation.buildTemplateSupportState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -69,11 +71,11 @@ class DocxTemplateJvmTest {
         tempFile.deleteOnExit()
 
         val placeholders = DocxTemplate.inspectTemplatePlaceholders(tempFile.absolutePath)
-        val support = buildTemplateSupportState(placeholders)
+        val support = buildTemplateSupportState(defaultCertificateConfiguration(), placeholders)
 
         assertTrue("{{akreditacijos_tipas}}" in placeholders)
         assertFalse("{{akreditacijos_valandos}}" in placeholders)
-        assertFalse(support.accreditedHours.isEnabled)
+        assertFalse(support.field(AccreditedHoursFieldId).isEnabled)
     }
 
     private fun buildTemplateDocx(): ByteArray {

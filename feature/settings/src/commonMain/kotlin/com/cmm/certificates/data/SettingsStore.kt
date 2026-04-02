@@ -26,7 +26,6 @@ class SettingsStore(
         val transport = stringPreferencesKey("smtp_transport")
         val subject = stringPreferencesKey("smtp_subject")
         val body = stringPreferencesKey("smtp_body")
-        val accreditedTypeOptions = stringPreferencesKey("accredited_type_options")
         val outputDirectory = stringPreferencesKey("output_directory")
         val signatureHtml = stringPreferencesKey("email_signature_html")
         val previewEmail = stringPreferencesKey("email_preview_address")
@@ -46,10 +45,6 @@ class SettingsStore(
             transport = prefs.enumOrDefault(Keys.transport, SmtpTransport.SMTPS),
             subject = prefs.stringOrDefault(Keys.subject, defaultEmailSubject()),
             body = prefs.stringOrDefault(Keys.body, defaultEmailBody()),
-            accreditedTypeOptions = prefs.stringOrDefault(
-                Keys.accreditedTypeOptions,
-                defaultAccreditedTypeOptions(),
-            ),
             outputDirectory = prefs[Keys.outputDirectory].orEmpty(),
             signatureHtml = prefs.stringOrDefault(Keys.signatureHtml, defaultSignatureHtml()),
             previewEmail = prefs.stringOrDefault(Keys.previewEmail, DEFAULT_PREVIEW_EMAIL),
@@ -68,7 +63,6 @@ class SettingsStore(
             prefs[Keys.transport] = settings.transport.name
             prefs[Keys.subject] = settings.subject
             prefs[Keys.body] = settings.body
-            prefs[Keys.accreditedTypeOptions] = settings.accreditedTypeOptions
             prefs[Keys.outputDirectory] = settings.outputDirectory
             prefs[Keys.signatureHtml] = settings.signatureHtml
             prefs[Keys.previewEmail] = settings.previewEmail
@@ -90,7 +84,6 @@ class SettingsStore(
         val transport: SmtpTransport,
         val subject: String,
         val body: String,
-        val accreditedTypeOptions: String,
         val outputDirectory: String,
         val signatureHtml: String,
         val previewEmail: String,

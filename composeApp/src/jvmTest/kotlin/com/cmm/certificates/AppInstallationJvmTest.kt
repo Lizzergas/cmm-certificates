@@ -1,6 +1,7 @@
 package com.cmm.certificates
 
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -31,6 +32,33 @@ class AppInstallationJvmTest {
 
             assertNotNull(path)
             assertTrue(path.normalizedPath().endsWith("packaging/resources/common/LICENSE.txt"))
+        }
+    }
+
+    @Test
+    fun installedResourcePath_prefersRuntimeResourcesOverWorkspacePackagingFiles() {
+        val tempDir = createTempDirectory("app-install-test").toFile()
+        val runtimeResourcesDir = File(tempDir, "runtime-resources").apply { mkdirs() }
+        val runtimeFile = File(runtimeResourcesDir, "config.json").apply {
+            writeText("runtime")
+        }
+
+        val previousResourcesDir = System.getProperty("compose.application.resources.dir")
+        System.setProperty("compose.application.resources.dir", runtimeResourcesDir.absolutePath)
+        try {
+            withUserDir(File(System.getProperty("user.dir"))) {
+                val path = AppInstallation.installedResourcePath("config.json")
+
+                assertNotNull(path)
+                assertTrue(path.normalizedPath() == runtimeFile.absolutePath.normalizedPath())
+            }
+        } finally {
+            if (previousResourcesDir == null) {
+                System.clearProperty("compose.application.resources.dir")
+            } else {
+                System.setProperty("compose.application.resources.dir", previousResourcesDir)
+            }
+            tempDir.deleteRecursively()
         }
     }
 

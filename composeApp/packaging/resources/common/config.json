@@ -1,0 +1,80 @@
+{
+    "version": 1,
+    "id": "default-certificate",
+    "documentNumberTag": "dokumento_id",
+    "xlsxFields": [
+        {
+            "tag": "vardas",
+            "label": "Vardas",
+            "headerName": "Jūsų vardas"
+        },
+        {
+            "tag": "pavarde",
+            "label": "Pavardė",
+            "headerName": "Jūsų pavardė"
+        }
+    ],
+    "manualFields": [
+        {
+            "tag": "akreditacijos_id",
+            "label": "Akreditacijos ID",
+            "type": "TEXT",
+            "defaultValue": "IVP-10",
+            "options": []
+        },
+        {
+            "tag": "dokumento_id",
+            "label": null,
+            "type": "NUMBER",
+            "defaultValue": null,
+            "options": []
+        },
+        {
+            "tag": "akreditacijos_tipas",
+            "label": null,
+            "type": "SELECT",
+            "defaultValue": null,
+            "options": [
+                "paskaitoje",
+                "seminare",
+                "konferencijoje",
+                "mokymuose"
+            ]
+        },
+        {
+            "tag": "akreditacijos_valandos",
+            "label": "Akreditacijos valandos",
+            "type": "NUMBER",
+            "defaultValue": null,
+            "options": []
+        },
+        {
+            "tag": "sertifikato_pavadinimas",
+            "label": "Renginio pavadinimas",
+            "type": "TEXT",
+            "defaultValue": null,
+            "options": []
+        },
+        {
+            "tag": "destytojas",
+            "label": null,
+            "type": "TEXT",
+            "defaultValue": null,
+            "options": []
+        },
+        {
+            "tag": "destytojo_tipas",
+            "label": null,
+            "type": "TEXT",
+            "defaultValue": "Lektorius:",
+            "options": []
+        },
+        {
+            "tag": "data",
+            "label": null,
+            "type": "DATE",
+            "defaultValue": null,
+            "options": []
+        }
+    ]
+}

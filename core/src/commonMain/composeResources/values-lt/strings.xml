@@ -2,6 +2,7 @@
     <string name="app_name">CMM Sertifikatai</string>
     <string name="common_action_ok">OK</string>
     <string name="common_action_cancel">Atšaukti</string>
+    <string name="common_action_edit">Redaguoti</string>
     <string name="common_clear_text">Išvalyti tekstą</string>
     <string name="common_file_xlsx">XLSX</string>
     <string name="common_file_docx">DOCX</string>
@@ -59,6 +60,7 @@
     <string name="conversion_error_template_required">Būtina pasirinkti šabloną.</string>
     <string name="conversion_error_xlsx_required">Būtina pasirinkti XLSX failą.</string>
     <string name="conversion_error_xlsx_parse">Nepavyko perskaityti XLSX failo.</string>
+    <string name="conversion_error_xlsx_missing_headers">Trūksta konfigūruotų XLSX antraščių: %1$s</string>
     <string name="conversion_error_docx_inspect">Nepavyko patikrinti DOCX šablono.</string>
     <string name="conversion_error_no_entries">Nėra XLSX įrašų generavimui.</string>
     <string name="conversion_error_fields_required">Būtina užpildyti visus sertifikato laukus.</string>
@@ -75,8 +77,13 @@
     <string name="conversion_error_certificate_name_required">Būtina įvesti renginio pavadinimą.</string>
     <string name="conversion_error_lector_required">Būtina įvesti lektorių.</string>
     <string name="conversion_error_lector_gender_required">Būtina įvesti lektoriaus žymą.</string>
+    <string name="conversion_error_dynamic_required">Būtina užpildyti lauką „%1$s“.</string>
+    <string name="conversion_error_dynamic_date_invalid">Laukas „%1$s“ turi būti YYYY-MM-DD formatu.</string>
+    <string name="conversion_error_xlsx_header_mapping_required">Būtina susieti XLSX stulpelius su konfigūracijos laukais.</string>
     <string name="conversion_missing_template_tag_tooltip">Trūksta žymės %1$s</string>
     <string name="conversion_missing_template_tag_supporting">Šis laukas neaktyvus, nes DOCX šablone nėra %1$s.</string>
+    <string name="conversion_xlsx_header_mapping_title">Susieti XLSX stulpelius</string>
+    <string name="conversion_xlsx_header_mapping_description">Pasirinkite, kuris XLSX stulpelis atitinka kiekvieną reikalingą lauką. Šis pasirinkimas bus įsimintas tam pačiam failui.</string>
     <string name="settings_title">Nustatymai</string>
     <string name="settings_subtitle">El. pašto šablonai ir programos nustatymai</string>
     <string name="settings_section_title">El. pašto ir programos nustatymai</string>
@@ -122,6 +129,7 @@ mokymuose</string>
     <string name="settings_pdf_preview_toggle">Naudoti PDF peržiūrą programoje</string>
     <string name="settings_pdf_preview_hint">Išjunkite, jei norite peržiūros PDF atidaryti sistemos numatytoje peržiūros programoje.</string>
     <string name="settings_history_cache_button">Istorija / talpykla</string>
+    <string name="settings_certificate_config_button">Sertifikato konfigūracija</string>
     <string name="settings_legal_title">Apie programą ir teisinė informacija</string>
     <string name="settings_legal_summary">Šioje programos versijoje pateikiama kliento EULA, nuosavybės pranešimas ir trečiųjų šalių pranešimai supakuotame teisinių dokumentų aplanke.</string>
     <string name="settings_ownership_notice">Programinė įranga yra licencijuojama, o ne parduodama. Išeitinio kodo, produkto ir susijusios intelektinės nuosavybės teisės lieka Ainis Skominas, nebent atskiras rašytinis perleidimas aiškiai numatytų kitaip.</string>

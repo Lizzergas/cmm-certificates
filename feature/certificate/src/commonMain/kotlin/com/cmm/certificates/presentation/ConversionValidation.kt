@@ -1,33 +1,21 @@
 package com.cmm.certificates.presentation
 
 import certificates.composeapp.generated.resources.Res
-import certificates.composeapp.generated.resources.conversion_error_accredited_hours_required
-import certificates.composeapp.generated.resources.conversion_error_accredited_id_required
-import certificates.composeapp.generated.resources.conversion_error_certificate_date_invalid
-import certificates.composeapp.generated.resources.conversion_error_certificate_date_required
-import certificates.composeapp.generated.resources.conversion_error_accredited_type_required
-import certificates.composeapp.generated.resources.conversion_error_certificate_name_required
-import certificates.composeapp.generated.resources.conversion_error_doc_id_required
 import certificates.composeapp.generated.resources.conversion_error_docx_inspect
-import certificates.composeapp.generated.resources.conversion_error_lector_gender_required
-import certificates.composeapp.generated.resources.conversion_error_lector_required
+import certificates.composeapp.generated.resources.conversion_error_dynamic_date_invalid
+import certificates.composeapp.generated.resources.conversion_error_dynamic_required
 import certificates.composeapp.generated.resources.conversion_error_no_entries
 import certificates.composeapp.generated.resources.conversion_error_template_required
+import certificates.composeapp.generated.resources.conversion_error_xlsx_missing_headers
 import certificates.composeapp.generated.resources.conversion_error_xlsx_parse
 import certificates.composeapp.generated.resources.conversion_error_xlsx_required
 import certificates.composeapp.generated.resources.conversion_missing_template_tag_supporting
 import certificates.composeapp.generated.resources.conversion_missing_template_tag_tooltip
 import com.cmm.certificates.core.presentation.UiMessage
+import com.cmm.certificates.domain.config.CertificateConfiguration
+import com.cmm.certificates.domain.config.CertificateFieldType
+import com.cmm.certificates.domain.config.tagForField
 import com.cmm.certificates.domain.parseCertificateDateInput
-
-internal const val CertificateDateTag = "{{data}}"
-internal const val AccreditedIdTag = "{{akreditacijos_id}}"
-internal const val DocIdTag = "{{dokumento_id}}"
-internal const val AccreditedTypeTag = "{{akreditacijos_tipas}}"
-internal const val AccreditedHoursTag = "{{akreditacijos_valandos}}"
-internal const val CertificateNameTag = "{{sertifikato_pavadinimas}}"
-internal const val LectorTag = "{{destytojas}}"
-internal const val LectorGenderTag = "{{destytojo_tipas}}"
 
 data class TemplateFieldAvailability(
     val tag: String,
@@ -51,68 +39,54 @@ data class TemplateFieldAvailability(
 }
 
 data class ConversionTemplateSupportState(
-    val certificateDate: TemplateFieldAvailability = TemplateFieldAvailability(CertificateDateTag),
-    val accreditedId: TemplateFieldAvailability = TemplateFieldAvailability(AccreditedIdTag),
-    val docIdStart: TemplateFieldAvailability = TemplateFieldAvailability(DocIdTag, disableWhenMissing = false),
-    val accreditedType: TemplateFieldAvailability = TemplateFieldAvailability(AccreditedTypeTag),
-    val accreditedHours: TemplateFieldAvailability = TemplateFieldAvailability(AccreditedHoursTag),
-    val certificateName: TemplateFieldAvailability = TemplateFieldAvailability(CertificateNameTag),
-    val lector: TemplateFieldAvailability = TemplateFieldAvailability(LectorTag),
-    val lectorGender: TemplateFieldAvailability = TemplateFieldAvailability(LectorGenderTag),
-)
+    val availabilityByFieldId: Map<String, TemplateFieldAvailability> = emptyMap(),
+    val documentNumberFieldId: String = "",
+) {
+    fun field(fieldId: String): TemplateFieldAvailability {
+        return availabilityByFieldId[fieldId]
+            ?: TemplateFieldAvailability(
+                tag = "{{$fieldId}}",
+                isPresentInTemplate = true,
+                disableWhenMissing = fieldId != documentNumberFieldId,
+            )
+    }
+}
 
 data class ConversionValidationState(
     val xlsxError: UiMessage? = null,
     val templateError: UiMessage? = null,
-    val certificateDateError: UiMessage? = null,
-    val accreditedIdError: UiMessage? = null,
-    val docIdStartError: UiMessage? = null,
-    val accreditedTypeError: UiMessage? = null,
-    val accreditedHoursError: UiMessage? = null,
-    val certificateNameError: UiMessage? = null,
-    val lectorError: UiMessage? = null,
-    val lectorGenderError: UiMessage? = null,
+    val fieldErrors: Map<String, UiMessage> = emptyMap(),
 ) {
     val hasBlockingErrors: Boolean
-        get() = listOf(
-            xlsxError,
-            templateError,
-            certificateDateError,
-            accreditedIdError,
-            docIdStartError,
-            accreditedTypeError,
-            accreditedHoursError,
-            certificateNameError,
-            lectorError,
-            lectorGenderError,
-        ).any { it != null }
+        get() = xlsxError != null || templateError != null || fieldErrors.isNotEmpty()
+
+    fun errorFor(fieldId: String): UiMessage? = fieldErrors[fieldId]
 }
 
-fun buildTemplateSupportState(templateAvailableTags: Set<String>?): ConversionTemplateSupportState {
-    fun field(tag: String, disableWhenMissing: Boolean = true): TemplateFieldAvailability {
-        val isPresent = templateAvailableTags?.contains(tag) ?: true
-        return TemplateFieldAvailability(
-            tag = tag,
+fun buildTemplateSupportState(
+    configuration: CertificateConfiguration,
+    templateAvailableTags: Set<String>?,
+): ConversionTemplateSupportState {
+    val availability = configuration.manualFields.associate { field ->
+        val isPresent =
+            templateAvailableTags?.contains(configuration.tagForField(field.tag)) ?: true
+        field.tag to TemplateFieldAvailability(
+            tag = configuration.tagForField(field.tag),
             isPresentInTemplate = isPresent,
-            disableWhenMissing = disableWhenMissing,
+            disableWhenMissing = field.tag != configuration.documentNumberTag,
         )
     }
 
     return ConversionTemplateSupportState(
-        certificateDate = field(CertificateDateTag),
-        accreditedId = field(AccreditedIdTag),
-        docIdStart = field(DocIdTag, disableWhenMissing = false),
-        accreditedType = field(AccreditedTypeTag),
-        accreditedHours = field(AccreditedHoursTag),
-        certificateName = field(CertificateNameTag),
-        lector = field(LectorTag),
-        lectorGender = field(LectorGenderTag),
+        availabilityByFieldId = availability,
+        documentNumberFieldId = configuration.documentNumberTag,
     )
 }
 
 fun buildConversionValidationState(
     files: ConversionFilesState,
-    form: ConversionFormState,
+    configuration: CertificateConfiguration,
+    formValues: Map<String, String>,
     entriesCount: Int,
     templateSupport: ConversionTemplateSupportState,
     hasAttemptedSubmit: Boolean,
@@ -127,11 +101,12 @@ fun buildConversionValidationState(
         files.templateLoadError != null -> files.templateLoadError
         hasAttemptedSubmit && files.templatePath.isBlank() -> UiMessage(Res.string.conversion_error_template_required)
         hasAttemptedSubmit &&
-            files.templatePath.isNotBlank() &&
-            files.templateAvailableTags == null &&
-            !files.isTemplateInspectionInProgress -> {
+                files.templatePath.isNotBlank() &&
+                files.templateAvailableTags == null &&
+                !files.isTemplateInspectionInProgress -> {
             UiMessage(Res.string.conversion_error_docx_inspect)
         }
+
         else -> null
     }
 
@@ -142,73 +117,48 @@ fun buildConversionValidationState(
         )
     }
 
+    val fieldErrors = buildMap {
+        configuration.manualFields.forEach { field ->
+            val availability = templateSupport.field(field.tag)
+            if (!availability.isEnabled) return@forEach
+
+            val value = formValues[field.tag].orEmpty()
+            val error = when {
+                value.isBlank() -> UiMessage(
+                    Res.string.conversion_error_dynamic_required,
+                    listOf(displayFieldLabel(field.tag, field.label)),
+                )
+                field.type == CertificateFieldType.DATE && parseCertificateDateInput(value) == null -> {
+                    UiMessage(
+                        Res.string.conversion_error_dynamic_date_invalid,
+                        listOf(displayFieldLabel(field.tag, field.label)),
+                    )
+                }
+
+                else -> null
+            }
+            if (error != null) {
+                put(field.tag, error)
+            }
+        }
+    }
+
     return ConversionValidationState(
         xlsxError = xlsxError,
         templateError = templateError,
-        certificateDateError = certificateDateFieldError(
-            value = form.certificateDate,
-            availability = templateSupport.certificateDate,
-        ),
-        accreditedIdError = requiredFieldError(
-            value = form.accreditedId,
-            availability = templateSupport.accreditedId,
-            errorResource = Res.string.conversion_error_accredited_id_required,
-        ),
-        docIdStartError = requiredFieldError(
-            value = form.docIdStart,
-            availability = templateSupport.docIdStart,
-            errorResource = Res.string.conversion_error_doc_id_required,
-        ),
-        accreditedTypeError = requiredFieldError(
-            value = form.accreditedType,
-            availability = templateSupport.accreditedType,
-            errorResource = Res.string.conversion_error_accredited_type_required,
-        ),
-        accreditedHoursError = requiredFieldError(
-            value = form.accreditedHours,
-            availability = templateSupport.accreditedHours,
-            errorResource = Res.string.conversion_error_accredited_hours_required,
-        ),
-        certificateNameError = requiredFieldError(
-            value = form.certificateName,
-            availability = templateSupport.certificateName,
-            errorResource = Res.string.conversion_error_certificate_name_required,
-        ),
-        lectorError = requiredFieldError(
-            value = form.lector,
-            availability = templateSupport.lector,
-            errorResource = Res.string.conversion_error_lector_required,
-        ),
-        lectorGenderError = requiredFieldError(
-            value = form.lectorGender,
-            availability = templateSupport.lectorGender,
-            errorResource = Res.string.conversion_error_lector_gender_required,
-        ),
+        fieldErrors = fieldErrors,
     )
-}
-
-private fun requiredFieldError(
-    value: String,
-    availability: TemplateFieldAvailability,
-    errorResource: org.jetbrains.compose.resources.StringResource,
-): UiMessage? {
-    if (!availability.isEnabled) return null
-    return if (value.isBlank()) UiMessage(errorResource) else null
-}
-
-private fun certificateDateFieldError(
-    value: String,
-    availability: TemplateFieldAvailability,
-): UiMessage? {
-    if (!availability.isEnabled) return null
-    if (value.isBlank()) return UiMessage(Res.string.conversion_error_certificate_date_required)
-    return if (parseCertificateDateInput(value) == null) {
-        UiMessage(Res.string.conversion_error_certificate_date_invalid)
-    } else {
-        null
-    }
 }
 
 fun xlsxParseErrorMessage(): UiMessage = UiMessage(Res.string.conversion_error_xlsx_parse)
 
+fun xlsxMissingHeadersErrorMessage(details: String): UiMessage = UiMessage(
+    Res.string.conversion_error_xlsx_missing_headers,
+    listOf(details),
+)
+
 fun docxInspectErrorMessage(): UiMessage = UiMessage(Res.string.conversion_error_docx_inspect)
+
+private fun displayFieldLabel(fieldTag: String, explicitLabel: String?): String {
+    return explicitLabel?.trim().takeUnless { it.isNullOrBlank() } ?: fieldTag
+}
