@@ -117,7 +117,8 @@ fun ConversionScreen(
     viewModel: ConversionViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val launchFilePicker = rememberFilePickerLauncher()
+    val launchXlsxPicker = rememberFilePickerLauncher("xlsx", viewModel::selectXlsx)
+    val launchTemplatePicker = rememberFilePickerLauncher("docx", viewModel::setTemplatePath)
     val snackbarHostState = remember { SnackbarHostState() }
     val notification = state.notification
     val notificationText = notification?.message?.asString()
@@ -157,8 +158,8 @@ fun ConversionScreen(
                 onStartConversion()
             }
         },
-        onSelectXlsx = { launchFilePicker("xlsx", viewModel::selectXlsx) },
-        onSelectTemplate = { launchFilePicker("docx", viewModel::setTemplatePath) },
+        onSelectXlsx = launchXlsxPicker,
+        onSelectTemplate = launchTemplatePicker,
         onFieldValueChange = viewModel::setManualFieldValue,
         onEditField = viewModel::openManualFieldEditor,
         onFeedbackUrlChange = viewModel::setFeedbackUrl,

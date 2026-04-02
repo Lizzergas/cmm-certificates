@@ -29,10 +29,13 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,7 +71,6 @@ import certificates.composeapp.generated.resources.settings_email_configuration_
 import certificates.composeapp.generated.resources.settings_email_configuration_title
 import certificates.composeapp.generated.resources.settings_history_cache_button
 import certificates.composeapp.generated.resources.settings_history_cache_close
-import certificates.composeapp.generated.resources.settings_installation_directory_hint
 import certificates.composeapp.generated.resources.settings_legal_commit
 import certificates.composeapp.generated.resources.settings_legal_open_folder_hint
 import certificates.composeapp.generated.resources.settings_legal_summary
@@ -80,6 +82,8 @@ import certificates.composeapp.generated.resources.settings_output_directory_def
 import certificates.composeapp.generated.resources.settings_output_directory_invalid_hint
 import certificates.composeapp.generated.resources.settings_ownership_notice
 import certificates.composeapp.generated.resources.settings_password_label
+import certificates.composeapp.generated.resources.settings_pdf_preview_hint
+import certificates.composeapp.generated.resources.settings_pdf_preview_toggle
 import certificates.composeapp.generated.resources.settings_port_label
 import certificates.composeapp.generated.resources.settings_section_title
 import certificates.composeapp.generated.resources.settings_send_logs
@@ -97,8 +101,6 @@ import certificates.composeapp.generated.resources.settings_transport_smtp
 import certificates.composeapp.generated.resources.settings_transport_smtps
 import certificates.composeapp.generated.resources.settings_transport_tls
 import certificates.composeapp.generated.resources.settings_username_label
-import certificates.composeapp.generated.resources.settings_pdf_preview_hint
-import certificates.composeapp.generated.resources.settings_pdf_preview_toggle
 import com.cmm.certificates.core.presentation.UiMessage
 import com.cmm.certificates.core.presentation.asString
 import com.cmm.certificates.core.theme.AppTheme
@@ -135,9 +137,19 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val signatureEditorState by viewModel.signatureEditorState.collectAsStateWithLifecycle()
     val launchDirectoryPicker = rememberDirectoryPickerLauncher()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showClearDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showSmtpDialog by remember { mutableStateOf(false) }
+    val notification = state.notification
+    val notificationText = notification?.message?.asString()
+
+    LaunchedEffect(notification?.id) {
+        val currentNotification = notification ?: return@LaunchedEffect
+        val message = notificationText ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        viewModel.consumeNotification(currentNotification.id)
+    }
     val actions = SettingsActions(
         onHostChange = viewModel::setHost,
         onPortChange = viewModel::setPort,
@@ -207,6 +219,7 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             SettingsTopBar(
                 title = Res.string.settings_title,
@@ -292,6 +305,12 @@ private fun BoxScope.SettingsContent(
             ) {
                 Text(stringResource(Res.string.settings_email_configuration_button))
             }
+            OutlinedButton(
+                onClick = onOpenCertificateConfig,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(Res.string.settings_certificate_config_button))
+            }
             if (!state.supportsEmailSending) {
                 Text(
                     text = stringResource(Res.string.email_sending_unsupported_hint),
@@ -376,19 +395,6 @@ private fun BoxScope.SettingsContent(
                 ) {
                     Text(stringResource(Res.string.settings_open_installation_directory))
                 }
-                state.installationDirectoryPath?.let { installationDirectoryPath ->
-                    Text(
-                        text = stringResource(Res.string.settings_installation_directory_hint) + "\n" + installationDirectoryPath,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            OutlinedButton(
-                onClick = onOpenCertificateConfig,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(Res.string.settings_certificate_config_button))
             }
             OutlinedButton(
                 onClick = actions.onEditSignature,

@@ -55,7 +55,7 @@ fun CertificateConfigScreen(
     viewModel: CertificateConfigViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val launchFilePicker = rememberFilePickerLauncher()
+    val launchSampleXlsxPicker = rememberFilePickerLauncher("xlsx", viewModel::setSampleXlsxPath)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -97,7 +97,7 @@ fun CertificateConfigScreen(
 
                 ConfigCard(title = "XLSX žymės") {
                     OutlinedButton(
-                        onClick = { launchFilePicker("xlsx", viewModel::setSampleXlsxPath) },
+                        onClick = launchSampleXlsxPicker,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(if (state.sampleXlsxPath.isBlank()) "Pasirinkti pavyzdinį XLSX" else state.sampleXlsxPath)

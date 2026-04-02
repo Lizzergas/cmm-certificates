@@ -73,7 +73,9 @@ fun ManualTagFieldDraftForm(
                 value = draft.optionsText,
                 onValueChange = { onChange(draft.copy(optionsText = it)) },
                 label = { Text("Pasirinkimai") },
+                singleLine = false,
                 minLines = 3,
+                maxLines = 8,
                 supportingText = { Text("Kiekviena eilutė - atskiras pasirinkimas") },
                 modifier = Modifier.fillMaxWidth(),
             )

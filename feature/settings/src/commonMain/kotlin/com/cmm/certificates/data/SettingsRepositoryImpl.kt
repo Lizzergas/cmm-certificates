@@ -169,7 +169,7 @@ class SettingsRepositoryImpl(
             logInfo(logTag, "SMTP authentication succeeded")
             true
         } catch (e: Exception) {
-            logError(logTag, "SMTP authentication failed", e)
+            logWarn(logTag, "SMTP authentication failed: ${e.message ?: "unknown error"}")
             updateSmtp {
                 it.copy(
                     isAuthenticated = false,

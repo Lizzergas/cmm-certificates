@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
@@ -80,6 +81,13 @@ class SettingsViewModel(
     }
 
     private val logSubmissionState = MutableStateFlow(LogSubmissionUiState())
+    private val notificationState = MutableStateFlow<SettingsNotificationState?>(null)
+    private var notificationIdCounter = 0L
+    private var lastObservedSmtpError: UiMessage? = null
+
+    init {
+        observeSmtpErrors()
+    }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         combine(
@@ -97,7 +105,8 @@ class SettingsViewModel(
         },
         connectivityMonitor.isNetworkAvailable,
         logSubmissionState,
-    ) { snapshot, isNetworkAvailable, logSubmissionState ->
+        notificationState,
+    ) { snapshot, isNetworkAvailable, logSubmissionState, notificationState ->
         snapshot.settings.toUiState(
             sentToday = snapshot.sentToday,
             supportsEmailSending = supportsEmailSending,
@@ -111,6 +120,7 @@ class SettingsViewModel(
             appCommitHash = appCommitHash,
             isNetworkAvailable = isNetworkAvailable,
             logSubmissionState = logSubmissionState,
+            notification = notificationState,
         )
     }.stateIn(
         viewModelScope,
@@ -181,6 +191,12 @@ class SettingsViewModel(
     fun authenticate() {
         if (!supportsEmailSending) return
         viewModelScope.launch { settingsRepository.authenticate() }
+    }
+
+    fun consumeNotification(notificationId: Long) {
+        notificationState.update { current ->
+            if (current?.id == notificationId) null else current
+        }
     }
 
     fun clearAll() {
@@ -309,6 +325,25 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.save() }
         signatureEditor.close()
     }
+
+    private fun observeSmtpErrors() {
+        viewModelScope.launch {
+            settingsRepository.state.collect { state ->
+                val error = state.smtp.errorMessage
+                when {
+                    error == null -> lastObservedSmtpError = null
+                    error != lastObservedSmtpError -> {
+                        lastObservedSmtpError = error
+                        notificationIdCounter += 1
+                        notificationState.value = SettingsNotificationState(
+                            id = notificationIdCounter,
+                            message = error,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 data class SettingsUiState(
@@ -333,6 +368,7 @@ data class SettingsUiState(
     val isSendingLogs: Boolean = false,
     val logSubmissionMessage: UiMessage? = null,
     val isLogSubmissionSuccess: Boolean = false,
+    val notification: SettingsNotificationState? = null,
 ) {
     val resolvedOutputDirectory: String
         get() = certificate.outputDirectory.ifBlank { defaultOutputDirectory }
@@ -366,6 +402,7 @@ private fun SettingsState.toUiState(
     appCommitHash: String?,
     isNetworkAvailable: Boolean,
     logSubmissionState: LogSubmissionUiState,
+    notification: SettingsNotificationState?,
 ): SettingsUiState {
     return SettingsUiState(
         smtp = smtp,
@@ -394,6 +431,7 @@ private fun SettingsState.toUiState(
         isSendingLogs = logSubmissionState.isSubmitting,
         logSubmissionMessage = logSubmissionState.message,
         isLogSubmissionSuccess = logSubmissionState.isSuccess,
+        notification = notification,
     )
 }
 
@@ -401,6 +439,11 @@ private data class LogSubmissionUiState(
     val isSubmitting: Boolean = false,
     val message: UiMessage? = null,
     val isSuccess: Boolean = false,
+)
+
+data class SettingsNotificationState(
+    val id: Long,
+    val message: UiMessage,
 )
 
 private data class SettingsSnapshot(
