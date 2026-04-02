@@ -30,6 +30,9 @@
     <string name="conversion_preview_dialog_title">PDF preview</string>
     <string name="conversion_preview_loading">Loading preview...</string>
     <string name="conversion_preview_error">Failed to render the preview PDF.</string>
+    <string name="conversion_preview_zoom_in">Zoom in</string>
+    <string name="conversion_preview_zoom_out">Zoom out</string>
+    <string name="conversion_preview_zoom_fit">Fit</string>
     <string name="conversion_runtime_restart_required">The action could not start. Restart the app and try again.</string>
     <string name="conversion_preview_unavailable_hint">In-app PDF preview is not available on this platform yet.</string>
     <string name="conversion_convert_button">Convert to PDF</string>

@@ -30,6 +30,9 @@
     <string name="conversion_preview_dialog_title">PDF peržiūra</string>
     <string name="conversion_preview_loading">Kraunama peržiūra...</string>
     <string name="conversion_preview_error">Nepavyko atvaizduoti PDF peržiūros.</string>
+    <string name="conversion_preview_zoom_in">Didinti</string>
+    <string name="conversion_preview_zoom_out">Mažinti</string>
+    <string name="conversion_preview_zoom_fit">Pritaikyti</string>
     <string name="conversion_runtime_restart_required">Veiksmo nepavyko paleisti. Perkraukite programą ir bandykite dar kartą.</string>
     <string name="conversion_preview_unavailable_hint">Šioje platformoje PDF peržiūra programoje dar nepalaikoma.</string>
     <string name="conversion_convert_button">Konvertuoti į PDF</string>

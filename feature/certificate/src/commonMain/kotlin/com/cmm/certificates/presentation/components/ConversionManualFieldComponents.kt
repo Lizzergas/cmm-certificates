@@ -2,6 +2,8 @@ package com.cmm.certificates.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerId
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import certificates.composeapp.generated.resources.Res
@@ -54,6 +63,9 @@ import com.cmm.certificates.presentation.conversionFieldLabel
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Pencil
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 private val CardPadding = Grid.x8
 
@@ -303,9 +315,88 @@ private fun CertificateDatePickerDialog(
             }
         },
     ) {
-        DatePicker(state = datePickerState)
+        DoubleClickConfirmingDatePicker(
+            state = datePickerState,
+            onDateConfirmed = { selectedDateMillis ->
+                onDateSelected(utcMillisToCertificateDateInput(selectedDateMillis))
+            },
+        )
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DoubleClickConfirmingDatePicker(
+    state: androidx.compose.material3.DatePickerState,
+    onDateConfirmed: (Long) -> Unit,
+) {
+    var hasObservedInitialSelection by remember { mutableStateOf(false) }
+    var lastSelectionChangeMark by remember { mutableStateOf<TimeMark?>(null) }
+
+    androidx.compose.runtime.LaunchedEffect(state.selectedDateMillis) {
+        if (!hasObservedInitialSelection) {
+            hasObservedInitialSelection = true
+            return@LaunchedEffect
+        }
+        if (state.selectedDateMillis != null) {
+            lastSelectionChangeMark = TimeSource.Monotonic.markNow()
+        }
+    }
+
+    DatePicker(
+        state = state,
+        modifier = Modifier.nonConsumingDoubleTap {
+            val selectedDateMillis = state.selectedDateMillis ?: return@nonConsumingDoubleTap
+            val lastSelectionChange = lastSelectionChangeMark ?: return@nonConsumingDoubleTap
+            if (lastSelectionChange.elapsedNow() <= DoubleTapConfirmWindow) {
+                onDateConfirmed(selectedDateMillis)
+            }
+        },
+    )
+}
+
+private fun Modifier.nonConsumingDoubleTap(onDoubleTap: () -> Unit): Modifier {
+    return pointerInput(onDoubleTap) {
+        awaitEachGesture {
+            val firstDown = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Final)
+            val firstUp = waitForUpIgnoringConsumption(firstDown.id) ?: return@awaitEachGesture
+            val secondDown = waitForSecondDownIgnoringConsumption(firstUp.uptimeMillis)
+                ?: return@awaitEachGesture
+            val secondUp = waitForUpIgnoringConsumption(secondDown.id) ?: return@awaitEachGesture
+            if (secondUp.uptimeMillis - firstUp.uptimeMillis <= viewConfiguration.doubleTapTimeoutMillis) {
+                onDoubleTap()
+            }
+        }
+    }
+}
+
+private suspend fun AwaitPointerEventScope.waitForUpIgnoringConsumption(
+    pointerId: PointerId,
+): PointerInputChange? {
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Final)
+        val change = event.changes.firstOrNull { it.id == pointerId } ?: return null
+        if (change.changedToUpIgnoreConsumed()) return change
+        if (!change.pressed) return null
+    }
+}
+
+private suspend fun AwaitPointerEventScope.waitForSecondDownIgnoringConsumption(
+    firstUpUptimeMillis: Long,
+): PointerInputChange? {
+    val minDownUptimeMillis = firstUpUptimeMillis + viewConfiguration.doubleTapMinTimeMillis
+    val maxDownUptimeMillis = firstUpUptimeMillis + viewConfiguration.doubleTapTimeoutMillis
+
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Final)
+        val downChange = event.changes.firstOrNull { it.changedToDownIgnoreConsumed() } ?: continue
+        if (downChange.uptimeMillis < minDownUptimeMillis) continue
+        if (downChange.uptimeMillis > maxDownUptimeMillis) return null
+        return downChange
+    }
+}
+
+private val DoubleTapConfirmWindow = 800.milliseconds
 
 @Composable
 private fun EditFieldIconButton(onClick: () -> Unit) {

@@ -23,6 +23,7 @@ multiplatform-nav3-ui = "1.0.0-alpha06"
 kotlinx-serialization = "1.10.0"
 filekit = "0.13.0"
 pdfbox = "3.0.7"
+icepdf = "7.3.2"
 poiOoxml = "5.5.1"
 simpleJavaMail = "8.12.6"
 slf4j = "2.0.17"
@@ -86,6 +87,8 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
+icepdf-core = { module = "com.github.pcorless.icepdf:icepdf-core", version.ref = "icepdf" }
+icepdf-viewer = { module = "com.github.pcorless.icepdf:icepdf-viewer", version.ref = "icepdf" }
 poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poiOoxml" }
 simple-java-mail = { module = "org.simplejavamail:simple-java-mail", version.ref = "simpleJavaMail" }
 skydoves-colorpicker = { module = "com.github.skydoves:colorpicker-compose", version.ref = "skydoves-colorpicker" }
