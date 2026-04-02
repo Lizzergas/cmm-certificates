@@ -90,4 +90,23 @@ class ConversionValidationTest {
         assertEquals(Res.string.conversion_error_recipient_email_header_required, validation.xlsxError?.resource)
         assertTrue(validation.hasBlockingErrors)
     }
+
+    @Test
+    fun submitValidation_rejectsEntriesFromDifferentSelectedXlsx() {
+        val validation = buildConversionValidationState(
+            files = ConversionFilesState(
+                xlsxPath = "new-registrations.xlsx",
+                templatePath = "template.docx",
+            ),
+            configuration = configuration,
+            formValues = emptyMap(),
+            entriesCount = 2,
+            templateSupport = buildTemplateSupportState(configuration, emptySet()),
+            hasAttemptedSubmit = true,
+            hasEntriesForCurrentXlsx = false,
+        )
+
+        assertEquals(Res.string.conversion_error_xlsx_parse, validation.xlsxError?.resource)
+        assertTrue(validation.hasBlockingErrors)
+    }
 }

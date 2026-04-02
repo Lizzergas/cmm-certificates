@@ -41,6 +41,8 @@ class ConversionContentTest {
                     onSelectTemplate = {},
                     onFieldValueChange = { _, _ -> },
                     onEditField = {},
+                    onRecipientEmailHeaderChange = {},
+                    onSaveRecipientEmailHeaderAsDefault = {},
                     onFeedbackUrlChange = {},
                     snackbarHostState = SnackbarHostState(),
                 )

@@ -63,7 +63,7 @@ class ConversionRefreshCoordinatorTest {
             currentFiles = { files },
             currentEntries = { existingEntries.toList() },
             updateFiles = { update -> files = update(files) },
-            setEntries = { updated ->
+            setParsedEntries = { _, updated ->
                 existingEntries.clear()
                 existingEntries.addAll(updated)
             },
@@ -78,6 +78,74 @@ class ConversionRefreshCoordinatorTest {
         assertEquals(1, notifications.size)
         assertEquals(UiMessage(Res.string.conversion_refresh_xlsx_failed), notifications.single().first)
         assertTrue(notifications.single().second)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun refreshXlsx_ignoresParsedEntriesWhenPathIsNoLongerSelected() = runTest {
+        var files = ConversionFilesState(xlsxPath = "second.xlsx")
+        val existingEntries = mutableListOf(
+            RegistrationEntry(
+                primaryEmail = "second@example.com",
+                name = "Second",
+                surname = "Entry",
+                institution = "CMM",
+                forEvent = "Renginys",
+                publicityApproval = "yes",
+            ),
+        )
+        val coordinator = ConversionRefreshCoordinator(
+            scope = this,
+            fileChangeObserver = FakeFileChangeObserver(),
+            parseRegistrations = ParseRegistrationsUseCase(
+                registrationParser = FakeRegistrationParser(
+                    inspectedSheet = XlsxSheetData(
+                        name = "Sheet1",
+                        headers = listOf("email"),
+                        rows = emptyList(),
+                    ),
+                    parsedEntries = listOf(
+                        RegistrationEntry(
+                            primaryEmail = "first@example.com",
+                            name = "First",
+                            surname = "Entry",
+                            institution = "CMM",
+                            forEvent = "Renginys",
+                            publicityApproval = "yes",
+                        ),
+                    ),
+                ),
+            ),
+            documentGenerator = FakeCertificateDocumentGenerator(),
+            ioDispatcher = StandardTestDispatcher(testScheduler),
+            refreshDebounceMillis = 0L,
+            currentConfiguration = {
+                CertificateConfiguration(
+                    id = "test",
+                    documentNumberTag = "doc_id",
+                    xlsxFields = listOf(
+                        com.cmm.certificates.domain.config.XlsxTagField(
+                            tag = "email",
+                            headerName = "email",
+                        ),
+                    ),
+                )
+            },
+            currentFiles = { files },
+            currentEntries = { existingEntries.toList() },
+            updateFiles = { update -> files = update(files) },
+            setParsedEntries = { _, updated ->
+                existingEntries.clear()
+                existingEntries.addAll(updated)
+            },
+            postNotification = { _, _ -> },
+        )
+
+        coordinator.refreshXlsx(path = "first.xlsx", isAutoRefresh = false)
+        advanceUntilIdle()
+
+        assertEquals("second@example.com", existingEntries.single().primaryEmail)
+        assertEquals("second.xlsx", files.xlsxPath)
     }
 
     @Test
@@ -118,6 +186,7 @@ private class FakeFileChangeObserver : FileChangeObserver {
 private class FakeRegistrationParser(
     private val inspectedSheet: XlsxSheetData,
     private val parseError: Throwable? = null,
+    private val parsedEntries: List<RegistrationEntry> = emptyList(),
 ) : RegistrationParser {
     override fun inspect(path: String): XlsxSheetData = inspectedSheet
 
@@ -126,7 +195,7 @@ private class FakeRegistrationParser(
         configuration: CertificateConfiguration,
     ): List<RegistrationEntry> {
         parseError?.let { throw it }
-        return emptyList()
+        return parsedEntries
     }
 }
 

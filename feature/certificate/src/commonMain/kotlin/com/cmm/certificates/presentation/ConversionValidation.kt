@@ -92,10 +92,12 @@ fun buildConversionValidationState(
     templateSupport: ConversionTemplateSupportState,
     hasAttemptedSubmit: Boolean,
     requiresRecipientEmailSelection: Boolean = false,
+    hasEntriesForCurrentXlsx: Boolean = true,
 ): ConversionValidationState {
     val xlsxError = when {
         files.xlsxLoadError != null -> files.xlsxLoadError
         hasAttemptedSubmit && files.xlsxPath.isBlank() -> UiMessage(Res.string.conversion_error_xlsx_required)
+        hasAttemptedSubmit && files.xlsxPath.isNotBlank() && !hasEntriesForCurrentXlsx -> UiMessage(Res.string.conversion_error_xlsx_parse)
         hasAttemptedSubmit && requiresRecipientEmailSelection -> UiMessage(Res.string.conversion_error_recipient_email_header_required)
         hasAttemptedSubmit && entriesCount == 0 -> UiMessage(Res.string.conversion_error_no_entries)
         else -> null

@@ -17,7 +17,7 @@
         {
             "tag": "email",
             "label": "El. paštas",
-            "headerName": "El. paštas"
+            "headerName": "El. pašto adresas"
         }
     ],
     "manualFields": [

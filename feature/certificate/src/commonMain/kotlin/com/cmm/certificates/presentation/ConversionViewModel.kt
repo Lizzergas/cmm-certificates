@@ -86,7 +86,7 @@ class ConversionViewModel(
     private val formState = MutableStateFlow(ConversionFormState())
     private val runtimeMappingsState = MutableStateFlow(ConversionRuntimeMappingsState())
     private val filesState = MutableStateFlow(ConversionFilesState())
-    private val entriesState = MutableStateFlow<List<RegistrationEntry>>(emptyList())
+    private val parsedEntriesState = MutableStateFlow(ParsedEntriesState())
     private val hasAttemptedSubmitState = MutableStateFlow(false)
     private val previewLoadingState = MutableStateFlow(false)
     private val previewPdfPathState = MutableStateFlow<String?>(null)
@@ -102,9 +102,14 @@ class ConversionViewModel(
         refreshDebounceMillis = refreshDebounceMillis,
         currentConfiguration = { currentParsingConfiguration() },
         currentFiles = { filesState.value },
-        currentEntries = { entriesState.value },
+        currentEntries = { parsedEntriesState.value.entries },
         updateFiles = filesState::update,
-        setEntries = { entriesState.value = it },
+        setParsedEntries = { path, entries ->
+            parsedEntriesState.value = ParsedEntriesState(
+                sourcePath = path,
+                entries = entries,
+            )
+        },
         postNotification = ::postNotification,
     )
 
@@ -118,7 +123,7 @@ class ConversionViewModel(
     private val inputState = combine(
         formState,
         filesState,
-        entriesState,
+        parsedEntriesState,
         hasAttemptedSubmitState,
         runtimeMappingsState,
         ::ConversionInputSnapshot,
@@ -214,11 +219,11 @@ class ConversionViewModel(
 
     fun selectXlsx(path: String) {
         if (!capabilities.canRunConversion) {
-            entriesState.value = emptyList()
+            parsedEntriesState.value = ParsedEntriesState()
             return
         }
         refreshCoordinator.restartXlsxWatcher(path)
-        entriesState.value = emptyList()
+        parsedEntriesState.value = ParsedEntriesState()
         filesState.update {
             it.copy(
                 xlsxPath = path,
@@ -227,7 +232,7 @@ class ConversionViewModel(
             )
         }
         if (path.isBlank()) {
-            entriesState.value = emptyList()
+            parsedEntriesState.value = ParsedEntriesState()
             return
         }
         refreshCoordinator.refreshXlsx(path, isAutoRefresh = false)
@@ -356,12 +361,14 @@ class ConversionViewModel(
             files = filesState.value,
             configuration = configuration,
             formValues = resolvedForm.manualValues,
-            entriesCount = entriesState.value.size,
+            entriesCount = parsedEntriesState.value.entries.size,
             templateSupport = buildTemplateSupportState(
                 configuration,
                 filesState.value.templateAvailableTags
             ),
             hasAttemptedSubmit = true,
+            requiresRecipientEmailSelection = uiState.value.recipientEmailMapping.isMissingSelection,
+            hasEntriesForCurrentXlsx = parsedEntriesState.value.sourcePath == filesState.value.xlsxPath,
         )
     }
 

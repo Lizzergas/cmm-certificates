@@ -26,6 +26,7 @@ data class ConversionUiState(
     val isPreviewLoading: Boolean = false,
     val previewPdfPath: String? = null,
     val entries: List<RegistrationEntry> = emptyList(),
+    val parsedEntriesSourcePath: String = "",
     val cachedEmailsCount: Int = 0,
     val editingManualField: ConversionManualFieldEditorState? = null,
     val notification: ConversionNotificationState? = null,
@@ -37,7 +38,7 @@ data class ConversionUiState(
 internal data class ConversionInputSnapshot(
     val form: ConversionFormState,
     val files: ConversionFilesState,
-    val entries: List<RegistrationEntry>,
+    val parsedEntries: ParsedEntriesState,
     val hasAttemptedSubmit: Boolean,
     val runtimeMappings: ConversionRuntimeMappingsState,
 )
@@ -78,6 +79,11 @@ data class ConversionFormState(
 
 data class ConversionRuntimeMappingsState(
     val recipientEmailHeaderOverride: String = "",
+)
+
+data class ParsedEntriesState(
+    val sourcePath: String = "",
+    val entries: List<RegistrationEntry> = emptyList(),
 )
 
 data class RecipientEmailMappingUiState(
@@ -136,10 +142,11 @@ internal fun buildConversionBaseUiState(
         files = snapshot.files,
         configuration = configuration,
         formValues = resolvedForm.manualValues,
-        entriesCount = snapshot.entries.size,
+        entriesCount = snapshot.parsedEntries.entries.size,
         templateSupport = templateSupport,
         hasAttemptedSubmit = snapshot.hasAttemptedSubmit,
         requiresRecipientEmailSelection = recipientEmailMapping.isMissingSelection,
+        hasEntriesForCurrentXlsx = snapshot.parsedEntries.sourcePath == snapshot.files.xlsxPath,
     )
 
     return ConversionUiState(
@@ -163,7 +170,8 @@ internal fun buildConversionBaseUiState(
         supportsConversion = supportsConversion,
         supportsEmailSending = supportsEmailSending,
         recipientEmailMapping = recipientEmailMapping,
-        entries = snapshot.entries,
+        entries = snapshot.parsedEntries.entries,
+        parsedEntriesSourcePath = snapshot.parsedEntries.sourcePath,
         editingManualField = overlay.editingManualField,
         notification = overlay.notification,
     )

@@ -40,7 +40,7 @@ internal class ConversionRefreshCoordinator(
     private val currentFiles: () -> ConversionFilesState,
     private val currentEntries: () -> List<RegistrationEntry>,
     private val updateFiles: (((ConversionFilesState) -> ConversionFilesState)) -> Unit,
-    private val setEntries: (List<RegistrationEntry>) -> Unit,
+    private val setParsedEntries: (String, List<RegistrationEntry>) -> Unit,
     private val postNotification: (UiMessage, Boolean) -> Unit,
 ) {
     private val logTag = "ConversionRefresh"
@@ -142,9 +142,9 @@ internal class ConversionRefreshCoordinator(
                         )
                     }
                     if (missingHeaders.isNotEmpty()) {
-                        if (!isAutoRefresh) {
-                            setEntries(emptyList())
-                        } else {
+                        if (!isAutoRefresh && currentFiles().xlsxPath == path) {
+                            setParsedEntries(path, emptyList())
+                        } else if (isAutoRefresh && currentFiles().xlsxPath == path) {
                             postNotification(
                                 UiMessage(Res.string.conversion_refresh_xlsx_failed),
                                 true
@@ -165,15 +165,15 @@ internal class ConversionRefreshCoordinator(
                         logError(logTag, "Failed to parse XLSX: $path", error)
                         if (!isAutoRefresh) emptyList() else currentEntries()
                     }
-                    if (parsed.isSuccess) {
-                        setEntries(entries)
+                    if (parsed.isSuccess && currentFiles().xlsxPath == path) {
+                        setParsedEntries(path, entries)
                         if (isAutoRefresh) {
                             postNotification(
                                 UiMessage(Res.string.conversion_refresh_xlsx_succeeded),
                                 false
                             )
                         }
-                    } else if (isAutoRefresh) {
+                    } else if (isAutoRefresh && currentFiles().xlsxPath == path) {
                         postNotification(UiMessage(Res.string.conversion_refresh_xlsx_failed), true)
                     }
                     updateFiles { current ->
@@ -189,14 +189,14 @@ internal class ConversionRefreshCoordinator(
                 },
                 onFailure = { error ->
                     logError(logTag, "Failed to inspect XLSX: $path", error)
-                    if (!isAutoRefresh) {
-                        setEntries(emptyList())
+                    if (!isAutoRefresh && currentFiles().xlsxPath == path) {
+                        setParsedEntries(path, emptyList())
                     }
                     updateFiles { current ->
                         if (current.xlsxPath != path) return@updateFiles current
                         current.copy(xlsxLoadError = xlsxParseErrorMessage())
                     }
-                    if (isAutoRefresh) {
+                    if (isAutoRefresh && currentFiles().xlsxPath == path) {
                         postNotification(UiMessage(Res.string.conversion_refresh_xlsx_failed), true)
                     }
                 },
