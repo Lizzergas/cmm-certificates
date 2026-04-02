@@ -36,12 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.settings_back
+import com.cmm.certificates.configeditor.ManualTagFieldDraft
+import com.cmm.certificates.configeditor.ManualTagFieldDraftForm
 import com.cmm.certificates.core.theme.Grid
 import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AppVerticalScrollbar
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.core.ui.rememberFilePickerLauncher
-import com.cmm.certificates.presentation.components.ManualTagFieldDraftForm
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -82,25 +83,37 @@ fun CertificateConfigScreen(
                     .align(Alignment.TopCenter),
                 verticalArrangement = Arrangement.spacedBy(Grid.x8),
             ) {
-                ConfigCard(title = "Sertifikato konfigūracija") {
+                ConfigCard() {
                     Text("DOCX šablone naudokite žymes formatu {{tag}}.")
                     state.externalPath?.let { path ->
-                        Text(path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            path,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     state.loadFailureMessage?.let { message ->
-                        Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                     state.message?.let { message ->
-                        Text(message, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            message,
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
 
-                ConfigCard(title = "XLSX žymės") {
+                ConfigCard() {
                     OutlinedButton(
                         onClick = launchSampleXlsxPicker,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(if (state.sampleXlsxPath.isBlank()) "Pasirinkti pavyzdinį XLSX" else state.sampleXlsxPath)
+                        Text(state.sampleXlsxPath.ifBlank { "Pasirinkti pavyzdinį XLSX" })
                     }
                     state.xlsxFields.forEachIndexed { index, field ->
                         XlsxFieldEditor(
@@ -110,12 +123,15 @@ fun CertificateConfigScreen(
                             onRemove = { viewModel.removeXlsxField(index) },
                         )
                     }
-                    OutlinedButton(onClick = viewModel::addXlsxField, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = viewModel::addXlsxField,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Pridėti XLSX žymę")
                     }
                 }
 
-                ConfigCard(title = "Įvedami laukai") {
+                ConfigCard() {
                     state.manualFields.forEachIndexed { index, field ->
                         ManualFieldEditor(
                             field = field,
@@ -123,12 +139,15 @@ fun CertificateConfigScreen(
                             onRemove = { viewModel.removeManualField(index) },
                         )
                     }
-                    OutlinedButton(onClick = viewModel::addManualField, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = viewModel::addManualField,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text("Pridėti įvedamą lauką")
                     }
                 }
 
-                ConfigCard(title = "Dokumento numerio žymė") {
+                ConfigCard() {
                     TagDropdown(
                         label = "Dokumento numerio žymė",
                         value = state.documentNumberTag,
@@ -180,8 +199,16 @@ private fun ConfigTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Grid.x1)) {
-            Text("Sertifikato konfigūracija", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("Sukurkite žymes XLSX ir DOCX šablonams.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "Sertifikato konfigūracija",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "Sukurkite žymes XLSX ir DOCX šablonams.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Grid.x2)) {
             TextButton(onClick = onBack) {
@@ -196,7 +223,6 @@ private fun ConfigTopBar(
 
 @Composable
 private fun ConfigCard(
-    title: String,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
@@ -287,7 +313,8 @@ private fun TagDropdown(
             value = value,
             onValueChange = {},
             label = { Text(label) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+            modifier = Modifier.fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
             readOnly = true,
             showClearIcon = false,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },

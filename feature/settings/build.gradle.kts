@@ -33,5 +33,10 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core)
         }
+
+        jvmTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.kotlin.test)
+        }
     }
 }

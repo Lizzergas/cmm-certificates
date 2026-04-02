@@ -2,6 +2,10 @@ package com.cmm.certificates.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cmm.certificates.configeditor.ManualTagFieldDraft
+import com.cmm.certificates.configeditor.removeItem
+import com.cmm.certificates.configeditor.toDraft
+import com.cmm.certificates.configeditor.updateItem
 import com.cmm.certificates.data.config.CertificateConfigurationRepository
 import com.cmm.certificates.domain.config.defaultCertificateConfiguration
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +46,9 @@ class CertificateConfigViewModel(
                                 if (!field.headerName.isNullOrBlank()) {
                                     field
                                 } else {
-                                    val exactMatch = headers.firstOrNull { it.trim().equals(field.tag.trim(), ignoreCase = true) }
+                                    val exactMatch = headers.firstOrNull {
+                                        it.trim().equals(field.tag.trim(), ignoreCase = true)
+                                    }
                                     field.copy(headerName = exactMatch.orEmpty())
                                 }
                             },
@@ -51,7 +57,11 @@ class CertificateConfigViewModel(
                     }
                 }
                 .onFailure {
-                    _uiState.update { it.copy(message = it.message ?: "Nepavyko nuskaityti XLSX antraščių.") }
+                    _uiState.update {
+                        it.copy(
+                            message = it.message ?: "Nepavyko nuskaityti XLSX antraščių."
+                        )
+                    }
                 }
         }
     }
@@ -74,19 +84,20 @@ class CertificateConfigViewModel(
         it.copy(manualFields = it.manualFields + ManualTagFieldDraft())
     }
 
-    fun updateManualField(index: Int, update: (ManualTagFieldDraft) -> ManualTagFieldDraft) = mutate {
-        val currentField = it.manualFields.getOrNull(index) ?: return@mutate it
-        val updatedField = update(currentField)
-        val updatedDocumentNumberTag = if (it.documentNumberTag == currentField.tag) {
-            updatedField.tag
-        } else {
-            it.documentNumberTag
+    fun updateManualField(index: Int, update: (ManualTagFieldDraft) -> ManualTagFieldDraft) =
+        mutate {
+            val currentField = it.manualFields.getOrNull(index) ?: return@mutate it
+            val updatedField = update(currentField)
+            val updatedDocumentNumberTag = if (it.documentNumberTag == currentField.tag) {
+                updatedField.tag
+            } else {
+                it.documentNumberTag
+            }
+            it.copy(
+                manualFields = it.manualFields.updateItem(index) { updatedField },
+                documentNumberTag = updatedDocumentNumberTag,
+            )
         }
-        it.copy(
-            manualFields = it.manualFields.updateItem(index) { updatedField },
-            documentNumberTag = updatedDocumentNumberTag,
-        )
-    }
 
     fun removeManualField(index: Int) = mutate {
         val removed = it.manualFields.getOrNull(index)
@@ -104,9 +115,11 @@ class CertificateConfigViewModel(
 
     fun resetToDefault() {
         hasLocalChanges = true
-        _uiState.value = repository.state.value.copy(configuration = defaultCertificateConfiguration()).toUiState(
-            message = null,
-        )
+        _uiState.value =
+            repository.state.value.copy(configuration = defaultCertificateConfiguration())
+                .toUiState(
+                    message = null,
+                )
     }
 
     fun save(onFinished: (Boolean) -> Unit = {}) {
@@ -115,11 +128,16 @@ class CertificateConfigViewModel(
             repository.save(configuration)
                 .onSuccess {
                     hasLocalChanges = false
-                    _uiState.value = repository.state.value.toUiState(message = "Konfigūracija išsaugota.")
+                    _uiState.value =
+                        repository.state.value.toUiState(message = "Konfigūracija išsaugota.")
                     onFinished(true)
                 }
                 .onFailure { error ->
-                    _uiState.update { it.copy(message = error.message ?: "Nepavyko išsaugoti konfigūracijos.") }
+                    _uiState.update {
+                        it.copy(
+                            message = error.message ?: "Nepavyko išsaugoti konfigūracijos."
+                        )
+                    }
                     onFinished(false)
                 }
         }

@@ -126,12 +126,13 @@ fun buildConversionValidationState(
             val error = when {
                 value.isBlank() -> UiMessage(
                     Res.string.conversion_error_dynamic_required,
-                    listOf(displayFieldLabel(field.tag, field.label)),
+                    listOf(conversionFieldLabel(field.tag, field.label)),
                 )
+
                 field.type == CertificateFieldType.DATE && parseCertificateDateInput(value) == null -> {
                     UiMessage(
                         Res.string.conversion_error_dynamic_date_invalid,
-                        listOf(displayFieldLabel(field.tag, field.label)),
+                        listOf(conversionFieldLabel(field.tag, field.label)),
                     )
                 }
 
@@ -158,7 +159,3 @@ fun xlsxMissingHeadersErrorMessage(details: String): UiMessage = UiMessage(
 )
 
 fun docxInspectErrorMessage(): UiMessage = UiMessage(Res.string.conversion_error_docx_inspect)
-
-private fun displayFieldLabel(fieldTag: String, explicitLabel: String?): String {
-    return explicitLabel?.trim().takeUnless { it.isNullOrBlank() } ?: fieldTag
-}

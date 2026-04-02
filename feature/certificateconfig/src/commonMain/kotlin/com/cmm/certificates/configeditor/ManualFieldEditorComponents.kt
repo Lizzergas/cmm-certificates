@@ -1,4 +1,4 @@
-package com.cmm.certificates.presentation.components
+package com.cmm.certificates.configeditor
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +32,6 @@ import com.cmm.certificates.core.theme.Stroke
 import com.cmm.certificates.core.ui.AnimatedDialog
 import com.cmm.certificates.core.ui.ClearableOutlinedTextField
 import com.cmm.certificates.domain.config.CertificateFieldType
-import com.cmm.certificates.presentation.ManualTagFieldDraft
 
 @Composable
 fun ManualTagFieldDraftForm(
