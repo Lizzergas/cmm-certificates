@@ -28,6 +28,7 @@
     <string name="conversion_output_directory_hint">Palieskite, kad pasirinktumėte vietą</string>
     <string name="conversion_preview_button">Peržiūrėti PDF</string>
     <string name="conversion_preview_dialog_title">PDF peržiūra</string>
+    <string name="conversion_preview_dialog_hint">Naudokite pelės ratuką arba jutiklinio kilimėlio gestą masteliui keisti, o slinkite ar tempkite dokumentui peržiūrėti.</string>
     <string name="conversion_preview_loading">Kraunama peržiūra...</string>
     <string name="conversion_preview_error">Nepavyko atvaizduoti PDF peržiūros.</string>
     <string name="conversion_preview_zoom_in">Didinti</string>

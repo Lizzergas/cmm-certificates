@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 
 private const val DialogEnterDurationMillis = 120
@@ -20,6 +21,7 @@ private const val DialogExitDurationMillis = 100
 @Composable
 fun AnimatedDialog(
     onDismiss: () -> Unit,
+    properties: DialogProperties = DialogProperties(),
     content: @Composable (requestDismiss: () -> Unit) -> Unit,
 ) {
     var isVisible by remember { mutableStateOf(false) }
@@ -43,7 +45,7 @@ fun AnimatedDialog(
         }
     }
 
-    Dialog(onDismissRequest = requestDismiss) {
+    Dialog(onDismissRequest = requestDismiss, properties = properties) {
         AnimatedVisibility(
             visible = isVisible,
             enter = fadeIn(animationSpec = tween(DialogEnterDurationMillis)),

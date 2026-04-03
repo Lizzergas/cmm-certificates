@@ -28,6 +28,7 @@
     <string name="conversion_output_directory_hint">Tap to choose destination</string>
     <string name="conversion_preview_button">Preview PDF</string>
     <string name="conversion_preview_dialog_title">PDF preview</string>
+    <string name="conversion_preview_dialog_hint">Use the mouse wheel or trackpad gesture to zoom, and drag or scroll to navigate.</string>
     <string name="conversion_preview_loading">Loading preview...</string>
     <string name="conversion_preview_error">Failed to render the preview PDF.</string>
     <string name="conversion_preview_zoom_in">Zoom in</string>

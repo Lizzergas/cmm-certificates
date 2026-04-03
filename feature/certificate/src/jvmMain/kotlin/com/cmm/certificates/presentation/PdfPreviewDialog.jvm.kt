@@ -11,9 +11,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
+import androidx.compose.ui.text.font.FontWeight
 import certificates.composeapp.generated.resources.Res
 import certificates.composeapp.generated.resources.conversion_preview_error
-import com.cmm.certificates.core.theme.Grid
 import org.icepdf.ri.common.MyAnnotationCallback
 import org.icepdf.ri.common.SwingController
 import org.icepdf.ri.common.SwingViewBuilder
@@ -23,21 +23,34 @@ import org.icepdf.ri.common.views.DocumentViewModelImpl
 import org.icepdf.ri.util.FontPropertiesManager
 import org.icepdf.ri.util.ViewerPropertiesManager
 import org.jetbrains.compose.resources.stringResource
+import java.awt.Component
 import java.awt.BorderLayout
+import java.awt.Toolkit
+import java.awt.event.ActionEvent
+import java.awt.event.KeyEvent
 import java.io.File
 import java.util.logging.Level
 import java.util.logging.Logger
+import javax.swing.AbstractAction
+import javax.swing.BorderFactory
+import javax.swing.JComponent
+import javax.swing.JMenuItem
 import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.SwingUtilities
 
 @Composable
 internal actual fun PlatformPdfPreviewContent(
     pdfPath: String,
     modifier: Modifier,
+    onRequestClose: () -> Unit,
 ) {
     val viewerHandle = remember(pdfPath) {
         runCatching {
-            createIcePdfViewerHandle(pdfPath)
+            createIcePdfViewerHandle(
+                pdfPath = pdfPath,
+                onRequestClose = onRequestClose,
+            )
         }.getOrNull()
     }
 
@@ -62,15 +75,17 @@ internal actual fun PlatformPdfPreviewContent(
             SwingPanel(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .fillMaxSize(),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 factory = { viewerHandle.panel },
             )
         }
     }
 }
 
-private fun createIcePdfViewerHandle(pdfPath: String): IcePdfViewerHandle {
+private fun createIcePdfViewerHandle(
+    pdfPath: String,
+    onRequestClose: () -> Unit,
+): IcePdfViewerHandle {
     configureIcePdfLogging()
     FontPropertiesManager.getInstance().loadOrReadSystemFonts()
 
@@ -103,21 +118,25 @@ private fun createIcePdfViewerHandle(pdfPath: String): IcePdfViewerHandle {
         DocumentViewController.PAGE_FIT_WINDOW_WIDTH,
         0f,
     )
-    val panel = JPanel(BorderLayout()).apply {
-        border = javax.swing.BorderFactory.createEmptyBorder(
-            Grid.x2.value.toInt(),
-            Grid.x2.value.toInt(),
-            Grid.x2.value.toInt(),
-            Grid.x2.value.toInt(),
-        )
-    }
     controller.documentViewController.annotationCallback =
         MyAnnotationCallback(controller.documentViewController)
-    panel.add(controller.documentViewController.viewContainer, BorderLayout.CENTER)
+    val documentViewContainer = controller.documentViewController.viewContainer
+    val panel = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        add(documentViewContainer, BorderLayout.CENTER)
+        isOpaque = false
+    }
     controller.openDocument(File(pdfPath).absolutePath)
     controller.setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, true)
     controller.setDisplayTool(DocumentViewModelImpl.DISPLAY_TOOL_TEXT_SELECTION)
     controller.setUtilityPaneVisible(false)
+    disableMouseWheelZoom(documentViewContainer)
+    installViewerShortcuts(
+        controller = controller,
+        root = panel,
+        documentViewContainer = documentViewContainer,
+        onRequestClose = onRequestClose,
+    )
     return IcePdfViewerHandle(controller, panel)
 }
 
@@ -125,6 +144,99 @@ private fun configureIcePdfLogging() {
     Logger.getLogger("org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType").level = Level.SEVERE
     Logger.getLogger("org.icepdf.core.pobjects.fonts.FontFactory").level = Level.SEVERE
     Logger.getLogger("org.icepdf.core.pobjects.fonts.FontManager").level = Level.SEVERE
+}
+
+private fun installViewerShortcuts(
+    controller: SwingController,
+    root: JComponent,
+    documentViewContainer: Component,
+    onRequestClose: () -> Unit,
+) {
+    val menuShortcutMask = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
+    val copyMenuItem = JMenuItem().apply {
+        isEnabled = false
+    }
+    controller.setCopyMenuItem(copyMenuItem)
+
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)) {
+        onRequestClose()
+    }
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_W, menuShortcutMask)) {
+        onRequestClose()
+    }
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_C, menuShortcutMask)) {
+        if (copyMenuItem.isEnabled) {
+            copyMenuItem.doClick()
+        }
+    }
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, menuShortcutMask)) {
+        controller.zoomIn()
+    }
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, menuShortcutMask)) {
+        controller.zoomOut()
+    }
+    registerWindowShortcut(root, KeyStroke.getKeyStroke(KeyEvent.VK_0, menuShortcutMask)) {
+        controller.setPageFitMode(DocumentViewController.PAGE_FIT_WINDOW_WIDTH, true)
+    }
+
+    if (documentViewContainer is JComponent) {
+        registerShortcut(documentViewContainer, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0)) {
+            onRequestClose()
+        }
+        registerShortcut(documentViewContainer, KeyStroke.getKeyStroke(KeyEvent.VK_W, menuShortcutMask)) {
+            onRequestClose()
+        }
+        registerShortcut(documentViewContainer, KeyStroke.getKeyStroke(KeyEvent.VK_C, menuShortcutMask)) {
+            if (copyMenuItem.isEnabled) {
+                copyMenuItem.doClick()
+            }
+        }
+    }
+}
+
+private fun registerWindowShortcut(
+    component: JComponent,
+    keyStroke: KeyStroke,
+    action: () -> Unit,
+) {
+    val actionKey = "window-shortcut-${keyStroke.keyCode}-${keyStroke.modifiers}-${component.hashCode()}"
+    component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionKey)
+    component.actionMap.put(
+        actionKey,
+        object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent?) {
+                action()
+            }
+        },
+    )
+}
+
+private fun registerShortcut(
+    component: JComponent,
+    keyStroke: KeyStroke,
+    action: () -> Unit,
+) {
+    val actionKey = "shortcut-${keyStroke.keyCode}-${keyStroke.modifiers}-${component.hashCode()}"
+    component.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(keyStroke, actionKey)
+    component.actionMap.put(
+        actionKey,
+        object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent?) {
+                action()
+            }
+        },
+    )
+}
+
+private fun disableMouseWheelZoom(component: Component) {
+    if (component is JComponent) {
+        component.mouseWheelListeners
+            .filter { it.javaClass.name.contains("MouseWheelZoom") }
+            .forEach(component::removeMouseWheelListener)
+    }
+    if (component is java.awt.Container) {
+        component.components.forEach(::disableMouseWheelZoom)
+    }
 }
 
 private class IcePdfViewerHandle(

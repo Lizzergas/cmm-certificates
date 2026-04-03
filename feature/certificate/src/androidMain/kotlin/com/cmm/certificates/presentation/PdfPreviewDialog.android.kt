@@ -15,6 +15,7 @@ import org.jetbrains.compose.resources.stringResource
 internal actual fun PlatformPdfPreviewContent(
     pdfPath: String,
     modifier: Modifier,
+    onRequestClose: () -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxWidth(),
